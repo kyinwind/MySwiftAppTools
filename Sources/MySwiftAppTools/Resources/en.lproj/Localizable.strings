@@ -1,0 +1,11 @@
+"PermissionManager.authReadTitle" = "Grant Read Access";
+"PermissionManager.authReadMsg" = "Choose the folder you want this app to read.";
+"PermissionManager.authWriteTitle" = "Grant Folder Access";
+"PermissionManager.authWriteMsg" = "Choose the folder you want this app to use.";
+
+"MyDirectoryType.normal" = "Pinned";
+"MyDirectoryType.nolabel" = "Temporary";
+"MyDirectoryType.history" = "History";
+
+"Toast.copiedToPasteboard" = "Copied to clipboard";
+"Toast.confirmOK" = "OK";
