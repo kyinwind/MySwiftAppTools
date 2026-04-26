@@ -1,17 +1,17 @@
 import Foundation
 import OSLog
 
-enum LogLevel {
+public enum LogLevel {
     case debug, info, warn, error
 }
 
-struct Log {
-    nonisolated(unsafe) static var isEnabled: Bool = true
+public struct Log {
+    nonisolated(unsafe) public static var isEnabled: Bool = true
 
     nonisolated(unsafe) private static var subsystem = Bundle.main.bundleIdentifier ?? "MySwiftAppTools"
     nonisolated(unsafe) private static var loggers: [String: Logger] = [:]
 
-    static func configure(
+    public static func configure(
         subsystem: String? = nil,
         isEnabled: Bool = true
     ) {
@@ -20,7 +20,7 @@ struct Log {
         loggers.removeAll()
     }
 
-    static func logger(category: String) -> Logger {
+    public static func logger(category: String) -> Logger {
         if let logger = loggers[category] {
             return logger
         }
@@ -29,7 +29,7 @@ struct Log {
         return newLogger
     }
 
-    static func log(
+    public static func log(
         _ category: String = "General",
         _ level: LogLevel,
         _ message: @autoclosure () -> String,
@@ -62,7 +62,7 @@ struct Log {
     }
     // MARK: - Shortcut APIs
 
-    static func debug(
+    public static func debug(
         _ message: @autoclosure () -> String,
         file: String = #file,
         function: String = #function,
@@ -71,7 +71,7 @@ struct Log {
         log("General", .debug, message(), file: file, function: function, line: line)
     }
 
-    static func info(
+    public static func info(
         _ message: @autoclosure () -> String,
         file: String = #file,
         function: String = #function,
@@ -80,7 +80,7 @@ struct Log {
         log("General", .info, message(), file: file, function: function, line: line)
     }
 
-    static func warn(
+    public static func warn(
         _ message: @autoclosure () -> String,
         file: String = #file,
         function: String = #function,
@@ -89,7 +89,7 @@ struct Log {
         log("General", .warn, message(), file: file, function: function, line: line)
     }
 
-    static func error(
+    public static func error(
         _ message: @autoclosure () -> String,
         file: String = #file,
         function: String = #function,

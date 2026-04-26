@@ -6,12 +6,12 @@
 //
 import Foundation
 
-func L(_ key: String, _ args: CVarArg...) -> String {
+public func L(_ key: String, _ args: CVarArg...) -> String {
     let format = Bundle.module.localizedString(forKey: key, value: key, table: nil)
     return String(format: format, locale: Locale.current, arguments: args)
 }
 
-extension String {
+public extension String {
     var toNSLocalizedString: String {
         Bundle.module.localizedString(forKey: self, value: self, table: nil)
     }
@@ -21,11 +21,11 @@ extension String {
     }
 }
 
-enum MySwiftAppToolsL10n {
-    static let authReadTitle = "PermissionManager.authReadTitle"
-    static let authReadMsg = "PermissionManager.authReadMsg"
-    static let authWriteTitle = "PermissionManager.authWriteTitle"
-    static let authWriteMsg = "PermissionManager.authWriteMsg"
-    static let copiedToPasteboard = "Toast.copiedToPasteboard"
-    static let confirmOK = "Toast.confirmOK"
+public enum MySwiftAppToolsL10n {
+    public static let authReadTitle = "PermissionManager.authReadTitle"
+    public static let authReadMsg = "PermissionManager.authReadMsg"
+    public static let authWriteTitle = "PermissionManager.authWriteTitle"
+    public static let authWriteMsg = "PermissionManager.authWriteMsg"
+    public static let copiedToPasteboard = "Toast.copiedToPasteboard"
+    public static let confirmOK = "Toast.confirmOK"
 }

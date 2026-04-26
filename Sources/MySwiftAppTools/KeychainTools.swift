@@ -29,7 +29,7 @@ import Security
 //let key = KeychainTools.load(account: AppKeychainAccount.openAIApiKey)
 //
 //KeychainTools.delete(account: AppKeychainAccount.openAIApiKey)
-enum KeychainTools {
+public enum KeychainTools {
 
     // MARK: - Default Service (App Level)
 
@@ -37,7 +37,7 @@ enum KeychainTools {
     /// 所有不特殊指定的 Keychain 数据都会存到这里
     nonisolated(unsafe) private static var defaultService = Bundle.main.bundleIdentifier ?? "MySwiftAppTools"
 
-    static func configure(defaultService: String) {
+    public static func configure(defaultService: String) {
         guard !defaultService.isEmpty else { return }
         self.defaultService = defaultService
     }
@@ -46,7 +46,7 @@ enum KeychainTools {
 
     /// 保存数据（完整参数）
     @discardableResult
-    static func save(
+    public static func save(
         _ value: String,
         service: String,
         account: String
@@ -72,7 +72,7 @@ enum KeychainTools {
     }
 
     /// 读取数据（完整参数）
-    static func load(
+    public static func load(
         service: String,
         account: String
     ) -> String? {
@@ -101,7 +101,7 @@ enum KeychainTools {
 
     /// 删除数据（完整参数）
     @discardableResult
-    static func delete(
+    public static func delete(
         service: String,
         account: String
     ) -> Bool {
@@ -120,7 +120,7 @@ enum KeychainTools {
 
     /// 保存数据（使用 App 默认 service）
     @discardableResult
-    static func save(
+    public static func save(
         _ value: String,
         account: String
     ) -> Bool {
@@ -128,7 +128,7 @@ enum KeychainTools {
     }
 
     @discardableResult
-    static func save<Account: RawRepresentable>(
+    public static func save<Account: RawRepresentable>(
         _ value: String,
         account: Account
     ) -> Bool where Account.RawValue == String {
@@ -136,13 +136,13 @@ enum KeychainTools {
     }
 
     /// 读取数据（使用 App 默认 service）
-    static func load(
+    public static func load(
         account: String
     ) -> String? {
         load(service: defaultService, account: account)
     }
 
-    static func load<Account: RawRepresentable>(
+    public static func load<Account: RawRepresentable>(
         account: Account
     ) -> String? where Account.RawValue == String {
         load(account: account.rawValue)
@@ -150,14 +150,14 @@ enum KeychainTools {
 
     /// 删除数据（使用 App 默认 service）
     @discardableResult
-    static func delete(
+    public static func delete(
         account: String
     ) -> Bool {
         delete(service: defaultService, account: account)
     }
 
     @discardableResult
-    static func delete<Account: RawRepresentable>(
+    public static func delete<Account: RawRepresentable>(
         account: Account
     ) -> Bool where Account.RawValue == String {
         delete(account: account.rawValue)
@@ -168,7 +168,7 @@ enum KeychainTools {
     /// 保存数据（App.serviceSuffix）
     /// 例如：TTSMate.Azure / TTSMate.OpenAI
     @discardableResult
-    static func save(
+    public static func save(
         _ value: String,
         serviceSuffix: String,
         account: String
@@ -178,7 +178,7 @@ enum KeychainTools {
     }
 
     @discardableResult
-    static func save<Account: RawRepresentable>(
+    public static func save<Account: RawRepresentable>(
         _ value: String,
         serviceSuffix: String,
         account: Account
@@ -187,7 +187,7 @@ enum KeychainTools {
     }
 
     /// 读取数据（App.serviceSuffix）
-    static func load(
+    public static func load(
         serviceSuffix: String,
         account: String
     ) -> String? {
@@ -195,7 +195,7 @@ enum KeychainTools {
         return load(service: service, account: account)
     }
 
-    static func load<Account: RawRepresentable>(
+    public static func load<Account: RawRepresentable>(
         serviceSuffix: String,
         account: Account
     ) -> String? where Account.RawValue == String {
@@ -204,7 +204,7 @@ enum KeychainTools {
 
     /// 删除数据（App.serviceSuffix）
     @discardableResult
-    static func delete(
+    public static func delete(
         serviceSuffix: String,
         account: String
     ) -> Bool {
@@ -213,7 +213,7 @@ enum KeychainTools {
     }
 
     @discardableResult
-    static func delete<Account: RawRepresentable>(
+    public static func delete<Account: RawRepresentable>(
         serviceSuffix: String,
         account: Account
     ) -> Bool where Account.RawValue == String {

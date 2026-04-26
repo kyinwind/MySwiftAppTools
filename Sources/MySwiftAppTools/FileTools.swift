@@ -21,51 +21,51 @@ import AppKit
 /// - 默认工作在 App Documents
 /// - 安全、可读、可扩展
 ///
-class FileTools {
+public final class FileTools {
     
     // MARK: - FileManager
     
-    nonisolated(unsafe) static let fm = FileManager.default
+    nonisolated(unsafe) public static let fm = FileManager.default
     // MARK: - Base Directories
     
     /// App Documents 目录（Sandbox 下）
-    static var documentsDirectory: URL {
+    public static var documentsDirectory: URL {
         fm.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
     
     /// App Caches 目录
-    static var cachesDirectory: URL {
+    public static var cachesDirectory: URL {
         fm.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 
     /// App Application Support 目录
-    static var applicationSupportDirectory: URL {
+    public static var applicationSupportDirectory: URL {
         fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
     }
     
     /// App Temporary 目录
-    static var temporaryDirectory: URL {
+    public static var temporaryDirectory: URL {
         fm.temporaryDirectory
     }
     
     // MARK: - Path Builder
     
     /// 在 Documents 下拼接路径
-    static func documentsPath(_ components: String...) -> URL {
+    public static func documentsPath(_ components: String...) -> URL {
         components.reduce(documentsDirectory) {
             $0.appendingPathComponent($1)
         }
     }
     
     /// 在 Caches 下拼接路径
-    static func cachesPath(_ components: String...) -> URL {
+    public static func cachesPath(_ components: String...) -> URL {
         components.reduce(cachesDirectory) {
             $0.appendingPathComponent($1)
         }
     }
 
     /// 在 Application Support 下拼接路径
-    static func applicationSupportPath(_ components: String...) -> URL {
+    public static func applicationSupportPath(_ components: String...) -> URL {
         components.reduce(applicationSupportDirectory) {
             $0.appendingPathComponent($1)
         }
@@ -74,12 +74,12 @@ class FileTools {
     // MARK: - Existence
     
     /// 文件或目录是否存在
-    static func exists(_ url: URL) -> Bool {
+    public static func exists(_ url: URL) -> Bool {
         fm.fileExists(atPath: url.path)
     }
     
     /// 是否为目录
-    static func isDirectory(_ url: URL) -> Bool {
+    public static func isDirectory(_ url: URL) -> Bool {
         var isDir: ObjCBool = false
         fm.fileExists(atPath: url.path, isDirectory: &isDir)
         return isDir.boolValue
@@ -88,13 +88,13 @@ class FileTools {
     // MARK: - Permissions
     
     /// 是否可写
-    static func isWritable(_ url: URL) -> Bool {
+    public static func isWritable(_ url: URL) -> Bool {
         fm.isWritableFile(atPath: url.path)
     }
     
     /// 确保目录存在（不存在就创建）
     @discardableResult
-    static func ensureDirectory(_ url: URL) throws -> URL {
+    public static func ensureDirectory(_ url: URL) throws -> URL {
         guard !exists(url) else { return url }
         try fm.createDirectory(
             at: url,
@@ -107,7 +107,7 @@ class FileTools {
     // MARK: - File Operations
     
     /// 创建空文件（可用于占位）
-    static func createFile(
+    public static func createFile(
         at url: URL,
         overwrite: Bool = false
     ) throws {
@@ -122,13 +122,13 @@ class FileTools {
     }
     
     /// 删除文件或目录
-    static func remove(_ url: URL) throws {
+    public static func remove(_ url: URL) throws {
         guard exists(url) else { return }
         try fm.removeItem(at: url)
     }
     
     /// 拷贝
-    static func copy(from src: URL, to dst: URL, overwrite: Bool = false) throws {
+    public static func copy(from src: URL, to dst: URL, overwrite: Bool = false) throws {
         if exists(dst) {
             if overwrite {
                 try remove(dst)
@@ -141,7 +141,7 @@ class FileTools {
     }
     
     /// 移动
-    static func move(from src: URL, to dst: URL, overwrite: Bool = false) throws {
+    public static func move(from src: URL, to dst: URL, overwrite: Bool = false) throws {
         if exists(dst) {
             if overwrite {
                 try remove(dst)
@@ -156,7 +156,7 @@ class FileTools {
     // MARK: - File Info
     
     /// 文件大小（字节）
-    static func fileSize(_ url: URL) -> Int64 {
+    public static func fileSize(_ url: URL) -> Int64 {
         guard
             let attr = try? fm.attributesOfItem(atPath: url.path),
             let size = attr[.size] as? NSNumber
@@ -167,7 +167,7 @@ class FileTools {
     }
     
     /// 友好的文件大小字符串
-    static func readableFileSize(_ url: URL) -> String {
+    public static func readableFileSize(_ url: URL) -> String {
         let size = fileSize(url)
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useGB]
@@ -178,7 +178,7 @@ class FileTools {
     // MARK: - Cleanup
     
     /// 清空目录（不删除目录本身）
-    static func clearDirectory(_ url: URL) throws {
+    public static func clearDirectory(_ url: URL) throws {
         guard exists(url) else { return }
         let items = try fm.contentsOfDirectory(
             at: url,
@@ -193,7 +193,7 @@ class FileTools {
     // 更完善的调用方式，如果是文件，就是打开 finder 并选中文件。如果是目录，就直接打开。
     //如果 flag 为 true，则指定用activateFileViewerSelecting
     @MainActor
-    static func openInFinder(_ url: URL,flag:Bool = false) {
+    public static func openInFinder(_ url: URL,flag:Bool = false) {
         // 1️⃣ 基础校验
         guard url.isFileURL else { return }
         
@@ -220,7 +220,7 @@ class FileTools {
     
     /// 使用系统默认应用播放音频文件
     /// - Parameter url: 音频文件 URL
-    static func playAudioWithSystem(_ url: URL) {
+    public static func playAudioWithSystem(_ url: URL) {
         guard exists(url) else {
             print("❌ 音频文件不存在：\(url.path)")
             return
@@ -229,11 +229,11 @@ class FileTools {
         NSWorkspace.shared.open(url)
     }
     //判断文件是否存在
-    static func fileExists(url:URL) -> Bool {
+    public static func fileExists(url:URL) -> Bool {
         let ret = FileManager.default.fileExists(atPath: url.path)
         return ret
     }
-    static func fileExists(path:String) -> Bool {
+    public static func fileExists(path:String) -> Bool {
         let ret = FileManager.default.fileExists(atPath: path)
         return ret
     }
@@ -251,7 +251,7 @@ class FileTools {
     ///   - fileName: 文件名（如 "chapter1.mp3"）
     /// - Returns: 文件 URL
     /// - Throws: 目录创建失败时抛出异常
-    static func audioFileURL(
+    public static func audioFileURL(
         projectId: String,
         fileName: String
     ) throws -> URL {
@@ -283,11 +283,11 @@ class FileTools {
         return projectDir.appendingPathComponent(fileName)
     }
     
-    static func getFileName(url:URL) -> String {
+    public static func getFileName(url:URL) -> String {
         return url.deletingPathExtension().lastPathComponent
     }
     
-    static func isImage(urls: [URL]) -> Bool {
+    public static func isImage(urls: [URL]) -> Bool {
         guard urls.isEmpty == false else { return false }
         
         let imageExts: Set<String> = [
@@ -298,7 +298,7 @@ class FileTools {
             imageExts.contains(url.pathExtension.lowercased())
         }
     }
-    static func copyTextsToPasteboard(_ texts: [String]) {
+    public static func copyTextsToPasteboard(_ texts: [String]) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(texts.joined(separator: "\n"), forType: .string)

@@ -8,12 +8,12 @@ import AppKit
 import Combine
 
 @MainActor
-class AudioPlayer: NSObject, ObservableObject {
+public final class AudioPlayer: NSObject, ObservableObject {
     
-    static let shared = AudioPlayer()
+    public static let shared = AudioPlayer()
     
-    @Published var player: AVAudioPlayer?
-    @Published var isPlaying: Bool = false
+    @Published public var player: AVAudioPlayer?
+    @Published public var isPlaying: Bool = false
     
     private override init() {
         super.init()
@@ -21,7 +21,7 @@ class AudioPlayer: NSObject, ObservableObject {
     
     // MARK: - 播放 Bundle 音频
     
-    func playAudio(forResource name: String,
+    public func playAudio(forResource name: String,
                    ofType type: String,
                    rate: Float = 1.0) {
         
@@ -35,7 +35,7 @@ class AudioPlayer: NSObject, ObservableObject {
     
     // MARK: - 直接播放 URL
     
-    func play(url: URL, rate: Float = 1.0) {
+    public func play(url: URL, rate: Float = 1.0) {
         do {
             player = try AVAudioPlayer(contentsOf: url)
             player?.enableRate = true
@@ -53,7 +53,7 @@ class AudioPlayer: NSObject, ObservableObject {
     
     // MARK: - 预加载音频
     
-    func loadAudio(forResource name: String, ofType type: String) {
+    public func loadAudio(forResource name: String, ofType type: String) {
         guard let url = Bundle.main.url(forResource: name, withExtension: type) else {
             print("❌ 找不到音频文件")
             return
@@ -69,26 +69,26 @@ class AudioPlayer: NSObject, ObservableObject {
     
     // MARK: - 控制
     
-    func play(rate: Float = 1.0) {
+    public func play(rate: Float = 1.0) {
         player?.enableRate = true
         player?.rate = rate
         player?.play()
         isPlaying = true
     }
     
-    func pause() {
+    public func pause() {
         player?.pause()
         isPlaying = false
     }
     
-    func stop() {
+    public func stop() {
         player?.stop()
         isPlaying = false
     }
     
     // MARK: - 播放 macOS 系统提示音
     
-    func playSystemSound(_ name: String = "Glass", times: Int = 6) {
+    public func playSystemSound(_ name: String = "Glass", times: Int = 6) {
         for i in 0..<times {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 1) {
                 NSSound(named: name)?.play()
@@ -98,7 +98,7 @@ class AudioPlayer: NSObject, ObservableObject {
     
     // MARK: - Zen / 专注提示音
     
-    func playCompletionSound() {
+    public func playCompletionSound() {
         playSystemSound("Tink")
     }
 }
@@ -106,7 +106,7 @@ class AudioPlayer: NSObject, ObservableObject {
 
 extension AudioPlayer: AVAudioPlayerDelegate {
     
-    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    nonisolated public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
             AudioPlayer.shared.isPlaying = false
             NotificationCenter.default.post(

@@ -9,9 +9,9 @@ import SwiftUI
 import AVFoundation
 
 // MARK: - 沙漏边框
-struct HourglassFrame: Shape {
+public struct HourglassFrame: Shape {
     
-    func path(in rect: CGRect) -> Path {
+    public func path(in rect: CGRect) -> Path {
         
         var path = Path()
         
@@ -37,9 +37,9 @@ struct HourglassFrame: Shape {
 }
 
 // MARK: - 三角形
-struct Triangle: Shape {
+public struct Triangle: Shape {
     
-    func path(in rect: CGRect) -> Path {
+    public func path(in rect: CGRect) -> Path {
         
         var path = Path()
         
@@ -54,9 +54,9 @@ struct Triangle: Shape {
 }
 
 // MARK: - 沙堆形状
-struct SandPile: Shape {
+public struct SandPile: Shape {
     
-    func path(in rect: CGRect) -> Path {
+    public func path(in rect: CGRect) -> Path {
         
         var path = Path()
         
@@ -75,11 +75,11 @@ struct SandPile: Shape {
 }
 
 // MARK: - 上半部分沙子
-struct SandTop: View {
+public struct SandTop: View {
     
     var progress: Double
     
-    var body: some View {
+    public var body: some View {
         
         GeometryReader { geo in
             
@@ -100,11 +100,11 @@ struct SandTop: View {
 }
 
 // MARK: - 下半部分沙子
-struct SandBottom: View {
+public struct SandBottom: View {
     
     var progress: Double
     
-    var body: some View {
+    public var body: some View {
         
         GeometryReader { geo in
             
@@ -135,14 +135,14 @@ struct SandBottom: View {
 }
 
 // MARK: - 沙粒
-struct SandParticle: View {
+public struct SandParticle: View {
     @State private var offset: CGFloat = 0
     @State private var delay: Double = 0
     
     // 允许外部传入大小，默认给一个值以防万一
     var size: CGFloat = 3.0
     
-    var body: some View {
+    public var body: some View {
         Circle()
             .fill(Color.orange)
             .frame(width: size, height: size) // 动态大小
@@ -164,10 +164,10 @@ struct SandParticle: View {
 }
 
 // MARK: - 流沙
-struct SandFlow: View {
+public struct SandFlow: View {
     var active: Bool
     
-    var body: some View {
+    public var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             // 假设沙粒宽度占流沙通道宽度的 25% (根据你的美学调整)
@@ -187,14 +187,14 @@ struct SandFlow: View {
 }
 
 // MARK: - 沙漏组件
-struct HourglassView: View {
+public struct HourglassView: View {
     
     /// 0 = 刚开始
     /// 1 = 结束
     @Binding var progress: Double
     @State var completionPlayer: AVAudioPlayer?
     
-    var body: some View {
+    public var body: some View {
         
         ZStack(alignment: .center) {
             

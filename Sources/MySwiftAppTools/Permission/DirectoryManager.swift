@@ -4,11 +4,11 @@ import SwiftUI
 /*
  这个工具类是为了保存目录权限的 bookmark而构造的保存结构
  */
-enum MyDirectoryType:String,Codable{
+public enum MyDirectoryType: String, Codable, Sendable {
     case normal    //正常维护的目标目录，都有label
     case noLabel    //临时保存的，没有label
     case history    //临时保存的历史记录，自动生成的label
-    var title: String {
+    public var title: String {
         switch self {
         case .normal:
             return "MyDirectoryType.normal".toNSLocalizedString
@@ -21,21 +21,21 @@ enum MyDirectoryType:String,Codable{
 }
 
 //定义目录结构体
-struct MyDirectory: Codable, Identifiable, Equatable {
-    let id: UUID
-    var url: URL
-    var bookmarkData: Data?
+public struct MyDirectory: Codable, Identifiable, Equatable, Sendable {
+    public let id: UUID
+    public var url: URL
+    public var bookmarkData: Data?
     /// 可选业务元数据（比如 Backup 显示名）
-    var label: String?
-    var type: MyDirectoryType
-    var createDate:Date
+    public var label: String?
+    public var type: MyDirectoryType
+    public var createDate:Date
     
     //这三个属性，用于保存历史数据
-    var useCount: Int?       //用过的数量
-    var recentUseCount: Int?   //最近用过的数量
-    var lastUsedAt: Date?        //最近用过的时间
+    public var useCount: Int?       //用过的数量
+    public var recentUseCount: Int?   //最近用过的数量
+    public var lastUsedAt: Date?        //最近用过的时间
     
-    init(url: URL, bookmarkData: Data? = nil, label: String? = nil, type: MyDirectoryType) {
+    public init(url: URL, bookmarkData: Data? = nil, label: String? = nil, type: MyDirectoryType) {
         self.id = UUID()
         self.url = url
         self.bookmarkData = bookmarkData
@@ -47,7 +47,7 @@ struct MyDirectory: Codable, Identifiable, Equatable {
         self.recentUseCount = nil
         self.lastUsedAt = nil
     }
-    init(url: URL, bookmarkData: Data? = nil, label: String? = nil, type: MyDirectoryType,useCount:Int,recentUseCount:Int,lastUsedAt:Date) {
+    public init(url: URL, bookmarkData: Data? = nil, label: String? = nil, type: MyDirectoryType,useCount:Int,recentUseCount:Int,lastUsedAt:Date) {
         self.id = UUID()
         self.url = url
         self.bookmarkData = bookmarkData
@@ -60,12 +60,12 @@ struct MyDirectory: Codable, Identifiable, Equatable {
         self.lastUsedAt = lastUsedAt
     }
     // Hashable
-    static func == (lhs: MyDirectory, rhs: MyDirectory) -> Bool {
+    public static func == (lhs: MyDirectory, rhs: MyDirectory) -> Bool {
         lhs.url.normalized.path == rhs.url.normalized.path
     }
 
     // 安全书签解析
-    func getSecurityScopedURL() -> (URL?, Bool) {
+    public func getSecurityScopedURL() -> (URL?, Bool) {
         guard let data = bookmarkData else {
             return (url, false)
         }
@@ -92,27 +92,27 @@ struct MyDirectory: Codable, Identifiable, Equatable {
 }
 
 
-protocol DirectoryStore {
+public protocol DirectoryStore {
     static var key: String { get }
     static func load() -> [MyDirectory]
     static func save(_ list: [MyDirectory])
     static func remove(_ url: URL)
 }
 
-final class DirectoryManager: DirectoryStore {
+public final class DirectoryManager: DirectoryStore {
 
     private static var defaults: UserDefaults {
             UserDefaults.standard
         }
-    internal static let key = "AuthorizedDirectories"
+    public static let key = "AuthorizedDirectories"
 
 
-    static func load() -> [MyDirectory] {
+    public static func load() -> [MyDirectory] {
         guard let data = defaults.data(forKey: key) else { return [] }
         return (try? JSONDecoder().decode([MyDirectory].self, from: data)) ?? []
     }
     
-    static func loadByUrl(url: URL) -> MyDirectory? {
+    public static func loadByUrl(url: URL) -> MyDirectory? {
         guard let data = defaults.data(forKey: key),
               let dirs = try? JSONDecoder().decode([MyDirectory].self, from: data)
         else {
@@ -127,13 +127,13 @@ final class DirectoryManager: DirectoryStore {
     }
 
     /// 有 label 的目录（例如 Backup 目标目录）
-    static func loadTargetDirectories() -> [MyDirectory] {
+    public static func loadTargetDirectories() -> [MyDirectory] {
         load().filter { $0.type == .normal }
             .sorted { $0.createDate > $1.createDate }
             //.sorted {$0.label!.localizedCaseInsensitiveCompare($1.label!) == .orderedAscending}
     }
     
-    static func save(_ list: [MyDirectory]) {
+    public static func save(_ list: [MyDirectory]) {
         if list.isEmpty {
             defaults.removeObject(forKey: key)
             return
@@ -143,30 +143,30 @@ final class DirectoryManager: DirectoryStore {
         }
     }
 
-    static func remove(_ delUrl: URL) {
+    public static func remove(_ delUrl: URL) {
         var list = load()
         list.removeAll { $0.url.normalized.path == delUrl.normalized.path }
         save(list)
     }
-    static func removeInType(_ delUrl: URL,type:MyDirectoryType) {
+    public static func removeInType(_ delUrl: URL,type:MyDirectoryType) {
         var list = load()
         list.removeAll { $0.url.normalized.path == delUrl.normalized.path && $0.type == type}
         save(list)
     }
-    static func appendAndSave(_ new: MyDirectory){
+    public static func appendAndSave(_ new: MyDirectory){
         var list = load()
         list.append(new)
         save(list)
     }
     
     /// load 历史记录
-    static func loadHistory() -> [MyDirectory] {
+    public static func loadHistory() -> [MyDirectory] {
         load().filter { $0.type == .history }
             .sorted { $0.createDate > $1.createDate }
             //.sorted {$0.label!.localizedCaseInsensitiveCompare($1.label!) == .orderedAscending}
     }
     
-    static func saveHistory(_ list: [MyDirectory]) {
+    public static func saveHistory(_ list: [MyDirectory]) {
         var alllist = load()
         
         alllist.removeAll(where: {$0.type == .history})
@@ -177,7 +177,7 @@ final class DirectoryManager: DirectoryStore {
     }
 }
 
-extension URL {
+public extension URL {
 
     /// 判断 self 是否在 base 目录下面（含 base 本身可加参数控制）
     func isIn(in base: URL, includeBase: Bool = true) -> Bool {

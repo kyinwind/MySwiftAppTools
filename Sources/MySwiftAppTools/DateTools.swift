@@ -7,9 +7,9 @@
 
 import Foundation
 
-class DateTools {
+public final class DateTools {
     //判断一个日期是否在当月
-    static func isDateInCurrentMonth(_ date: Date) -> Bool {
+    public static func isDateInCurrentMonth(_ date: Date) -> Bool {
         let calendar = Calendar.current
 
         // 获取当前日期的年和月
@@ -24,14 +24,14 @@ class DateTools {
         return currentYear == dateYear && currentMonth == dateMonth
     }
     //根据传递的日期，得到一个"yyyy-MM"格式的表示月份的字符串
-    static func getMonthStringByDate(date:Date) -> String {
+    public static func getMonthStringByDate(date:Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         let datetime = formatter.string(from: date)
         return datetime
     }
     //根据传递的String日期，得到一个"yyyy-MM"格式的表示月份的字符串
-    static func getMonthStringByDateString(date:String) -> String {
+    public static func getMonthStringByDateString(date:String) -> String {
         let date = getDateByString(string: date,dateFormat: "yyyy-MM-dd")
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
@@ -39,14 +39,14 @@ class DateTools {
         return datetime
     }
     //根据传递的日期，得到一个"yyyy-MM-dd"格式的日期字符串
-    static func getStringByDate(date:Date) -> String {
+    public static func getStringByDate(date:Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let datetime = formatter.string(from: date)
         return datetime
     }
     //根据传递的时间，得到一个"yyyy-MM-dd HH:mm:ss"格式的时间字符串
-    static func getStringByDateTime(_ date:Date) -> String {
+    public static func getStringByDateTime(_ date:Date) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "yyyy-MM-dd' 'HH:mm:ss"
@@ -54,7 +54,7 @@ class DateTools {
         return datetime
     }
     //由今天的日期，得到一个字符串的日期，指定格式是"yyyy-MM-dd"
-    static func getStringByCurrentDate() -> String {
+    public static func getStringByCurrentDate() -> String {
         let formatter = DateFormatter()
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "yyyy-MM-dd"
@@ -62,7 +62,7 @@ class DateTools {
         return datetime
     }
     //由今天的日期时间，得到一个字符串的时间，指定格式是"yyyy-MM-dd HH:mm"
-    static func getDateTimeStringByCurrentDate() -> String {
+    public static func getDateTimeStringByCurrentDate() -> String {
         let formatter = DateFormatter()
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
@@ -70,7 +70,7 @@ class DateTools {
         return datetime
     }
     //只要当前的小时和分钟
-    static func getTimeStringByCurrentDate() -> String {
+    public static func getTimeStringByCurrentDate() -> String {
         let formatter = DateFormatter()
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "HH:mm"
@@ -83,7 +83,7 @@ class DateTools {
     ///   - date: Date类型
     ///   - dateFormat: 格式化样式默认“yyyy-MM-dd”
     /// - Returns: 日期字符串
-    static func getDateStringByDate(date:Date, dateFormat:String="yyyy-MM-dd") -> String {
+    public static func getDateStringByDate(date:Date, dateFormat:String="yyyy-MM-dd") -> String {
         let timeZone = TimeZone.init(identifier: "UTC")
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
@@ -92,7 +92,7 @@ class DateTools {
         let date = formatter.string(from: date)
         return date.components(separatedBy: " ").first!
     }
-    static func getMonthStringByDate(date:Date, dateFormat:String="yyyy-MM") -> String {
+    public static func getMonthStringByDate(date:Date, dateFormat:String="yyyy-MM") -> String {
         let timeZone = TimeZone.init(identifier: "UTC")
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
@@ -107,7 +107,7 @@ class DateTools {
     ///   - string: 日期字符串
     ///   - dateFormat: 格式化样式，默认为“yyyy-MM-dd HH:mm:ss”
     /// - Returns: Date类型
-    static func getDateByString(string:String, dateFormat:String? = nil) -> Date {
+    public static func getDateByString(string:String, dateFormat:String? = nil) -> Date {
         let dateFormatter = DateFormatter.init()
         if let df = dateFormat,df != "" {
             dateFormatter.dateFormat = dateFormat
@@ -118,7 +118,7 @@ class DateTools {
         return date!
     }
     //由一个月份的字符串转换成时间Date格式
-    static func getDateByMonthString(string:String) -> Date {
+    public static func getDateByMonthString(string:String) -> Date {
         //print("getDateByMonthString--------------string:\(string)")
         let timeZone = TimeZone.init(identifier: "UTC")
         let formatter = DateFormatter()
@@ -131,7 +131,7 @@ class DateTools {
         return date!
     }
     //由一个数字转换为百分比
-    static func getPercentageByNumber(_ number: Double) -> String {
+    public static func getPercentageByNumber(_ number: Double) -> String {
         //print(number)
         let formatter = NumberFormatter()
         
@@ -143,7 +143,7 @@ class DateTools {
         
     }
     
-    static func getDateDiff(start:String,end:String) -> Int {
+    public static func getDateDiff(start:String,end:String) -> Int {
         // 计算两个日期差，返回相差天数,如果 end - start 大于 0，返回也是大于 0
         let formatter = DateFormatter()
         let calendar = Calendar.current
@@ -156,7 +156,7 @@ class DateTools {
         let diff:DateComponents = calendar.dateComponents([.day], from: startDate!, to: endDate!)
         return diff.day!
     }
-    static func getDateDiff(start:Date,end:Date) -> Int {
+    public static func getDateDiff(start:Date,end:Date) -> Int {
         // 计算两个日期差，返回相差天数
         let formatter = DateFormatter()
         let calendar = Calendar.current
@@ -170,7 +170,7 @@ class DateTools {
         return diff.day!
     }
     //计算某个日期之后N个月是哪一天
-    static func getDayAfterMonths(startDate:Date,months:Int)->Date{
+    public static func getDayAfterMonths(startDate:Date,months:Int)->Date{
         let calendar = Calendar.current
         // 获取当前日期
         let currentDate = startDate
@@ -184,7 +184,7 @@ class DateTools {
         return MonthsLater
     }
     //计算某个日期之前N个月是哪一天
-    static func getDayBeforeMonths(startDate:Date,months:Int)->Date{
+    public static func getDayBeforeMonths(startDate:Date,months:Int)->Date{
         let calendar = Calendar.current
         // 获取当前日期
         let currentDate = startDate
@@ -198,11 +198,11 @@ class DateTools {
         return MonthsBefore
     }
     ///计算某个日期之后n天的日期
-    static func getDateAfterDays(from date: Date, days: Int) -> Date {
+    public static func getDateAfterDays(from date: Date, days: Int) -> Date {
         let calendar = Calendar.current
         return calendar.date(byAdding:.day, value: days, to: date)!
     }
-    static let buddhaHoliDay:[String:String] = ["1-1":"正月初一弥勒菩萨圣诞",
+    public static let buddhaHoliDay:[String:String] = ["1-1":"正月初一弥勒菩萨圣诞",
                                                    "1-6":"正月初六定光佛圣诞",
                                                    "2-8":"二月初八释迦牟尼佛出家",
                                                    "2-15":"二月十五日释迦牟尼佛涅",
@@ -230,7 +230,7 @@ class DateTools {
                                                    "12-29":"十二月二十九日华严菩萨圣诞"]
     
     //计算当天有哪些佛教节日
-    static func getBuddhaHolidayInfo(date:Date)->String{
+    public static func getBuddhaHolidayInfo(date:Date)->String{
         //初始化农历日历
         let lunarCalendar = Calendar.init(identifier: .chinese)
         
@@ -275,7 +275,7 @@ class DateTools {
     }
     
     
-    static func getBuddhaHoliday(lunarKey: String, gregorKey: String) -> String?{
+    public static func getBuddhaHoliday(lunarKey: String, gregorKey: String) -> String?{
         
         ///当前农历节日优先返回
         if let holiday = buddhaHoliDay[lunarKey]{
@@ -285,7 +285,7 @@ class DateTools {
         return nil
     }
     //返回佛教节日字符串
-    static func getBuddhaDaysText()->String {
+    public static func getBuddhaDaysText()->String {
         let str = """
 正月初一弥勒菩萨圣诞
 正月初六定光佛圣诞
@@ -318,7 +318,7 @@ class DateTools {
     }
 }
 
-extension DateFormatter {
+public extension DateFormatter {
     static let zipName: DateFormatter = {
         let df = DateFormatter()
         df.dateFormat = "yyyyMMdd-HHmmss"

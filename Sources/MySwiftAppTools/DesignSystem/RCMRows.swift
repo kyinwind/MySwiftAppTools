@@ -1,11 +1,11 @@
 import SwiftUI
 
-struct RCMSettingRow<Trailing: View>: View {
+public struct RCMSettingRow<Trailing: View>: View {
     let title: LocalizedStringKey
     let subtitle: String?
     let trailing: Trailing
 
-    init(
+    public init(
         _ title: LocalizedStringKey,
         subtitle: String? = nil,
         @ViewBuilder trailing: () -> Trailing
@@ -15,7 +15,7 @@ struct RCMSettingRow<Trailing: View>: View {
         self.trailing = trailing()
     }
 
-    var body: some View {
+    public var body: some View {
         HStack(alignment: .center, spacing: RCMSpacing.md) {
             VStack(alignment: .leading, spacing: RCMSpacing.xxs) {
                 Text(title)
@@ -38,18 +38,18 @@ struct RCMSettingRow<Trailing: View>: View {
     }
 }
 
-struct RCMValueRow: View {
+public struct RCMValueRow: View {
     let title: LocalizedStringKey
     let value: String
     let tone: Color
 
-    init(_ title: LocalizedStringKey, value: String, tone: Color = RCMColor.textPrimary) {
+    public init(_ title: LocalizedStringKey, value: String, tone: Color = RCMColor.textPrimary) {
         self.title = title
         self.value = value
         self.tone = tone
     }
 
-    var body: some View {
+    public var body: some View {
         HStack(spacing: RCMSpacing.md) {
             Text(title)
                 .font(RCMTypography.body)
@@ -65,16 +65,16 @@ struct RCMValueRow: View {
     }
 }
 
-struct RCMInlineField<Content: View>: View {
+public struct RCMInlineField<Content: View>: View {
     let label: LocalizedStringKey
     let content: Content
 
-    init(_ label: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+    public init(_ label: LocalizedStringKey, @ViewBuilder content: () -> Content) {
         self.label = label
         self.content = content()
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: RCMSpacing.xs) {
             RCMLabelText(label)
             content

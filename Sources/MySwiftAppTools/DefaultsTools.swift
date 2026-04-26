@@ -8,9 +8,9 @@
 import Foundation
 
 /// UserDefaults 统一访问工具
-struct DefaultsTools: @unchecked Sendable {
+public struct DefaultsTools: @unchecked Sendable {
     // MARK: - App Group ID
-    nonisolated(unsafe) static var appGroupID = "group.com.michaeldev"
+    nonisolated(unsafe) public static var appGroupID = "group.com.michaeldev"
 
     // MARK: - 实例
 
@@ -21,19 +21,19 @@ struct DefaultsTools: @unchecked Sendable {
     }
     
     //在项目 app 启动时，如果有 groupid，可以进行配置，如果没有则不用管，DefaultsTools会默认使用 app 本身的standard配置
-    static func configure(appGroupID: String) {
+    public static func configure(appGroupID: String) {
         self.appGroupID = appGroupID
     }
     // MARK: - 工厂
 
     //static let standard = DefaultsTools(userDefaults: .standard)
 
-    static let group = DefaultsTools(
-        userDefaults: UserDefaults(suiteName: appGroupID) ?? .standard
-    )
+    public static var group: DefaultsTools {
+        DefaultsTools(userDefaults: UserDefaults(suiteName: appGroupID) ?? .standard)
+    }
     
     /// 自动选择（推荐）调用的入口
-    static var shared: DefaultsTools {
+    public static var shared: DefaultsTools {
         if let groupUD = UserDefaults(suiteName: appGroupID) {
             return DefaultsTools(userDefaults: groupUD)
         } else {
@@ -43,56 +43,56 @@ struct DefaultsTools: @unchecked Sendable {
 
     // MARK: - 基础读写（强类型）
 
-    func set<T>(_ value: T?, for key: Key) {
+    public func set<T>(_ value: T?, for key: Key) {
         ud.set(value, forKey: key.rawValue)
     }
 
-    func value<T>(for key: Key) -> T? {
+    public func value<T>(for key: Key) -> T? {
         ud.value(forKey: key.rawValue) as? T
     }
 
-    func remove(_ key: Key) {
+    public func remove(_ key: Key) {
         ud.removeObject(forKey: key.rawValue)
     }
 
-    func exists(_ key: Key) -> Bool {
+    public func exists(_ key: Key) -> Bool {
         ud.object(forKey: key.rawValue) != nil
     }
 
     // MARK: - Bool / Int / Double / String 快捷
 
-    func bool(_ key: Key) -> Bool? {
+    public func bool(_ key: Key) -> Bool? {
         guard ud.object(forKey: key.rawValue) != nil else { return nil }
         return ud.bool(forKey: key.rawValue)
     }
 
-    func int(_ key: Key) -> Int? {
+    public func int(_ key: Key) -> Int? {
         guard ud.object(forKey: key.rawValue) != nil else { return nil }
         return ud.integer(forKey: key.rawValue)
     }
 
-    func double(_ key: Key) -> Double? {
+    public func double(_ key: Key) -> Double? {
         guard ud.object(forKey: key.rawValue) != nil else { return nil }
         return ud.double(forKey: key.rawValue)
     }
 
-    func string(_ key: Key) -> String? {
+    public func string(_ key: Key) -> String? {
         ud.string(forKey: key.rawValue)
     }
-    struct Key: RawRepresentable, Hashable, ExpressibleByStringLiteral {
-        let rawValue: String
+    public struct Key: RawRepresentable, Hashable, ExpressibleByStringLiteral {
+        public let rawValue: String
 
-        init(rawValue: String) {
+        public init(rawValue: String) {
             self.rawValue = rawValue
         }
 
-        init(stringLiteral value: String) {
+        public init(stringLiteral value: String) {
             self.rawValue = value
         }
 
     }
 }
-extension DefaultsTools {
+public extension DefaultsTools {
 
     // MARK: - 直接支持 string key
 

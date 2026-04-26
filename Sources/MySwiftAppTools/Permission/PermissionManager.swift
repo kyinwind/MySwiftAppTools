@@ -1,32 +1,32 @@
 import AppKit
 
-enum PermissionPurpose {
+public enum PermissionPurpose: Sendable {
     case read          // 只需要访问（Finder / 打开终端）
     case write         // 需要写（生成 / 修改 / 删除）
 }
 
 //返回给调用方，把匹配到的 bookmark 的 url 返回，以供调用方 stop 权限
-struct PermissionUrlGroup{
+public struct PermissionUrlGroup: Sendable {
     //这个 url 来源是调用方发出的 url
-    var url:URL?
+    public var url:URL?
     /*
      这个值是肯定有的，即使一开始没有，也会弹出窗口让用户授权，然后再返回
      调用方拿到这个 matchUrl，用于 stopAccessingSecurityScopedResource 和 stop权限
      */
-    var matchUrl:URL
+    public var matchUrl:URL
 }
 
 @MainActor
-final class PermissionManager {
+public final class PermissionManager {
     
-    static let shared = PermissionManager()
+    public static let shared = PermissionManager()
     private init() {}
     
     private var isRequesting = false
     
     // MARK: - 已指定url统一入口
     @MainActor
-    func ensureAccess(
+    public func ensureAccess(
         for url: URL,
         purpose: PermissionPurpose
     ) async -> PermissionUrlGroup? {
@@ -44,7 +44,7 @@ final class PermissionManager {
     }
     
     //拼接目录，供外部调用方基于matchUrl拼接出具体的访问 url
-    func buildChildURL(
+    public func buildChildURL(
         matchUrl: URL,
         targetUrl: URL
     ) -> URL? {
@@ -73,7 +73,7 @@ final class PermissionManager {
 
     
     //找到最匹配的目录权限，拼好 url，返回
-    func restoreBestMatch(
+    public func restoreBestMatch(
         from target: URL,
         purpose: PermissionPurpose
     ) -> PermissionUrlGroup? {
@@ -136,7 +136,7 @@ final class PermissionManager {
     
     
     // MARK: 未指定目标url入口
-    func ensureTargetDirectoryAccess(
+    public func ensureTargetDirectoryAccess(
         suggested: URL? = nil,
         purpose: PermissionPurpose = .write
     ) async -> PermissionUrlGroup? {
@@ -190,7 +190,7 @@ final class PermissionManager {
     }
     
     //根据一个 url 返回目录
-    func normalizeToDirectory(_ url: URL) -> URL {
+    public func normalizeToDirectory(_ url: URL) -> URL {
         if url.hasDirectoryPath {
             return url.standardizedFileURL
         } else {
@@ -233,7 +233,7 @@ final class PermissionManager {
     //    }
     
     //请求目录访问赋权
-    func requestDirectoryAccess(
+    public func requestDirectoryAccess(
         _ suggested: URL,
         purpose: PermissionPurpose
     ) async -> PermissionUrlGroup? {
@@ -288,7 +288,7 @@ final class PermissionManager {
         }
     }
     
-    func isWritable(_ url: URL) -> Bool {
+    public func isWritable(_ url: URL) -> Bool {
         let test = url.appendingPathComponent(".perm_test_\(UUID())")
         do {
             try "test".write(to: test, atomically: true, encoding: .utf8)
@@ -310,7 +310,7 @@ final class PermissionManager {
     }
     
     
-    func title(for purpose: PermissionPurpose) -> String {
+    public func title(for purpose: PermissionPurpose) -> String {
         switch purpose {
         case .read:
             return MySwiftAppToolsL10n.authReadTitle.toNSLocalizedString
@@ -319,7 +319,7 @@ final class PermissionManager {
         }
     }
     
-    func message(for purpose: PermissionPurpose) -> String {
+    public func message(for purpose: PermissionPurpose) -> String {
         switch purpose {
         case .read:
             return MySwiftAppToolsL10n.authReadMsg.toNSLocalizedString

@@ -69,23 +69,23 @@ import StoreKit
  */
 @MainActor
 @Observable
-final class StoreManager {
-    static let shared = StoreManager(autoStart: false)
+public final class StoreManager {
+    public static let shared = StoreManager(autoStart: false)
 
-    var allProductIDs: [String]
-    var proProductID: String?
-    var products: [Product] = []
-    var purchasedProducts: [String: Bool] = [:]
-    var isLoadingProducts = false
-    var lastErrorMessage: String?
+    public var allProductIDs: [String]
+    public var proProductID: String?
+    public var products: [Product] = []
+    public var purchasedProducts: [String: Bool] = [:]
+    public var isLoadingProducts = false
+    public var lastErrorMessage: String?
 
-    var hasPurchasedPro: Bool {
+    public var hasPurchasedPro: Bool {
         guard let proProductID else { return false }
         return isPurchased(proProductID)
     }
 
     // 兼容旧项目里的 storeManager.proProductId 命名。
-    var proProductId: String {
+    public var proProductId: String {
         get { proProductID ?? "" }
         set {
             proProductID = newValue.isEmpty ? nil : newValue
@@ -98,7 +98,7 @@ final class StoreManager {
     @ObservationIgnored
     nonisolated(unsafe) private var transactionUpdatesTask: Task<Void, Never>?
 
-    init(
+    public init(
         productIDs: [String] = [],
         proProductID: String? = nil,
         autoStart: Bool = true
@@ -116,7 +116,7 @@ final class StoreManager {
         transactionUpdatesTask?.cancel()
     }
 
-    func configure(
+    public func configure(
         productIDs: [String],
         proProductID: String? = nil,
         autoRefresh: Bool = true
@@ -133,7 +133,7 @@ final class StoreManager {
         }
     }
 
-    func start() {
+    public func start() {
         observeTransactions()
 
         Task {
@@ -141,20 +141,20 @@ final class StoreManager {
         }
     }
 
-    func refresh() async {
+    public func refresh() async {
         await checkAllPurchasedProducts()
         await fetchProducts()
     }
 
-    func isPurchased(_ productID: String) -> Bool {
+    public func isPurchased(_ productID: String) -> Bool {
         purchasedProducts[productID] == true
     }
 
-    func product(for productID: String) -> Product? {
+    public func product(for productID: String) -> Product? {
         products.first { $0.id == productID }
     }
 
-    func observeTransactions() {
+    public func observeTransactions() {
         guard transactionUpdatesTask == nil else { return }
 
         transactionUpdatesTask = Task {
@@ -172,7 +172,7 @@ final class StoreManager {
         }
     }
 
-    func checkAllPurchasedProducts() async {
+    public func checkAllPurchasedProducts() async {
         initializePurchaseFlags()
 
         for await result in Transaction.currentEntitlements {
@@ -182,7 +182,7 @@ final class StoreManager {
         }
     }
 
-    func fetchProducts() async {
+    public func fetchProducts() async {
         guard !allProductIDs.isEmpty else {
             products = []
             return

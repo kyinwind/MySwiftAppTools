@@ -22,57 +22,71 @@ import Observation
 ///
 /// 后续如果你有更多状态，比如失败、暂停、校验中，
 /// 可以继续往这里扩展。
-struct ComponentState: Equatable {
+public struct ComponentState: Equatable {
     /// 当前组件是否处于忙碌状态。
     /// 例如点击按钮后请求接口，请求结束前设为 true。
-    var isBusy: Bool = false
+    public var isBusy: Bool = false
 
     /// 当前组件对应的流程是否完成。
     /// 例如 A、B 都完成后，才能解锁 E、F。
-    var isFinished: Bool = false
+    public var isFinished: Bool = false
+
+    public init(isBusy: Bool = false, isFinished: Bool = false) {
+        self.isBusy = isBusy
+        self.isFinished = isFinished
+    }
 }
 
 /// 管理器内部保存的组件节点。
 /// 工具类本身不关心具体组件长什么样，只关心：
 /// - 它属于哪个组
 /// - 它当前是什么状态
-struct ComponentNode<GroupID: Hashable>: Equatable {
-    let groupID: GroupID
-    var state: ComponentState
+public struct ComponentNode<GroupID: Hashable>: Equatable {
+    public let groupID: GroupID
+    public var state: ComponentState
+
+    public init(groupID: GroupID, state: ComponentState) {
+        self.groupID = groupID
+        self.state = state
+    }
 }
 
 /// 规则计算时使用的上下文。
 /// 规则只读取这个上下文，不直接依赖 Store 内部实现，
 /// 这样规则更独立，也更容易单测。
-struct InteractionContext<ComponentID: Hashable, GroupID: Hashable> {
+public struct InteractionContext<ComponentID: Hashable, GroupID: Hashable> {
     /// 当前所有组件的快照。
-    let components: [ComponentID: ComponentNode<GroupID>]
+    public let components: [ComponentID: ComponentNode<GroupID>]
+
+    public init(components: [ComponentID: ComponentNode<GroupID>]) {
+        self.components = components
+    }
 
     /// 读取某个组件的状态。
-    func state(of componentID: ComponentID) -> ComponentState? {
+    public func state(of componentID: ComponentID) -> ComponentState? {
         components[componentID]?.state
     }
 
     /// 读取某个组件所在分组。
-    func group(of componentID: ComponentID) -> GroupID? {
+    public func group(of componentID: ComponentID) -> GroupID? {
         components[componentID]?.groupID
     }
 
     /// 获取某个分组下的所有组件 ID。
-    func componentIDs(in groupID: GroupID) -> [ComponentID] {
+    public func componentIDs(in groupID: GroupID) -> [ComponentID] {
         components.compactMap { id, node in
             node.groupID == groupID ? id : nil
         }
     }
 
     /// 获取某个分组下的所有节点。
-    func nodes(in groupID: GroupID) -> [ComponentNode<GroupID>] {
+    public func nodes(in groupID: GroupID) -> [ComponentNode<GroupID>] {
         components.values.filter { $0.groupID == groupID }
     }
 
     /// 判断某个分组中，除了当前组件外，是否还有其他组件正在忙。
     /// 常用于“组内互斥”。
-    func isAnyOtherComponentBusy(
+    public func isAnyOtherComponentBusy(
         in groupID: GroupID,
         excluding componentID: ComponentID
     ) -> Bool {
@@ -90,7 +104,7 @@ struct InteractionContext<ComponentID: Hashable, GroupID: Hashable> {
     /// - 组内任意一个完成即可
     /// - 指定组件完成即可
     /// 可以把这里继续抽象成策略。
-    func isGroupFinished(_ groupID: GroupID) -> Bool {
+    public func isGroupFinished(_ groupID: GroupID) -> Bool {
         let groupNodes = nodes(in: groupID)
 
         // 空组默认不算完成。
@@ -106,7 +120,7 @@ struct InteractionContext<ComponentID: Hashable, GroupID: Hashable> {
 ///
 /// 多条规则会叠加：
 /// 只有全部规则都返回 true，组件才可用。
-protocol InteractionRule {
+public protocol InteractionRule {
     associatedtype ComponentID: Hashable
     associatedtype GroupID: Hashable
 
@@ -118,15 +132,15 @@ protocol InteractionRule {
 
 /// 由于带 associatedtype 的协议不能直接作为普通数组元素使用，
 /// 这里用一个类型擦除包装，把不同规则统一收口成同一种类型。
-struct AnyInteractionRule<ComponentID: Hashable, GroupID: Hashable> {
+public struct AnyInteractionRule<ComponentID: Hashable, GroupID: Hashable> {
     private let allowsClosure: (ComponentID, InteractionContext<ComponentID, GroupID>) -> Bool
 
-    init<R: InteractionRule>(_ rule: R)
+    public init<R: InteractionRule>(_ rule: R)
     where R.ComponentID == ComponentID, R.GroupID == GroupID {
         self.allowsClosure = rule.allows
     }
 
-    func allows(
+    public func allows(
         componentID: ComponentID,
         context: InteractionContext<ComponentID, GroupID>
     ) -> Bool {
@@ -142,16 +156,16 @@ struct AnyInteractionRule<ComponentID: Hashable, GroupID: Hashable> {
 /// 这个规则支持按分组启用：
 /// - `enabledGroups == nil` 时，表示所有分组都启用组内互斥
 /// - `enabledGroups` 有值时，表示只有指定分组启用组内互斥
-struct GroupMutualExclusionRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
+public struct GroupMutualExclusionRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
     /// 需要启用组内互斥的分组集合。
     /// 传 nil 表示所有分组都启用。
-    let enabledGroups: Set<GroupID>?
+    public let enabledGroups: Set<GroupID>?
 
-    init(enabledGroups: Set<GroupID>? = nil) {
+    public init(enabledGroups: Set<GroupID>? = nil) {
         self.enabledGroups = enabledGroups
     }
 
-    func allows(
+    public func allows(
         componentID: ComponentID,
         context: InteractionContext<ComponentID, GroupID>
     ) -> Bool {
@@ -178,12 +192,16 @@ struct GroupMutualExclusionRule<ComponentID: Hashable, GroupID: Hashable>: Inter
 /// 规则2：组依赖。
 /// 含义：
 /// 某个组想可用，必须先满足它依赖的前置组都已经完成。
-struct GroupDependencyRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
+public struct GroupDependencyRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
     /// key: 当前组
     /// value: 当前组依赖的前置组集合
-    let dependencies: [GroupID: Set<GroupID>]
+    public let dependencies: [GroupID: Set<GroupID>]
 
-    func allows(
+    public init(dependencies: [GroupID: Set<GroupID>]) {
+        self.dependencies = dependencies
+    }
+
+    public func allows(
         componentID: ComponentID,
         context: InteractionContext<ComponentID, GroupID>
     ) -> Bool {
@@ -204,19 +222,28 @@ struct GroupDependencyRule<ComponentID: Hashable, GroupID: Hashable>: Interactio
 }
 
 /// 规则3：来源组件 busy 时，禁用指定目标组件。
-struct BusySourceDisablesTargetsRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
+public struct BusySourceDisablesTargetsRule<ComponentID: Hashable, GroupID: Hashable>: InteractionRule {
     /// 单条映射规则。
-    struct Item {
+    public struct Item {
         /// 来源组件。
-        let source: ComponentID
+        public let source: ComponentID
 
         /// 当 source busy 时，需要被禁用的目标组件。
-        let targets: Set<ComponentID>
+        public let targets: Set<ComponentID>
+
+        public init(source: ComponentID, targets: Set<ComponentID>) {
+            self.source = source
+            self.targets = targets
+        }
     }
 
-    let items: [Item]
+    public let items: [Item]
 
-    func allows(
+    public init(items: [Item]) {
+        self.items = items
+    }
+
+    public func allows(
         componentID: ComponentID,
         context: InteractionContext<ComponentID, GroupID>
     ) -> Bool {
@@ -245,14 +272,14 @@ struct BusySourceDisablesTargetsRule<ComponentID: Hashable, GroupID: Hashable>: 
 /// 使用 @MainActor 的原因：
 /// SwiftUI 的状态更新和界面刷新都应发生在主线程。
 @Observable
-final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
+public final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
     /// 当前页面中已注册的组件集合。
-    var components: [ComponentID: ComponentNode<GroupID>] = [:]
+    public var components: [ComponentID: ComponentNode<GroupID>] = [:]
 
     /// 当前启用的联动规则。
-    var rules: [AnyInteractionRule<ComponentID, GroupID>] = []
+    public var rules: [AnyInteractionRule<ComponentID, GroupID>] = []
 
-    init(rules: [AnyInteractionRule<ComponentID, GroupID>] = []) {
+    public init(rules: [AnyInteractionRule<ComponentID, GroupID>] = []) {
         self.rules = rules
     }
 
@@ -265,7 +292,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 注册单个组件。
     /// 页面初始化时，把参与联动的组件都注册进来。
-    func register(
+    public func register(
         _ componentID: ComponentID,
         groupID: GroupID,
         initialState: ComponentState = .init()
@@ -278,7 +305,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 批量注册组件。
     /// 适合页面首次进入时统一初始化。
-    func register(
+    public func register(
         _ items: [(componentID: ComponentID, groupID: GroupID, initialState: ComponentState)]
     ) {
         for item in items {
@@ -291,7 +318,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 取消注册组件。
     /// 如果你的页面组件是动态出现或销毁的，这个方法会有用。
-    func unregister(_ componentID: ComponentID) {
+    public func unregister(_ componentID: ComponentID) {
         components.removeValue(forKey: componentID)
     }
 
@@ -299,12 +326,12 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 替换全部规则。
     /// 一般在页面初始化时调用一次即可。
-    func setRules(_ rules: [AnyInteractionRule<ComponentID, GroupID>]) {
+    public func setRules(_ rules: [AnyInteractionRule<ComponentID, GroupID>]) {
         self.rules = rules
     }
 
     /// 追加单条规则。
-    func addRule(_ rule: AnyInteractionRule<ComponentID, GroupID>) {
+    public func addRule(_ rule: AnyInteractionRule<ComponentID, GroupID>) {
         rules.append(rule)
     }
 
@@ -312,7 +339,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 设置某个组件是否忙碌。
     /// 常用于点击后开启异步任务。
-    func setBusy(_ isBusy: Bool, for componentID: ComponentID) {
+    public func setBusy(_ isBusy: Bool, for componentID: ComponentID) {
         guard var node = components[componentID] else { return }
         node.state.isBusy = isBusy
         components[componentID] = node
@@ -320,7 +347,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 设置某个组件是否完成。
     /// 常用于某个关键步骤执行成功后，解锁后续流程。
-    func setFinished(_ isFinished: Bool, for componentID: ComponentID) {
+    public func setFinished(_ isFinished: Bool, for componentID: ComponentID) {
         guard var node = components[componentID] else { return }
         node.state.isFinished = isFinished
         components[componentID] = node
@@ -328,7 +355,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 通用状态更新入口。
     /// 当状态字段逐渐变多时，这个方法更灵活。
-    func updateState(
+    public func updateState(
         for componentID: ComponentID,
         mutate: (inout ComponentState) -> Void
     ) {
@@ -338,14 +365,14 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
     }
 
     /// 重置单个组件状态。
-    func reset(_ componentID: ComponentID) {
+    public func reset(_ componentID: ComponentID) {
         guard var node = components[componentID] else { return }
         node.state = .init()
         components[componentID] = node
     }
 
     /// 重置全部组件状态。
-    func resetAll() {
+    public func resetAll() {
         for key in components.keys {
             components[key]?.state = .init()
         }
@@ -355,7 +382,7 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
 
     /// 查询某个组件当前是否可用。
     /// SwiftUI 视图层通常会直接拿它驱动 `.disabled(...)`。
-    func isEnabled(_ componentID: ComponentID) -> Bool {
+    public func isEnabled(_ componentID: ComponentID) -> Bool {
         guard components[componentID] != nil else {
             return false
         }
@@ -365,18 +392,18 @@ final class ComponentsFlowManager<ComponentID: Hashable, GroupID: Hashable> {
     }
 
     /// 查询某个组件当前状态。
-    func state(of componentID: ComponentID) -> ComponentState? {
+    public func state(of componentID: ComponentID) -> ComponentState? {
         components[componentID]?.state
     }
 
     /// 查询某个分组是否已完成。
-    func isGroupFinished(_ groupID: GroupID) -> Bool {
+    public func isGroupFinished(_ groupID: GroupID) -> Bool {
         let context = InteractionContext(components: components)
         return context.isGroupFinished(groupID)
     }
 
     /// 返回当前全部组件，便于调试或列表展示。
-    func allComponents() -> [ComponentID: ComponentNode<GroupID>] {
+    public func allComponents() -> [ComponentID: ComponentNode<GroupID>] {
         components
     }
 }

@@ -15,10 +15,10 @@ swift
 复制
 // 定义你的菜单项
 struct YourMenuItem: Hashable, Identifiable {
-    let id: String
-    let label: String
-    let icon: String
-    let tint: Color
+    public let id: String
+    public let label: String
+    public let icon: String
+    public let tint: Color
 }
 3. 使用示例
 swift
@@ -36,7 +36,7 @@ struct ExampleView: View {
         RCMSidebarMenuItem(id: "users", label: "用户", icon: "person.2", tint: .green),
     ]
     
-    var body: some View {
+    public var body: some View {
         VStack {
             // 分组1：不需要标题
             RCMSidebarGroupView(
@@ -81,13 +81,13 @@ RCMSidebarIcon.PresetTint.indigo  // 靛蓝
 总结：使用前只需要确保 DesignSystem 文件都在项目里，然后准备好菜单数据就行。
  */
 /// 侧边栏菜单项数据
-struct RCMSidebarMenuItem: Hashable, Identifiable {
-    let id: String
-    let label: String
-    let icon: String
-    let tint: Color
+public struct RCMSidebarMenuItem: Hashable, Identifiable {
+    public let id: String
+    public let label: String
+    public let icon: String
+    public let tint: Color
     
-    init(id: String = UUID().uuidString, label: String, icon: String, tint: Color) {
+    public init(id: String = UUID().uuidString, label: String, icon: String, tint: Color) {
         self.id = id
         self.label = label
         self.icon = icon
@@ -96,18 +96,18 @@ struct RCMSidebarMenuItem: Hashable, Identifiable {
 }
 
 /// 侧边栏分组视图
-struct RCMSidebarGroupView: View {
+public struct RCMSidebarGroupView: View {
     let title: String?
     let items: [RCMSidebarMenuItem]
     @Binding var selection: String
     
-    init(title: String? = nil, items: [RCMSidebarMenuItem], selection: Binding<String>) {
+    public init(title: String? = nil, items: [RCMSidebarMenuItem], selection: Binding<String>) {
         self.title = title
         self.items = items
         self._selection = selection
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: RCMSpacing.xs) {
             // 分组标题
             if let title {
@@ -133,12 +133,12 @@ struct RCMSidebarGroupView: View {
 }
 
 /// 单个侧边栏菜单项按钮
-struct RCMSidebarItemButton: View {
+public struct RCMSidebarItemButton: View {
     let item: RCMSidebarMenuItem
     let isSelected: Bool
     let action: () -> Void
     
-    var body: some View {
+    public var body: some View {
         Button(action: action) {
             HStack(spacing: RCMSpacing.sm) {
                 RCMSidebarIcon(
@@ -167,7 +167,7 @@ struct RCMSidebarItemButton: View {
 
 // MARK: - Surface Components
 
-struct RCMCard<Content: View>: View {
+public struct RCMCard<Content: View>: View {
     let padding: CGFloat
     // Type erasure lets the shared card accept both solid colors and gradients.
     let backgroundStyle: AnyShapeStyle
@@ -176,7 +176,7 @@ struct RCMCard<Content: View>: View {
 
     /// Shared card surface. Omit `background` for the neutral default, or pass a
     /// branded color/gradient for hero cards without creating one-off surfaces.
-    init(
+    public init(
         padding: CGFloat = RCMSpacing.lg,
         background: some ShapeStyle = RCMColor.cardGrayBackground,
         cornerRadius: CGFloat = RCMRadius.md,
@@ -188,7 +188,7 @@ struct RCMCard<Content: View>: View {
         self.content = content()
     }
 
-    var body: some View {
+    public var body: some View {
         content
             .padding(padding)
             .background(
@@ -198,13 +198,13 @@ struct RCMCard<Content: View>: View {
     }
 }
 
-struct RCMPageSection<Content: View>: View {
+public struct RCMPageSection<Content: View>: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
     let showsDivider: Bool?
     let content: Content
 
-    init(
+    public init(
         _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
         showsDivider: Bool = false,
@@ -216,7 +216,7 @@ struct RCMPageSection<Content: View>: View {
         self.content = content()
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 标题区域 - 无背景，直接显示在页面上
             VStack(alignment: .leading, spacing: RCMSpacing.xxs) {
@@ -246,14 +246,14 @@ struct RCMPageSection<Content: View>: View {
     }
 }
 
-struct RCMHeroPanel<Content: View>: View {
+public struct RCMHeroPanel<Content: View>: View {
     let content: Content
 
-    init(@ViewBuilder content: () -> Content) {
+    public init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
-    var body: some View {
+    public var body: some View {
         content
             .padding(RCMSpacing.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -276,7 +276,7 @@ struct RCMHeroPanel<Content: View>: View {
 // MARK: - 自定义行组件（支持多行 Subtitle）
 
 /// 多行 Subtitle 行组件（避免 SKBaseRow 的 lineLimit 限制）
-struct MultilineSubtitleRow<Content: View>: View {
+public struct MultilineSubtitleRow<Content: View>: View {
     var systemIcon: String? = nil
     var iconImage: NSImage? = nil
     var iconColor: Color? = nil
@@ -285,7 +285,7 @@ struct MultilineSubtitleRow<Content: View>: View {
     let content: Content
     
     /// 用 @ViewBuilder 让 content 参数支持多视图
-    init(systemIcon: String? = nil,
+    public init(systemIcon: String? = nil,
          iconImage: NSImage? = nil,
          iconColor: Color? = nil,
          title: String? = nil,
@@ -299,7 +299,7 @@ struct MultilineSubtitleRow<Content: View>: View {
         self.content = content()
     }
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 12) {
             iconView
             
@@ -375,17 +375,17 @@ struct MultilineSubtitleRow<Content: View>: View {
 
  */
 
-struct CollapsibleSection<Content: View>: View {
+public struct CollapsibleSection<Content: View>: View {
     var title: String? = nil
     @State private var isExpanded = false
     @ViewBuilder let content: () -> Content
     
-    init(_ title: String?, @ViewBuilder content: @escaping () -> Content) {
+    public init(_ title: String?, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.content = content
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             // Header - 可点击
             Button(action: {

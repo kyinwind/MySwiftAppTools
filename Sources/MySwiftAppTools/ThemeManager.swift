@@ -35,7 +35,7 @@ import SwiftUI
 //#5DADE2：接近湖面反射阳光时的蓝色
 
 @Observable
-class ThemeManager {
+public final class ThemeManager {
     var theme: Theme = Theme()
     
     func updateTheme(theme:Theme) {
@@ -43,7 +43,7 @@ class ThemeManager {
     }
 }
 
-struct Theme {
+public struct Theme {
     
     //背景颜色
     var myBGColor:Color = Color.myGray ?? Color(.systemGray)
@@ -69,7 +69,7 @@ struct Theme {
     
 }
 
-extension Color {
+public extension Color {
     //背景颜色
     static let myGray = Color(hex: "#fdfdfd")
     //其他背景色
@@ -92,7 +92,7 @@ extension Color {
 }
 
 // UIColor 扩展用于从十六进制字符串创建颜色
-extension Color {
+public extension Color {
     init?(hex: String) {
         let r, g, b, a: Double
         
@@ -128,12 +128,12 @@ extension Color {
 
 //MARK: 自定义的组件
 
-struct CustomGroupBoxStyle: GroupBoxStyle {
+public struct CustomGroupBoxStyle: GroupBoxStyle {
     var themeManager: ThemeManager
-    init(themeManager: ThemeManager) {
+    public init(themeManager: ThemeManager) {
         self.themeManager = themeManager
     }
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading) {
             configuration.label
             Divider()
@@ -148,11 +148,11 @@ struct CustomGroupBoxStyle: GroupBoxStyle {
 }
 
 // 自定义 HStack 样式
-struct CustomHStackStyle: View {
+public struct CustomHStackStyle: View {
     @Environment(ThemeManager.self) var themeManager: ThemeManager
     let content: () -> AnyView
     
-    var body: some View {
+    public var body: some View {
         HStack(alignment: .center) {
             content() // 这里放置要展示的内容
         }
@@ -166,14 +166,14 @@ struct CustomHStackStyle: View {
 }
 
 // 自定义 MyHStack 组件，类似于自定义 GroupBox
-struct MyHStack<Content: View>: View {
+public struct MyHStack<Content: View>: View {
     let content: Content
     
-    init(@ViewBuilder content: () -> Content) {
+    public init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
     
-    var body: some View {
+    public var body: some View {
         CustomHStackStyle {
             AnyView(content) // 将传递的内容转换为 AnyView
         }
@@ -181,17 +181,17 @@ struct MyHStack<Content: View>: View {
 }
 
 //MARK: 所有按钮样式
-struct CustomButtonStyle: ButtonStyle {
+public struct CustomButtonStyle: ButtonStyle {
     var isEnabled: Bool?
     var themeManager: ThemeManager
-    init(themeManager: ThemeManager) {
+    public init(themeManager: ThemeManager) {
         self.themeManager = themeManager
     }
-    init(isEnabled:Bool, themeManager: ThemeManager) {
+    public init(isEnabled:Bool, themeManager: ThemeManager) {
         self.isEnabled = isEnabled
         self.themeManager = themeManager
     }
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         if isEnabled != nil {
             configuration.label
                 .font(.headline)
@@ -220,8 +220,8 @@ struct CustomButtonStyle: ButtonStyle {
 }
 
 //MARK: 自定义的 ImageModifier，用于将图像大小设置为两倍
-struct DoubleSizeImageModifier: ViewModifier {
-    func body(content: Content) -> some View {
+public struct DoubleSizeImageModifier: ViewModifier {
+    public func body(content: Content) -> some View {
         content
             .scaledToFit()                // 保持图像比例
             .frame(width: 50, height: 50) // 设置两倍的宽高 (假设原始大小是 20x20)
@@ -230,7 +230,7 @@ struct DoubleSizeImageModifier: ViewModifier {
 }
 
 //MARK: 扩展 View，创建一个便于调用的修饰符
-extension Image {
+public extension Image {
     func doubleSizedImage() -> some View {
         self.resizable()               // 在 Image 上调用 resizable()，允许调整大小
             .modifier(DoubleSizeImageModifier()) // 应用自定义的 ViewModifier
@@ -240,8 +240,8 @@ extension Image {
 //MARK: 用于设置标准字体
 
 //普通文本
-struct StandardFontModifier: ViewModifier {
-    func body(content: Content) -> some View {
+public struct StandardFontModifier: ViewModifier {
+    public func body(content: Content) -> some View {
         content
             .font(.headline)
             .fontWeight(.bold) // 加粗
@@ -249,15 +249,15 @@ struct StandardFontModifier: ViewModifier {
 }
 
 //MARK: 扩展 View，创建一个便于调用的修饰符
-extension Text {
+public extension Text {
     func setStandardFont() -> some View {
         self.modifier(StandardFontModifier()) // 应用自定义的 ViewModifier
     }
 }
 
 //MARK: titil字体
-struct StandardTitleFontModifier: ViewModifier {
-    func body(content: Content) -> some View {
+public struct StandardTitleFontModifier: ViewModifier {
+    public func body(content: Content) -> some View {
         content
             .font(.title3)
             .fontWeight(.bold) // 加粗
@@ -265,28 +265,28 @@ struct StandardTitleFontModifier: ViewModifier {
 }
 
 //MARK: 扩展 View，创建一个便于调用的修饰符
-extension Text {
+public extension Text {
     func setStandardTitleFont() -> some View {
         self.modifier(StandardTitleFontModifier()) // 应用自定义的 ViewModifier
     }
 }
 
-enum VideoHeroTheme {
-    static let groupTitleFont: Font = .title3.weight(.bold)
-    static let groupSubtitleFont: Font = .callout
-    static let actionButtonFont: Font = .callout.weight(.semibold)
-    static let actionButtonCornerRadius: CGFloat = 14
-    static let actionButtonVerticalPadding: CGFloat = 12
-    static let actionButtonHorizontalPadding: CGFloat = 14
-    static let actionButtonTint: Color = .orange
-    static let actionButtonForeground: Color = .white
+public enum VideoHeroTheme {
+    public static let groupTitleFont: Font = .title3.weight(.bold)
+    public static let groupSubtitleFont: Font = .callout
+    public static let actionButtonFont: Font = .callout.weight(.semibold)
+    public static let actionButtonCornerRadius: CGFloat = 14
+    public static let actionButtonVerticalPadding: CGFloat = 12
+    public static let actionButtonHorizontalPadding: CGFloat = 14
+    public static let actionButtonTint: Color = .orange
+    public static let actionButtonForeground: Color = .white
 }
 
-struct VideoHeroPrimaryButtonStyle: ButtonStyle {
+public struct VideoHeroPrimaryButtonStyle: ButtonStyle {
     var tint: Color = VideoHeroTheme.actionButtonTint
     var isDisabled: Bool = false
 
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(VideoHeroTheme.actionButtonFont)
             .foregroundStyle(VideoHeroTheme.actionButtonForeground.opacity(isDisabled ? 0.72 : 1))
@@ -303,26 +303,26 @@ struct VideoHeroPrimaryButtonStyle: ButtonStyle {
     }
 }
 
-struct VideoHeroGroupTitleModifier: ViewModifier {
-    func body(content: Content) -> some View {
+public struct VideoHeroGroupTitleModifier: ViewModifier {
+    public func body(content: Content) -> some View {
         content
             .font(VideoHeroTheme.groupTitleFont)
             .foregroundStyle(.primary)
     }
 }
 
-extension View {
+public extension View {
     func videoHeroGroupTitle() -> some View {
         modifier(VideoHeroGroupTitleModifier())
     }
 }
 
 //MARK: 一个带提示符的文本编辑器
-struct PlaceholderTextEditor: View {
+public struct PlaceholderTextEditor: View {
     @Binding var text: String
     let placeholder: String
     
-    var body: some View {
+    public var body: some View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
                 .padding(8)
@@ -342,16 +342,16 @@ struct PlaceholderTextEditor: View {
 }
 
 //MARK: 自定义的label
-struct LabeledField<Content: View>: View {
+public struct LabeledField<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
     
-    init(_ title: String, @ViewBuilder content: () -> Content) {
+    public init(_ title: String, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.callout)
@@ -362,7 +362,7 @@ struct LabeledField<Content: View>: View {
 }
 
 //MARK: 将一个Double转为字符串，保留N位小数点
-extension Double {
+public extension Double {
     var oneDecimal: String {
         String(format: "%.1f", self)
     }
@@ -371,7 +371,7 @@ extension Double {
     }
 }
 //MARK: 一个支持只读的文本显示组件
-struct ReadOnlyTextView: NSViewRepresentable {
+public struct ReadOnlyTextView: NSViewRepresentable {
     
     // MARK: - Inputs
     @Binding var text: String
@@ -380,7 +380,7 @@ struct ReadOnlyTextView: NSViewRepresentable {
     var font: NSFont = .systemFont(ofSize: 14)
     
     // MARK: - 协调器：用于监听 NSTextView 的文本变化，实现双向绑定
-    class Coordinator: NSObject, NSTextViewDelegate {
+    public class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ReadOnlyTextView
         
         init(parent: ReadOnlyTextView) {
@@ -388,7 +388,7 @@ struct ReadOnlyTextView: NSViewRepresentable {
         }
         
         // 监听文本变化，同步到 SwiftUI 的 Binding
-        func textDidChange(_ notification: Notification) {
+        public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             // 避免循环更新：只有文本真的变化时才同步
             if textView.string != parent.text {
@@ -398,11 +398,11 @@ struct ReadOnlyTextView: NSViewRepresentable {
     }
     
     // MARK: - Make
-    func makeCoordinator() -> Coordinator {
+    public func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
     }
     
-    func makeNSView(context: Context) -> NSScrollView {
+    public func makeNSView(context: Context) -> NSScrollView {
         let textView = NSTextView()
         
         // 🔹 行为控制
@@ -434,7 +434,7 @@ struct ReadOnlyTextView: NSViewRepresentable {
     }
     
     // MARK: - Update
-    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+    public func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
         
         // 行为更新（允许运行时切换）
@@ -460,12 +460,12 @@ struct ReadOnlyTextView: NSViewRepresentable {
 }
 
 //为了解决TextEditor文字上面被截的问题，特意写了CustomTextView
-struct CustomTextView: NSViewRepresentable {
+public struct CustomTextView: NSViewRepresentable {
     @Binding var text: String
     var placeholder: String = "请输入..."
     var maxLength: Int? = nil
     
-    func makeNSView(context: Context) -> NSScrollView {
+    public func makeNSView(context: Context) -> NSScrollView {
         
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
@@ -512,7 +512,7 @@ struct CustomTextView: NSViewRepresentable {
         return scrollView
     }
     
-    func updateNSView(_ nsView: NSScrollView, context: Context) {
+    public func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
         
         if textView.string != text {
@@ -522,11 +522,11 @@ struct CustomTextView: NSViewRepresentable {
         context.coordinator.updatePlaceholder()
     }
     
-    func makeCoordinator() -> Coordinator {
+    public func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, NSTextViewDelegate {
+    public class Coordinator: NSObject, NSTextViewDelegate {
         
         var parent: CustomTextView
         weak var textView: NSTextView?
@@ -537,7 +537,7 @@ struct CustomTextView: NSViewRepresentable {
         }
         
         // 限制最大长度
-        func textView(
+        public func textView(
             _ textView: NSTextView,
             shouldChangeTextIn affectedCharRange: NSRange,
             replacementString: String?
@@ -559,7 +559,7 @@ struct CustomTextView: NSViewRepresentable {
             return newText.count <= maxLength
         }
         
-        func textDidChange(_ notification: Notification) {
+        public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             
             parent.text = textView.string
@@ -576,11 +576,11 @@ struct CustomTextView: NSViewRepresentable {
 //MARK: esc键快捷关闭窗口
 //使用方法
 //.modifier(EscCloseModifier())
-struct EscCloseModifier: ViewModifier {
+public struct EscCloseModifier: ViewModifier {
     @Environment(\.dismiss) private var dismiss
     let enabled: Bool
     
-    func body(content: Content) -> some View {
+    public func body(content: Content) -> some View {
         content.background(
             Group {
                 if enabled {
@@ -596,7 +596,7 @@ struct EscCloseModifier: ViewModifier {
 }
 
 //MARK: 自定义交通灯按钮组件
-struct ToobarStatusLight: View {
+public struct ToobarStatusLight: View {
     @Environment(\.isEnabled) private var isEnabled
     //isOn如果为空，则代表不需要绿灯效果，正常显示就行
     let isOn: Bool?
@@ -604,7 +604,7 @@ struct ToobarStatusLight: View {
     let title: String
     let accentColor: Color?
 
-    init(
+    public init(
         isOn: Bool? = nil,
         systemImage: String,
         title: String,
@@ -616,7 +616,7 @@ struct ToobarStatusLight: View {
         self.accentColor = accentColor
     }
     
-    var body: some View {
+    public var body: some View {
         let color: Color = {
             if let accentColor {
                 return accentColor
@@ -653,26 +653,26 @@ private struct MySettingsCardBorderKey: EnvironmentKey {
     static let defaultValue: Bool = true   // 默认显示
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
     var mySettingsCardShowsBorder: Bool {
         get { self[MySettingsCardBorderKey.self] }
         set { self[MySettingsCardBorderKey.self] = newValue }
     }
 }
-extension View {
+public extension View {
     func showBorder(_ show: Bool) -> some View {
         environment(\.mySettingsCardShowsBorder, show)
     }
 }
 
-struct MySettingsCard<Content: View>: View {
+public struct MySettingsCard<Content: View>: View {
     
     private let title: LocalizedStringKey
     private let subtitle: LocalizedStringKey?
     private let content: Content
     @Environment(\.mySettingsCardShowsBorder)
     private var showsBorder
-    init(
+    public init(
         title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> Content
@@ -682,7 +682,7 @@ struct MySettingsCard<Content: View>: View {
         self.content = content()
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             
             headerView
@@ -722,7 +722,7 @@ struct MySettingsCard<Content: View>: View {
 }
 
 // MARK: - 按钮组组件 ActionBarAlignment
-enum ActionBarAlignment {
+public enum ActionBarAlignment: Sendable {
     case leading
     case center
     case trailing
@@ -736,7 +736,7 @@ enum ActionBarAlignment {
     }
 }
 
-enum ActionBarLayoutStyle: Equatable {
+public enum ActionBarLayoutStyle: Equatable, Sendable {
     /// Preserve the original behavior: single row when there is room, compact control group when not.
     case automatic
     /// Always render actions in one horizontal row.
@@ -748,41 +748,46 @@ enum ActionBarLayoutStyle: Equatable {
 }
 
 // MARK: - Shortcut Model（⭐️核心）
-struct ActionShortcut: Equatable {
-    let key: KeyEquivalent
-    let modifiers: EventModifiers
+public struct ActionShortcut: Equatable,  Sendable {
+    public let key: KeyEquivalent
+    public let modifiers: EventModifiers
 
-    static let commandA = ActionShortcut(key: "a", modifiers: [.command])
-    static let commandB = ActionShortcut(key: "b", modifiers: [.command])
-    static let commandC = ActionShortcut(key: "c", modifiers: [.command])
-    static let commandD = ActionShortcut(key: "d", modifiers: [.command])
-    static let commandE = ActionShortcut(key: "e", modifiers: [.command])
-    static let commandF = ActionShortcut(key: "f", modifiers: [.command])
-    static let commandG = ActionShortcut(key: "g", modifiers: [.command])
-    static let commandH = ActionShortcut(key: "h", modifiers: [.command])
-    static let commandI = ActionShortcut(key: "i", modifiers: [.command])
-    static let commandJ = ActionShortcut(key: "j", modifiers: [.command])
-    static let commandK = ActionShortcut(key: "k", modifiers: [.command])
-    static let commandL = ActionShortcut(key: "l", modifiers: [.command])
-    static let commandM = ActionShortcut(key: "m", modifiers: [.command])
-    static let commandN = ActionShortcut(key: "n", modifiers: [.command])
-    static let commandO = ActionShortcut(key: "o", modifiers: [.command])
-    static let commandP = ActionShortcut(key: "p", modifiers: [.command])
-    static let commandQ = ActionShortcut(key: "q", modifiers: [.command])
-    static let commandR = ActionShortcut(key: "r", modifiers: [.command])
-    static let commandS = ActionShortcut(key: "s", modifiers: [.command])
-    static let commandT = ActionShortcut(key: "t", modifiers: [.command])
-    static let commandU = ActionShortcut(key: "u", modifiers: [.command])
-    static let commandV = ActionShortcut(key: "v", modifiers: [.command])
-    static let commandW = ActionShortcut(key: "w", modifiers: [.command])
-    static let commandX = ActionShortcut(key: "x", modifiers: [.command])
-    static let commandY = ActionShortcut(key: "y", modifiers: [.command])
-    static let commandZ = ActionShortcut(key: "z", modifiers: [.command])
-    static let delete = ActionShortcut(key: .delete, modifiers: [])
-    static let escape = ActionShortcut(key: .escape, modifiers: [])
-    static let commandNothing = ActionShortcut(key: " ", modifiers: [])
+    public init(key: KeyEquivalent, modifiers: EventModifiers) {
+        self.key = key
+        self.modifiers = modifiers
+    }
 
-    var displayString: String {
+    public static let commandA = ActionShortcut(key: "a", modifiers: [.command])
+    public static let commandB = ActionShortcut(key: "b", modifiers: [.command])
+    public static let commandC = ActionShortcut(key: "c", modifiers: [.command])
+    public static let commandD = ActionShortcut(key: "d", modifiers: [.command])
+    public static let commandE = ActionShortcut(key: "e", modifiers: [.command])
+    public static let commandF = ActionShortcut(key: "f", modifiers: [.command])
+    public static let commandG = ActionShortcut(key: "g", modifiers: [.command])
+    public static let commandH = ActionShortcut(key: "h", modifiers: [.command])
+    public static let commandI = ActionShortcut(key: "i", modifiers: [.command])
+    public static let commandJ = ActionShortcut(key: "j", modifiers: [.command])
+    public static let commandK = ActionShortcut(key: "k", modifiers: [.command])
+    public static let commandL = ActionShortcut(key: "l", modifiers: [.command])
+    public static let commandM = ActionShortcut(key: "m", modifiers: [.command])
+    public static let commandN = ActionShortcut(key: "n", modifiers: [.command])
+    public static let commandO = ActionShortcut(key: "o", modifiers: [.command])
+    public static let commandP = ActionShortcut(key: "p", modifiers: [.command])
+    public static let commandQ = ActionShortcut(key: "q", modifiers: [.command])
+    public static let commandR = ActionShortcut(key: "r", modifiers: [.command])
+    public static let commandS = ActionShortcut(key: "s", modifiers: [.command])
+    public static let commandT = ActionShortcut(key: "t", modifiers: [.command])
+    public static let commandU = ActionShortcut(key: "u", modifiers: [.command])
+    public static let commandV = ActionShortcut(key: "v", modifiers: [.command])
+    public static let commandW = ActionShortcut(key: "w", modifiers: [.command])
+    public static let commandX = ActionShortcut(key: "x", modifiers: [.command])
+    public static let commandY = ActionShortcut(key: "y", modifiers: [.command])
+    public static let commandZ = ActionShortcut(key: "z", modifiers: [.command])
+    public static let delete = ActionShortcut(key: .delete, modifiers: [])
+    public static let escape = ActionShortcut(key: .escape, modifiers: [])
+    public static let commandNothing = ActionShortcut(key: " ", modifiers: [])
+
+    public var displayString: String {
         var result = ""
 
         if modifiers.contains(.command) { result += "⌘" }
@@ -805,7 +810,7 @@ struct ActionShortcut: Equatable {
 
 // MARK: - ActionItem
 
-enum ActionItem: Identifiable {
+public enum ActionItem: Identifiable {
 
     case add(
         enabled: Bool = true,
@@ -855,7 +860,7 @@ enum ActionItem: Identifiable {
         action: () -> Void
     )
 
-    var id: String {
+    public var id: String {
         switch self {
         case .add: return "add"
         case .edit: return "edit"
@@ -976,12 +981,12 @@ private struct ActionBarFlowLayout: Layout {
 
 /// Optional visual treatment for ActionBar buttons. Keeping this separate from
 /// `ActionItem` lets callers opt into branded buttons without changing defaults.
-struct ActionBarButtonDisplayStyle {
-    let backgroundColor: Color
-    let foregroundColor: Color
-    let cornerRadius: CGFloat
+public struct ActionBarButtonDisplayStyle:  Sendable {
+    public let backgroundColor: Color
+    public let foregroundColor: Color
+    public let cornerRadius: CGFloat
 
-    init(
+    public init(
         backgroundColor: Color,
         foregroundColor: Color,
         cornerRadius: CGFloat = RCMRadius.md
@@ -992,7 +997,7 @@ struct ActionBarButtonDisplayStyle {
     }
 
     /// App primary action style: orange background with white text.
-    static let primary = ActionBarButtonDisplayStyle(
+    public static let primary = ActionBarButtonDisplayStyle(
         backgroundColor: .orange,
         foregroundColor: .white
     )
@@ -1002,7 +1007,7 @@ private struct ActionBarDisplayButtonStyle: ButtonStyle {
     let displayStyle: ActionBarButtonDisplayStyle
     let isEnabled: Bool
 
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(RCMTypography.bodyStrong)
             .foregroundStyle(displayStyle.foregroundColor.opacity(isEnabled ? 1 : 0.72))
@@ -1024,7 +1029,7 @@ private struct ActionBarDisplayButtonStyle: ButtonStyle {
 
 // MARK: - ActionBar
 
-struct ActionBar: View {
+public struct ActionBar: View {
 
     let items: [ActionItem]
     var alignment: ActionBarAlignment = .leading
@@ -1034,11 +1039,23 @@ struct ActionBar: View {
     @State private var availableWidth: CGFloat = 0
     @State private var regularWidth: CGFloat = 0
 
+    public init(
+        items: [ActionItem],
+        alignment: ActionBarAlignment = .leading,
+        layoutStyle: ActionBarLayoutStyle = .automatic,
+        buttonDisplayStyle: ActionBarButtonDisplayStyle? = nil
+    ) {
+        self.items = items
+        self.alignment = alignment
+        self.layoutStyle = layoutStyle
+        self.buttonDisplayStyle = buttonDisplayStyle
+    }
+
     private var layoutMode: LayoutMode {
         availableWidth >= regularWidth ? .regular : .compact
     }
 
-    var body: some View {
+    public var body: some View {
         if layoutStyle == .wrapping {
             baseContent
                 .frame(maxWidth: .infinity)
@@ -1313,26 +1330,26 @@ struct ActionBar: View {
 }
 
 //MARK: 从Bundle读取版本，app名称，用于显示
-struct AppInfo {
+public struct AppInfo {
     
-    static let name: String = {
+    public static let name: String = {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
         ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
         ?? "App"
     }()
     
-    static let version: String = {
+    public static let version: String = {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }()
     
-    static let build: String = {
+    public static let build: String = {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
     }()
     
-    static let fullVersion: String = {
+    public static let fullVersion: String = {
         build.isEmpty ? version : "\(version) (\(build))"
     }()
-    static var icon: NSImage {
+    public static var icon: NSImage {
         NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
     }
 }

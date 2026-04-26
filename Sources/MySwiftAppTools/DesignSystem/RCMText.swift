@@ -21,16 +21,16 @@ import SwiftUI
 //.alternatingContentBackgroundColors
 //建议使用 Color(.controlBackgroundColor) 作为卡片背景，Color(.labelColor) 作为文字色，这样在亮色/暗色模式下都会自动适配。
 //页面的 title
-struct RCMPageTitle: View {
+public struct RCMPageTitle: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
 
-    init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
+    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
         self.title = title
         self.subtitle = subtitle
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: RCMSpacing.xs) {
             Text(title)
                 .font(RCMTypography.pageTitle)
@@ -46,16 +46,16 @@ struct RCMPageTitle: View {
     }
 }
 //每一页里面每一个章节的 title
-struct RCMSectionTitle: View {
+public struct RCMSectionTitle: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
 
-    init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
+    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
         self.title = title
         self.subtitle = subtitle
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: RCMSpacing.xxs) {
             Text(title)
                 .font(RCMTypography.sectionTitle)
@@ -74,14 +74,14 @@ struct RCMSectionTitle: View {
     }
 }
 
-struct RCMLabelText: View {
+public struct RCMLabelText: View {
     let text: LocalizedStringKey
 
-    init(_ text: LocalizedStringKey) {
+    public init(_ text: LocalizedStringKey) {
         self.text = text
     }
 
-    var body: some View {
+    public var body: some View {
         Text(text)
             .font(RCMTypography.captionStrong)
             .foregroundStyle(RCMColor.textSecondary)
@@ -89,28 +89,28 @@ struct RCMLabelText: View {
     }
 }
 
-struct RCMCaptionText: View {
+public struct RCMCaptionText: View {
     let text: LocalizedStringKey
 
-    init(_ text: LocalizedStringKey) {
+    public init(_ text: LocalizedStringKey) {
         self.text = text
     }
 
-    var body: some View {
+    public var body: some View {
         Text(text)
             .font(RCMTypography.caption)
             .foregroundStyle(RCMColor.textSecondary)
     }
 }
 
-struct RCMMonoText: View {
+public struct RCMMonoText: View {
     let text: String
 
-    init(_ text: String) {
+    public init(_ text: String) {
         self.text = text
     }
 
-    var body: some View {
+    public var body: some View {
         Text(text)
             .font(RCMTypography.monoCaption)
             .foregroundStyle(RCMColor.textSecondary)

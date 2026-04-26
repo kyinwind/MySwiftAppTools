@@ -54,13 +54,13 @@ import Foundation
  - keyPrefix 用于隔离不同 App 或不同功能组在 UserDefaults 中保存的计数。
  */
 @MainActor
-enum ProGatekeeper {
+public enum ProGatekeeper {
     private static var hasPurchasedPro: () -> Bool = { false }
     private static var presentPurchase: () -> Void = {}
     private static var freeLimits: [String: Int] = [:]
     private static var keyPrefix = "ProGatekeeper"
 
-    static func configure(
+    public static func configure(
         freeLimits: [String: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
@@ -72,7 +72,7 @@ enum ProGatekeeper {
         self.presentPurchase = presentPurchase
     }
 
-    static func configure<Feature>(
+    public static func configure<Feature>(
         freeLimits: [Feature: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
@@ -86,7 +86,7 @@ enum ProGatekeeper {
         )
     }
 
-    static func check(_ feature: String) async -> Bool {
+    public static func check(_ feature: String) async -> Bool {
         if allow(feature) {
             consume(feature)
             return true
@@ -96,11 +96,11 @@ enum ProGatekeeper {
         return false
     }
 
-    static func check<Feature>(_ feature: Feature) async -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+    public static func check<Feature>(_ feature: Feature) async -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
         await check(feature.rawValue)
     }
 
-    static func allow(_ feature: String) -> Bool {
+    public static func allow(_ feature: String) -> Bool {
         if hasPurchasedPro() {
             return true
         }
@@ -114,11 +114,11 @@ enum ProGatekeeper {
         return currentCount(for: feature) < limit
     }
 
-    static func allow<Feature>(_ feature: Feature) -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+    public static func allow<Feature>(_ feature: Feature) -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
         allow(feature.rawValue)
     }
 
-    static func remaining(_ feature: String) -> Int? {
+    public static func remaining(_ feature: String) -> Int? {
         guard let limit = freeLimits[feature] else {
             return nil
         }
@@ -132,11 +132,11 @@ enum ProGatekeeper {
         return max(0, limit - currentCount(for: feature))
     }
 
-    static func remaining<Feature>(_ feature: Feature) -> Int? where Feature: RawRepresentable, Feature.RawValue == String {
+    public static func remaining<Feature>(_ feature: Feature) -> Int? where Feature: RawRepresentable, Feature.RawValue == String {
         remaining(feature.rawValue)
     }
 
-    static func debugReset() {
+    public static func debugReset() {
         for feature in freeLimits.keys {
             DefaultsTools.shared.set(0, for: usageKey(for: feature))
         }
