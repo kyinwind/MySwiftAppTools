@@ -203,7 +203,7 @@ public final class StoreManager {
     }
 
     @discardableResult
-    func purchase(_ product: Product) async -> Bool {
+    public func purchase(_ product: Product) async -> Bool {
         do {
             let result = try await product.purchase()
 
@@ -234,7 +234,7 @@ public final class StoreManager {
     }
 
     @discardableResult
-    func purchase(productID: String) async -> Bool {
+    public func purchase(productID: String) async -> Bool {
         if let product = product(for: productID) {
             return await purchase(product)
         }
