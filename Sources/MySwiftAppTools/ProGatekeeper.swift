@@ -1,154 +1,183 @@
 //
 //  ProGatekeeper.swift
-//  RightClickMate
 //
 //  Created by yangxuehui on 2026/2/10.
 //
-import SwiftUI
 
-enum ProFeature {
-    //free用户只能新建固定的文件类型，pro用户可以自定义文件类型
-    case createProOfficeFile
-    //free用户修改文件名不超过20张，pro用户没有限制
-    case batchRename
-    case zip
-    //free用户只能修改单张图片，pro用户可以同时修改多张图片
-    case resizeImage
-    //free用户只能复制5层，pro用户可以复制20层
-    case copyTree
-    
-    // 拆开隐私橡皮擦
-    //case blurImage
-    case privacyOCR
-    //pro用户可以使用Ai修复没有限制，免费用户则每天都有使用次数的限制
-    case privacyAIRepair
-    //pro用户可以批量处理，free用户只能一张一张处理
-    case privacyBatch
-    //pro用户可以导出导入
-    case exportAndImport
-    //可以增加快速应用，免费用户只能显示历史记录，pro用户可以自己指定常用app
-    case quickApp
-}
+import Foundation
+
 /*
- DefaultsTools保存用过的次数，以及最新的日期。
+ DefaultsTools 保存免费用户的使用次数和每日重置日期。
+ 调用方负责定义 feature、购买状态和购买入口。
+
+ 使用方式：
+
+ 1. 在调用 App 中定义自己的 Pro 功能枚举：
+
+    enum AppProFeature: String {
+        case privacyOCR
+        case privacyAIRepair
+        case privacyBatch
+    }
+
+ 2. 在 App 启动时配置一次：
+
+    ProGatekeeper.configure(
+        freeLimits: [
+            AppProFeature.privacyOCR: 10,
+            AppProFeature.privacyAIRepair: 5,
+            AppProFeature.privacyBatch: 0
+        ],
+        keyPrefix: "YourApp.ProGatekeeper",
+        hasPurchasedPro: {
+            AppState.shared.hasPurchasedPro
+        },
+        presentPurchase: {
+            // 打开你的购买页、设置页或订阅弹窗
+        }
+    )
+
+ 3. 使用功能前检查权限：
+
+    if await ProGatekeeper.check(AppProFeature.privacyOCR) {
+        // 执行功能
+    }
+
+ 4. 查询免费额度剩余次数：
+
+    let remaining = ProGatekeeper.remaining(AppProFeature.privacyOCR)
+
+ 说明：
+ - freeLimits 中没有声明的 feature，会被视为 Pro-only，免费用户不允许使用。
+ - freeLimits 的值为 0 时，表示免费用户完全不能使用该功能。
+ - Pro 用户由 hasPurchasedPro 返回 true 后直接放行，不消耗免费次数。
+ - keyPrefix 用于隔离不同 App 或不同功能组在 UserDefaults 中保存的计数。
  */
 @MainActor
-class ProGatekeeper {
-    static var hasPurchasedPro: () -> Bool = { false }
-    static var presentPurchase: () -> Void = {
-        NSApp.activate(ignoringOtherApps: true)
-        NSWorkspace.shared.open(
-            URL(string: "rightclickmate://purchase")!
+enum ProGatekeeper {
+    private static var hasPurchasedPro: () -> Bool = { false }
+    private static var presentPurchase: () -> Void = {}
+    private static var freeLimits: [String: Int] = [:]
+    private static var keyPrefix = "ProGatekeeper"
+
+    static func configure(
+        freeLimits: [String: Int],
+        keyPrefix: String = "ProGatekeeper",
+        hasPurchasedPro: @escaping () -> Bool,
+        presentPurchase: @escaping () -> Void
+    ) {
+        self.freeLimits = freeLimits
+        self.keyPrefix = keyPrefix
+        self.hasPurchasedPro = hasPurchasedPro
+        self.presentPurchase = presentPurchase
+    }
+
+    static func configure<Feature>(
+        freeLimits: [Feature: Int],
+        keyPrefix: String = "ProGatekeeper",
+        hasPurchasedPro: @escaping () -> Bool,
+        presentPurchase: @escaping () -> Void
+    ) where Feature: Hashable & RawRepresentable, Feature.RawValue == String {
+        configure(
+            freeLimits: Dictionary(uniqueKeysWithValues: freeLimits.map { ($0.key.rawValue, $0.value) }),
+            keyPrefix: keyPrefix,
+            hasPurchasedPro: hasPurchasedPro,
+            presentPurchase: presentPurchase
         )
     }
 
-    static let freeLimits: [ProFeature: Int] = [
-        .privacyOCR: 10,  //free用户每天 10 次
-        .privacyAIRepair: 5,  //free 用户每天 5 次
-        .privacyBatch: 0, // ❗free 完全禁止
-    ]
-    
-    /// ⭐ 唯一对外入口（安全）
-    @MainActor
-    static func check(_ feature: ProFeature) async -> Bool {
+    static func check(_ feature: String) async -> Bool {
         if allow(feature) {
-            consume(feature) // ⭐ 成功才消耗
+            consume(feature)
             return true
-        } else {
-            block(feature)
-            return false
         }
+
+        presentPurchase()
+        return false
     }
-    
-    private static func consume(_ feature: ProFeature) {
-        guard !hasPurchasedPro() else { return }
-        guard freeLimits[feature] != nil else { return }
-        resetIfNeeded() // ⭐ 加这一行
-        let key = keyForFeature(feature)
-        let current = DefaultsTools.shared.int(key) ?? 0
-        DefaultsTools.shared.set(current + 1, for: key)
+
+    static func check<Feature>(_ feature: Feature) async -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+        await check(feature.rawValue)
     }
-    /// 判断是否允许使用某个 Pro 功能
-    static func allow(_ feature: ProFeature) -> Bool {
-        
-        // Pro 用户直接放行
+
+    static func allow(_ feature: String) -> Bool {
         if hasPurchasedPro() {
             return true
         }
-        else{
-            //这三个有计数，允许 free 用户每天使用一定的次数
-            if feature == .privacyAIRepair || feature == .privacyOCR || feature == .privacyBatch {
-                // 非限制功能直接放行
-                guard let limit = freeLimits[feature] else {
-                    return false
-                }
-                
-                resetIfNeeded()
-                
-                let current = currentCount(for: feature)
-                
-                return current < limit
-            }
+
+        guard let limit = freeLimits[feature] else {
+            return false
         }
-        return false
+
+        resetIfNeeded()
+
+        return currentCount(for: feature) < limit
     }
-    //取出今天已经用了多少次
-    private static func currentCount(for feature: ProFeature) -> Int {
-        let key = keyForFeature(feature)
-        return DefaultsTools.shared.int(key) ?? 0
+
+    static func allow<Feature>(_ feature: Feature) -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+        allow(feature.rawValue)
     }
-    //查询还剩多少次
-    static func remaining(_ feature: ProFeature) -> Int? {
-        guard let limit = freeLimits[feature] else { return nil }
-        
+
+    static func remaining(_ feature: String) -> Int? {
+        guard let limit = freeLimits[feature] else {
+            return nil
+        }
+
         if hasPurchasedPro() {
             return nil
         }
-        
+
         resetIfNeeded()
-        
-        let current = currentCount(for: feature)
-        return max(0, limit - current)
+
+        return max(0, limit - currentCount(for: feature))
     }
-    /// 不允许时的统一处理
-    @MainActor
-    private static func block(_ feature: ProFeature) {
-        presentPurchase()
+
+    static func remaining<Feature>(_ feature: Feature) -> Int? where Feature: RawRepresentable, Feature.RawValue == String {
+        remaining(feature.rawValue)
     }
-    
-    private static func keyForFeature(_ feature: ProFeature) -> DefaultsTools.Key {
-        switch feature {
-        case .privacyOCR:
-            return .ocrCount
-        case .privacyAIRepair:
-            return .aiRepairCount
-        case .privacyBatch:
-            return .privacyEraserBatch
-        default:
-            fatalError("No key for feature: \(feature)")
+
+    static func debugReset() {
+        for feature in freeLimits.keys {
+            DefaultsTools.shared.set(0, for: usageKey(for: feature))
         }
+        DefaultsTools.shared.set(Calendar.current.startOfDay(for: Date()), for: lastResetDateKey)
     }
-    //resetIfNeeded() 用来在“跨天时清零使用次数”
+
+    private static func consume(_ feature: String) {
+        guard !hasPurchasedPro() else { return }
+        guard freeLimits[feature] != nil else { return }
+
+        resetIfNeeded()
+
+        let key = usageKey(for: feature)
+        let current = DefaultsTools.shared.int(key) ?? 0
+        DefaultsTools.shared.set(current + 1, for: key)
+    }
+
+    private static func currentCount(for feature: String) -> Int {
+        DefaultsTools.shared.int(usageKey(for: feature)) ?? 0
+    }
+
     private static func resetIfNeeded() {
         let today = Calendar.current.startOfDay(for: Date())
-        let last = DefaultsTools.shared.value(for: .lastResetDate) as Date? ?? .distantPast
-        
-        if !Calendar.current.isDate(today, inSameDayAs: last) {
-            
-            for feature in freeLimits.keys {
-                let key = keyForFeature(feature)
-                DefaultsTools.shared.set(0, for: key)
-            }
-            
-            DefaultsTools.shared.set(today, for: .lastResetDate)
+        let last = DefaultsTools.shared.value(for: lastResetDateKey) as Date? ?? .distantPast
+
+        guard !Calendar.current.isDate(today, inSameDayAs: last) else {
+            return
         }
+
+        for feature in freeLimits.keys {
+            DefaultsTools.shared.set(0, for: usageKey(for: feature))
+        }
+
+        DefaultsTools.shared.set(today, for: lastResetDateKey)
     }
-    
-     static func debugReset() {
-        let today = Calendar.current.startOfDay(for: Date())
-         DefaultsTools.shared.set(0, for: .ocrCount)
-         DefaultsTools.shared.set(0, for: .aiRepairCount)
-         DefaultsTools.shared.set(today, for: .lastResetDate)
+
+    private static var lastResetDateKey: DefaultsTools.Key {
+        DefaultsTools.Key(rawValue: "\(keyPrefix).lastResetDate")
+    }
+
+    private static func usageKey(for feature: String) -> DefaultsTools.Key {
+        DefaultsTools.Key(rawValue: "\(keyPrefix).usage.\(feature)")
     }
 }
-

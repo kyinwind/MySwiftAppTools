@@ -23,7 +23,8 @@ let package = Package(
             name: "MySwiftAppTools",
             exclude: ["DesignSystem/README.md"],
             resources: [
-                .process("Resources")
+                .process("Resources/en.lproj"),
+                .process("Resources/zh-Hans.lproj")
             ]
         ),
 

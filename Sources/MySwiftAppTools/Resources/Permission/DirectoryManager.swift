@@ -1,5 +1,9 @@
 import Foundation
 import SwiftUI
+
+/*
+ 这个工具类是为了保存目录权限的 bookmark而构造的保存结构
+ */
 enum MyDirectoryType:String,Codable{
     case normal    //正常维护的目标目录，都有label
     case noLabel    //临时保存的，没有label

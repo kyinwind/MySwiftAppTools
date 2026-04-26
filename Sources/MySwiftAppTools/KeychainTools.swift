@@ -7,23 +7,40 @@
 
 import Foundation
 import Security
-enum KeychainAccount {
-    static let azureApiKey = "AZURE_SPEECH_KEY"
-    static let azureRegion = "AZURE_SERVICE_REGION"
-    static let openAIApiKey = "openai.apiKey"
-}
 
 /// Keychain 工具封装
 /// - 设计目标：
 ///   1. 底层支持完整参数（service + account）
 ///   2. 上层提供 App 默认 service 的便捷方法
+///   App 里可以这样写：
+/// 使用方法：
+//enum AppKeychainAccount: String {
+//    case azureApiKey = "AZURE_SPEECH_KEY"
+//    case azureRegion = "AZURE_SERVICE_REGION"
+//    case openAIApiKey = "openai.apiKey"
+//}
+//启动时配置一次：
+//
+//KeychainTools.configure(defaultService: "RightClickMate")
+//使用时：
+//
+//KeychainTools.save("sk-xxx", account: AppKeychainAccount.openAIApiKey)
+//
+//let key = KeychainTools.load(account: AppKeychainAccount.openAIApiKey)
+//
+//KeychainTools.delete(account: AppKeychainAccount.openAIApiKey)
 enum KeychainTools {
 
     // MARK: - Default Service (App Level)
 
     /// App 级默认 service
     /// 所有不特殊指定的 Keychain 数据都会存到这里
-    private static let defaultService = "TTSMate"
+    nonisolated(unsafe) private static var defaultService = Bundle.main.bundleIdentifier ?? "MySwiftAppTools"
+
+    static func configure(defaultService: String) {
+        guard !defaultService.isEmpty else { return }
+        self.defaultService = defaultService
+    }
 
     // MARK: - Core (Full Params)
 
@@ -110,11 +127,25 @@ enum KeychainTools {
         save(value, service: defaultService, account: account)
     }
 
+    @discardableResult
+    static func save<Account: RawRepresentable>(
+        _ value: String,
+        account: Account
+    ) -> Bool where Account.RawValue == String {
+        save(value, account: account.rawValue)
+    }
+
     /// 读取数据（使用 App 默认 service）
     static func load(
         account: String
     ) -> String? {
         load(service: defaultService, account: account)
+    }
+
+    static func load<Account: RawRepresentable>(
+        account: Account
+    ) -> String? where Account.RawValue == String {
+        load(account: account.rawValue)
     }
 
     /// 删除数据（使用 App 默认 service）
@@ -123,6 +154,13 @@ enum KeychainTools {
         account: String
     ) -> Bool {
         delete(service: defaultService, account: account)
+    }
+
+    @discardableResult
+    static func delete<Account: RawRepresentable>(
+        account: Account
+    ) -> Bool where Account.RawValue == String {
+        delete(account: account.rawValue)
     }
 
     // MARK: - Sub Service Support (Optional)
@@ -139,6 +177,15 @@ enum KeychainTools {
         return save(value, service: service, account: account)
     }
 
+    @discardableResult
+    static func save<Account: RawRepresentable>(
+        _ value: String,
+        serviceSuffix: String,
+        account: Account
+    ) -> Bool where Account.RawValue == String {
+        save(value, serviceSuffix: serviceSuffix, account: account.rawValue)
+    }
+
     /// 读取数据（App.serviceSuffix）
     static func load(
         serviceSuffix: String,
@@ -146,6 +193,13 @@ enum KeychainTools {
     ) -> String? {
         let service = "\(defaultService).\(serviceSuffix)"
         return load(service: service, account: account)
+    }
+
+    static func load<Account: RawRepresentable>(
+        serviceSuffix: String,
+        account: Account
+    ) -> String? where Account.RawValue == String {
+        load(serviceSuffix: serviceSuffix, account: account.rawValue)
     }
 
     /// 删除数据（App.serviceSuffix）
@@ -156,5 +210,13 @@ enum KeychainTools {
     ) -> Bool {
         let service = "\(defaultService).\(serviceSuffix)"
         return delete(service: service, account: account)
+    }
+
+    @discardableResult
+    static func delete<Account: RawRepresentable>(
+        serviceSuffix: String,
+        account: Account
+    ) -> Bool where Account.RawValue == String {
+        delete(serviceSuffix: serviceSuffix, account: account.rawValue)
     }
 }

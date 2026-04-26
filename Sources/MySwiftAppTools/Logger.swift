@@ -1,3 +1,4 @@
+import Foundation
 import OSLog
 
 enum LogLevel {
@@ -7,8 +8,17 @@ enum LogLevel {
 struct Log {
     nonisolated(unsafe) static var isEnabled: Bool = true
 
-    nonisolated(unsafe) private static var subsystem = "com.michaeldev"
+    nonisolated(unsafe) private static var subsystem = Bundle.main.bundleIdentifier ?? "MySwiftAppTools"
     nonisolated(unsafe) private static var loggers: [String: Logger] = [:]
+
+    static func configure(
+        subsystem: String? = nil,
+        isEnabled: Bool = true
+    ) {
+        self.subsystem = subsystem ?? Bundle.main.bundleIdentifier ?? "MySwiftAppTools"
+        self.isEnabled = isEnabled
+        loggers.removeAll()
+    }
 
     static func logger(category: String) -> Logger {
         if let logger = loggers[category] {

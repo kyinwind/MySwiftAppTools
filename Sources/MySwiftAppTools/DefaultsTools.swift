@@ -19,7 +19,11 @@ struct DefaultsTools: @unchecked Sendable {
     private init(userDefaults: UserDefaults) {
         self.ud = userDefaults
     }
-
+    
+    //在项目 app 启动时，如果有 groupid，可以进行配置，如果没有则不用管，DefaultsTools会默认使用 app 本身的standard配置
+    static func configure(appGroupID: String) {
+        self.appGroupID = appGroupID
+    }
     // MARK: - 工厂
 
     //static let standard = DefaultsTools(userDefaults: .standard)
@@ -86,10 +90,6 @@ struct DefaultsTools: @unchecked Sendable {
             self.rawValue = value
         }
 
-        static let ocrCount: Key = "ocrCount"
-        static let aiRepairCount: Key = "aiRepairCount"
-        static let privacyEraserBatch: Key = "privacyEraserBatch"
-        static let lastResetDate: Key = "lastResetDate"
     }
 }
 extension DefaultsTools {
