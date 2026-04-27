@@ -223,7 +223,7 @@ private func copyToPasteboard(_ text: String) {
     generator.notificationOccurred(.success)
     #endif
 
-    ShowToastSuccess(MySwiftAppToolsL10n.copiedToPasteboard.toNSLocalizedString)
+    ShowToastSuccess(MySwiftAppToolsL10n.copiedToPasteboard.toPackageNSLocalizedString)
 }
 
 public struct ToastView: View {
@@ -321,7 +321,7 @@ private struct ToastRow: View {
             Spacer()
 
             if item.requireConfirm {
-                Button(MySwiftAppToolsL10n.confirmOK.toNSLocalizedString) {
+                Button(MySwiftAppToolsL10n.confirmOK.toPackageNSLocalizedString) {
                     manager.remove(item)
                     item.onConfirm?()
                 }

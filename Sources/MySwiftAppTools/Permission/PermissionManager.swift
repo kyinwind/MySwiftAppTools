@@ -151,8 +151,8 @@ public final class PermissionManager {
             panel.canChooseFiles = false
             panel.allowsMultipleSelection = false
             panel.directoryURL = suggested
-            panel.title = MySwiftAppToolsL10n.authWriteTitle.toNSLocalizedString
-            panel.message = MySwiftAppToolsL10n.authWriteMsg.toNSLocalizedString
+            panel.title = MySwiftAppToolsL10n.authWriteTitle.toPackageNSLocalizedString
+            panel.message = MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
             NSApp.activate(ignoringOtherApps: true)
             panel.begin { resp in
                 guard resp == .OK, let url = panel.url else {
@@ -249,8 +249,8 @@ public final class PermissionManager {
             panel.canChooseFiles = false
             panel.allowsMultipleSelection = false
             panel.directoryURL = suggested
-            panel.title = MySwiftAppToolsL10n.authWriteTitle.toNSLocalizedString
-            panel.message = MySwiftAppToolsL10n.authWriteMsg.toNSLocalizedString
+            panel.title = MySwiftAppToolsL10n.authWriteTitle.toPackageNSLocalizedString
+            panel.message = MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
             NSApp.activate(ignoringOtherApps: true)
             panel.begin { resp in
                 guard resp == .OK, let url = panel.url else {
@@ -313,18 +313,18 @@ public final class PermissionManager {
     public func title(for purpose: PermissionPurpose) -> String {
         switch purpose {
         case .read:
-            return MySwiftAppToolsL10n.authReadTitle.toNSLocalizedString
+            return MySwiftAppToolsL10n.authReadTitle.toPackageNSLocalizedString
         case .write:
-            return MySwiftAppToolsL10n.authWriteTitle.toNSLocalizedString
+            return MySwiftAppToolsL10n.authWriteTitle.toPackageNSLocalizedString
         }
     }
     
     public func message(for purpose: PermissionPurpose) -> String {
         switch purpose {
         case .read:
-            return MySwiftAppToolsL10n.authReadMsg.toNSLocalizedString
+            return MySwiftAppToolsL10n.authReadMsg.toPackageNSLocalizedString
         case .write:
-            return MySwiftAppToolsL10n.authWriteMsg.toNSLocalizedString
+            return MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
         }
     }
 }

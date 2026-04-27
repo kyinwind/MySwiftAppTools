@@ -491,7 +491,7 @@ Sources/MySwiftAppTools/Resources/zh-Hans.lproj/Localizable.strings
 常用入口：
 
 ```swift
-L("Some.Key")
+packageL("Some.Key")
 "Some.Key".toNSLocalizedString
 ```
 
