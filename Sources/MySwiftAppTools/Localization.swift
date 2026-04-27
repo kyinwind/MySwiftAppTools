@@ -6,7 +6,7 @@
 //
 import Foundation
 //在外部调用使用
-func L(_ key: String, _ args: CVarArg...) -> String {
+public func L(_ key: String, _ args: CVarArg...) -> String {
     String(format: NSLocalizedString(key, comment: ""), arguments: args)
 }
 
@@ -16,7 +16,7 @@ public func packageL(_ key: String, _ args: CVarArg...) -> String {
     return String(format: format, locale: Locale.current, arguments: args)
 }
 //包外使用
-extension String {
+public extension String {
 
     /// AppKit / Finder Extension 使用
     var toNSLocalizedString: String {

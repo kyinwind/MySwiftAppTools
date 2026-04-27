@@ -488,10 +488,10 @@ Sources/MySwiftAppTools/Resources/zh-Hans.lproj/Localizable.strings
 
 包内文案通过 `Bundle.module` 读取，不依赖调用 App 的 `Localizable.strings`。
 
-常用入口：
+外部调用常用入口：
 
 ```swift
-packageL("Some.Key")
+L("Some.Key")
 "Some.Key".toNSLocalizedString
 ```
 
