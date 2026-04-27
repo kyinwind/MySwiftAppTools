@@ -57,7 +57,7 @@ import Foundation
 public enum ProGatekeeper {
     private static var hasPurchasedPro: () -> Bool = { false }
     private static var presentPurchase: () -> Void = {}
-    private static var freeLimits: [String: Int] = [:]
+    public static var freeLimits: [String: Int] = [:]
     private static var keyPrefix = "ProGatekeeper"
 
     public static func configure(
