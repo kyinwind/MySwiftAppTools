@@ -246,7 +246,7 @@ public struct RCMPageSection<Content: View>: View {
     }
 }
 
-struct RCMHeroPanelBlue<Content: View>: View {
+public struct RCMHeroPanelBlue<Content: View>: View {
     let content: Content
     
     public init(@ViewBuilder content: () -> Content) {
