@@ -194,7 +194,11 @@ public struct HourglassView: View {
     /// 1 = 结束
     @Binding public var progress: Double
     @State var completionPlayer: AVAudioPlayer?
-    
+    // ✅ 新增：显式声明 public init
+    // 必须加上这一行，否则外部无法实例化
+    public init(progress: Binding<Double>) {
+        self._progress = progress
+    }
     public var body: some View {
         
         ZStack(alignment: .center) {
