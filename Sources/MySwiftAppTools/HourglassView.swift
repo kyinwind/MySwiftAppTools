@@ -16,6 +16,7 @@ public struct HourglassFrame: Shape {
         var path = Path()
         
         let w = rect.width
+        let h = rect.height
         let neckWidth = w * 0.15
         
         // 上半部分
@@ -191,7 +192,7 @@ public struct HourglassView: View {
     
     /// 0 = 刚开始
     /// 1 = 结束
-    @Binding var progress: Double
+    @Binding public var progress: Double
     @State var completionPlayer: AVAudioPlayer?
     
     public var body: some View {
