@@ -1,21 +1,32 @@
 import SwiftUI
 
-public enum RCMColor {
-    public static let primary = Color.orange                          // 主色调：橙色
+
+// MARK: - App 启动时配置
+// 在 App.init 或 AppDelegate.applicationDidFinishLaunching 中：
+// RCMColor.shared.primary = .blue  // 每个 App 自行设置
+
+@MainActor
+@Observable
+public final class RCMColor {
+    @MainActor public static let shared = RCMColor()
+    
+    // 可配置的主色调，每个 App 启动时设置
+    public var primary: Color = Color.blue
+    
     public static let accent = Color(red: 0.192, green: 0.514, blue: 1.0)
     public static let accentSoft = Color.accentColor.opacity(0.12)
     public static let success = Color(red: 0.153, green: 0.694, blue: 0.353)
     public static let warning = Color(red: 0.976, green: 0.694, blue: 0.208)
     public static let danger = Color(red: 0.898, green: 0.267, blue: 0.267)
-
+    
     public static let textPrimary = Color.primary
     public static let textSecondary = Color.secondary
     public static let textTertiary = Color.secondary.opacity(0.72)
-
+    
 #if os(macOS)
     public static let pageBackground = Color(nsColor: .windowBackgroundColor)
     public static let cardBackground = Color(nsColor: .controlBackgroundColor)
-    public static let cardGrayBackground = Color(.secondarySystemFill)    //这个灰色比浅灰更深一点
+    public static let cardGrayBackground = Color(.secondarySystemFill)
     public static let subtleFill = Color(nsColor: .quaternaryLabelColor).opacity(0.08)
     public static let border = Color.primary.opacity(0.10)
 #else
@@ -25,6 +36,8 @@ public enum RCMColor {
     public static let subtleFill = Color(.secondarySystemFill)
     public static let border = Color.primary.opacity(0.10)
 #endif
+    
+    public init() {}
 }
 
 public enum RCMSpacing {
