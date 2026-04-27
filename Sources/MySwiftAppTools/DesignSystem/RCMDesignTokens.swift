@@ -5,8 +5,6 @@ import SwiftUI
 // 在 App.init 或 AppDelegate.applicationDidFinishLaunching 中：
 // RCMColor.shared.primary = .blue  // 每个 App 自行设置
 
-@MainActor
-@Observable
 public final class RCMColor {
     @MainActor public static let shared = RCMColor()
     

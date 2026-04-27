@@ -16,7 +16,7 @@ public struct HourglassFrame: Shape {
         var path = Path()
         
         let w = rect.width
-        let h = rect.height
+        _ = rect.height
         let neckWidth = w * 0.15
         
         // 上半部分

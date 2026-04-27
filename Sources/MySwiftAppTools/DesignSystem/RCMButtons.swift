@@ -73,7 +73,7 @@ public struct RCMButtonStyle: ButtonStyle {
         case .primary:
             // 主要按钮：橙色填充
             RoundedRectangle(cornerRadius: RCMRadius.md, style: .continuous)
-                .fill(isDisabled ? Color.gray.opacity(0.55) : RCMColor.primary.opacity(opacity))
+                .fill(isDisabled ? Color.gray.opacity(0.55) : RCMColor.shared.primary.opacity(opacity))
         case .secondary:
             // 次要按钮：卡片背景色
             RoundedRectangle(cornerRadius: RCMRadius.md, style: .continuous)
