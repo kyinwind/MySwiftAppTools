@@ -587,7 +587,10 @@ public struct CustomTextView: NSViewRepresentable {
 public struct EscCloseModifier: ViewModifier {
     @Environment(\.dismiss) private var dismiss
     let enabled: Bool
-    
+    // ⭐ 添加这行
+    public init(enabled: Bool = true) {
+        self.enabled = enabled
+    }
     public func body(content: Content) -> some View {
         content.background(
             Group {
