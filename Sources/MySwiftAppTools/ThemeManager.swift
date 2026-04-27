@@ -34,14 +34,22 @@ import SwiftUI
 //#48C6EF：一种柔和的水蓝色
 //#5DADE2：接近湖面反射阳光时的蓝色
 
+@MainActor
 @Observable
 public final class ThemeManager {
+    //如果不更新Theme，就直接用shared
+    public static let shared = ThemeManager()
+    
+    //如果可能更新theme，用这个theme，需要ThemeManager()
     var theme: Theme = Theme()
     
-    func updateTheme(theme:Theme) {
+    public init() {}  // 需要保留，否则单例也无法初始化
+    
+    func updateTheme(theme: Theme) {
         self.theme = theme
     }
 }
+
 
 public struct Theme {
     
