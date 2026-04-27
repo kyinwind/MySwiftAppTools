@@ -55,12 +55,13 @@ import Foundation
  */
 @MainActor
 public final class ProGatekeeper {
-    private static var hasPurchasedPro: () -> Bool = { false }
-    private static var presentPurchase: () -> Void = {}
-    public static var freeLimits: [String: Int] = [:]
-    private static var keyPrefix = "ProGatekeeper"
+    public static let shared = ProGatekeeper()
+    private var hasPurchasedPro: () -> Bool = { false }
+    private var presentPurchase: () -> Void = {}
+    public var freeLimits: [String: Int] = [:]
+    private var keyPrefix = "ProGatekeeper"
     private init() {}
-    public static func configure(
+    public func configure(
         freeLimits: [String: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
@@ -72,7 +73,7 @@ public final class ProGatekeeper {
         self.presentPurchase = presentPurchase
     }
 
-    public static func configure<Feature>(
+    public func configure<Feature>(
         freeLimits: [Feature: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
@@ -86,7 +87,7 @@ public final class ProGatekeeper {
         )
     }
 
-    public static func check(_ feature: String) async -> Bool {
+    public func check(_ feature: String) async -> Bool {
         if allow(feature) {
             consume(feature)
             return true
@@ -96,11 +97,11 @@ public final class ProGatekeeper {
         return false
     }
 
-    public static func check<Feature>(_ feature: Feature) async -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+    public func check<Feature>(_ feature: Feature) async -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
         await check(feature.rawValue)
     }
 
-    public static func allow(_ feature: String) -> Bool {
+    public func allow(_ feature: String) -> Bool {
         if hasPurchasedPro() {
             return true
         }
@@ -114,11 +115,11 @@ public final class ProGatekeeper {
         return currentCount(for: feature) < limit
     }
 
-    public static func allow<Feature>(_ feature: Feature) -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
+    public func allow<Feature>(_ feature: Feature) -> Bool where Feature: RawRepresentable, Feature.RawValue == String {
         allow(feature.rawValue)
     }
 
-    public static func remaining(_ feature: String) -> Int? {
+    public func remaining(_ feature: String) -> Int? {
         guard let limit = freeLimits[feature] else {
             return nil
         }
@@ -132,18 +133,18 @@ public final class ProGatekeeper {
         return max(0, limit - currentCount(for: feature))
     }
 
-    public static func remaining<Feature>(_ feature: Feature) -> Int? where Feature: RawRepresentable, Feature.RawValue == String {
+    public func remaining<Feature>(_ feature: Feature) -> Int? where Feature: RawRepresentable, Feature.RawValue == String {
         remaining(feature.rawValue)
     }
 
-    public static func debugReset() {
+    public func debugReset() {
         for feature in freeLimits.keys {
             DefaultsTools.shared.set(0, for: usageKey(for: feature))
         }
         DefaultsTools.shared.set(Calendar.current.startOfDay(for: Date()), for: lastResetDateKey)
     }
 
-    private static func consume(_ feature: String) {
+    private func consume(_ feature: String) {
         guard !hasPurchasedPro() else { return }
         guard freeLimits[feature] != nil else { return }
 
@@ -154,11 +155,11 @@ public final class ProGatekeeper {
         DefaultsTools.shared.set(current + 1, for: key)
     }
 
-    private static func currentCount(for feature: String) -> Int {
+    private func currentCount(for feature: String) -> Int {
         DefaultsTools.shared.int(usageKey(for: feature)) ?? 0
     }
 
-    private static func resetIfNeeded() {
+    private func resetIfNeeded() {
         let today = Calendar.current.startOfDay(for: Date())
         let last = DefaultsTools.shared.value(for: lastResetDateKey) as Date? ?? .distantPast
 
@@ -173,11 +174,11 @@ public final class ProGatekeeper {
         DefaultsTools.shared.set(today, for: lastResetDateKey)
     }
 
-    private static var lastResetDateKey: DefaultsTools.Key {
+    private var lastResetDateKey: DefaultsTools.Key {
         DefaultsTools.Key(rawValue: "\(keyPrefix).lastResetDate")
     }
 
-    private static func usageKey(for feature: String) -> DefaultsTools.Key {
+    private func usageKey(for feature: String) -> DefaultsTools.Key {
         DefaultsTools.Key(rawValue: "\(keyPrefix).usage.\(feature)")
     }
 }
