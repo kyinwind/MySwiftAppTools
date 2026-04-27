@@ -54,12 +54,12 @@ import Foundation
  - keyPrefix 用于隔离不同 App 或不同功能组在 UserDefaults 中保存的计数。
  */
 @MainActor
-public enum ProGatekeeper {
+public final class ProGatekeeper {
     private static var hasPurchasedPro: () -> Bool = { false }
     private static var presentPurchase: () -> Void = {}
     public static var freeLimits: [String: Int] = [:]
     private static var keyPrefix = "ProGatekeeper"
-
+    private init() {}
     public static func configure(
         freeLimits: [String: Int],
         keyPrefix: String = "ProGatekeeper",
