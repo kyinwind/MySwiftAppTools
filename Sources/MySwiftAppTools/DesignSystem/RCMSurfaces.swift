@@ -246,7 +246,33 @@ public struct RCMPageSection<Content: View>: View {
     }
 }
 
-public struct RCMHeroPanel<Content: View>: View {
+struct RCMHeroPanelBlue<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding(RCMSpacing.xxl)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [
+                        RCMColor.accent.opacity(0.96),
+                        Color(red: 0.278, green: 0.659, blue: 1.0)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: RCMRadius.xl, style: .continuous))
+            .shadow(color: RCMShadow.card, radius: 18, x: 0, y: 10)
+    }
+}
+
+public struct RCMHeroPanelOrange<Content: View>: View {
     let content: Content
 
     public init(@ViewBuilder content: () -> Content) {
