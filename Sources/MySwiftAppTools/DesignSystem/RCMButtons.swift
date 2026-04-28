@@ -219,16 +219,17 @@ public enum RCMSidebarIconPresetTint {
 
 public struct RCMBadge: View {
     public enum Style {
-        case `default`
-        case success
-        case warning
-        case danger
+        case neutral   // 中性：灰色
+        case accent    // 主题色：跟随 primary
+        case success   // 成功：绿色
+        case warning   // 警告：橙色
+        case danger    // 危险：红色
     }
 
     private let text: String
     private let style: Style
 
-    public init(_ text: String, style: Style = .default) {
+    public init(_ text: String, style: Style = .accent) {
         self.text = text
         self.style = style
     }
@@ -245,15 +246,18 @@ public struct RCMBadge: View {
             )
     }
 
+    /// 前景色（文字颜色）
     private var foregroundColor: Color {
         switch style {
-        case .default: return RCMTheme.shared.colors.primaryColor
-        case .success: return RCMTheme.shared.colors.successColor
-        case .warning: return RCMTheme.shared.colors.warningColor
-        case .danger: return RCMTheme.shared.colors.dangerColor
+        case .neutral:  return RCMTheme.shared.colors.textSecondary
+        case .accent:   return RCMTheme.shared.colors.primaryColor
+        case .success:  return RCMTheme.shared.colors.successColor
+        case .warning:  return RCMTheme.shared.colors.warningColor
+        case .danger:   return RCMTheme.shared.colors.dangerColor
         }
     }
 
+    /// 背景色：前景色的 12% 透明度
     private var backgroundColor: Color {
         foregroundColor.opacity(0.12)
     }
