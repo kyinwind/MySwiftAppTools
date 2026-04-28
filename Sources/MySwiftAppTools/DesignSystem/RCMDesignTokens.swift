@@ -71,6 +71,15 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
     public var warningColor: Color { Color(hex: warning) }
     public var dangerColor: Color { Color(hex: danger) }
 
+    // MARK: - 用 Color 直接赋值（更直觉的写法）
+
+    /// 设置主色，支持 `tokens.colors.setPrimary(.orange)` 写法
+    public mutating func setPrimary(_ color: Color) { primary = color.toHex() }
+    public mutating func setAccent(_ color: Color) { accent = color.toHex() }
+    public mutating func setSuccess(_ color: Color) { success = color.toHex() }
+    public mutating func setWarning(_ color: Color) { warning = color.toHex() }
+    public mutating func setDanger(_ color: Color) { danger = color.toHex() }
+
     public var accentSoft: Color { accentColor.opacity(0.12) }
 
     public var textPrimary: Color { Color.primary }
