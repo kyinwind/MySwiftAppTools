@@ -226,10 +226,10 @@ public struct RCMBadge: View {
         case danger    // 危险：红色
     }
 
-    private let text: String
+    private let text: LocalizedStringKey
     private let style: Style
 
-    public init(_ text: String, style: Style = .accent) {
+    public init(_ text: LocalizedStringKey, style: Style = .accent) {
         self.text = text
         self.style = style
     }
