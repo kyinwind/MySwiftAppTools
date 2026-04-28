@@ -16,7 +16,7 @@ public struct RCMPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, RCMTheme.shared.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md)
-                    .fill(RCMTheme.shared.colors.primaryColor)
+                    .fill(RCMTheme.shared.colors.primary)
             )
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
@@ -36,12 +36,12 @@ public struct RCMSecondaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(RCMTheme.shared.typography.bodyStrong)
-            .foregroundColor(RCMTheme.shared.colors.primaryColor)
+            .foregroundColor(RCMTheme.shared.colors.primary)
             .frame(height: RCMTheme.shared.controlSize.buttonHeight)
             .padding(.horizontal, RCMTheme.shared.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md)
-                    .stroke(RCMTheme.shared.colors.primaryColor, lineWidth: 1.5)
+                    .stroke(RCMTheme.shared.colors.primary, lineWidth: 1.5)
             )
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
@@ -61,7 +61,7 @@ public struct RCMSoftButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(RCMTheme.shared.typography.bodyStrong)
-            .foregroundColor(RCMTheme.shared.colors.primaryColor)
+            .foregroundColor(RCMTheme.shared.colors.primary)
             .frame(height: RCMTheme.shared.controlSize.buttonHeight)
             .padding(.horizontal, RCMTheme.shared.spacing.md)
             .background(
@@ -91,7 +91,7 @@ public struct RCMDangerButtonStyle: ButtonStyle {
             .padding(.horizontal, RCMTheme.shared.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md)
-                    .fill(RCMTheme.shared.colors.dangerColor)
+                    .fill(RCMTheme.shared.colors.danger)
             )
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
@@ -206,10 +206,10 @@ public enum RCMSidebarIconPresetTint {
 
     public var color: Color {
         switch self {
-        case .blue: return RCMTheme.shared.colors.primaryColor
-        case .green: return RCMTheme.shared.colors.successColor
-        case .orange: return RCMTheme.shared.colors.warningColor
-        case .red: return RCMTheme.shared.colors.dangerColor
+        case .blue: return RCMTheme.shared.colors.primary
+        case .green: return RCMTheme.shared.colors.success
+        case .orange: return RCMTheme.shared.colors.warning
+        case .red: return RCMTheme.shared.colors.danger
         case .gray: return .secondary
         }
     }
@@ -250,10 +250,10 @@ public struct RCMBadge: View {
     private var foregroundColor: Color {
         switch style {
         case .neutral:  return RCMTheme.shared.colors.textSecondary
-        case .accent:   return RCMTheme.shared.colors.primaryColor
-        case .success:  return RCMTheme.shared.colors.successColor
-        case .warning:  return RCMTheme.shared.colors.warningColor
-        case .danger:   return RCMTheme.shared.colors.dangerColor
+        case .accent:   return RCMTheme.shared.colors.primary
+        case .success:  return RCMTheme.shared.colors.success
+        case .warning:  return RCMTheme.shared.colors.warning
+        case .danger:   return RCMTheme.shared.colors.danger
         }
     }
 
@@ -281,7 +281,7 @@ public struct RCMToggle: View {
                 .foregroundColor(RCMTheme.shared.colors.textPrimary)
             Spacer()
             Toggle("", isOn: $isOn)
-                .toggleStyle(SwitchToggleStyle(tint: RCMTheme.shared.colors.primaryColor))
+                .toggleStyle(SwitchToggleStyle(tint: RCMTheme.shared.colors.primary))
         }
         .padding(.vertical, RCMTheme.shared.spacing.sm)
     }

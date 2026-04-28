@@ -10,11 +10,11 @@ import AppKit
 /// 点击颜色块时打开 macOS 系统 NSColorPanel，选择后自动回调
 @MainActor
 private struct RCMSystemColorWell: NSViewRepresentable {
-    @Binding var hexString: String
+    @Binding var color: Color
 
     func makeNSView(context: Context) -> NSColorWell {
         let well = NSColorWell(frame: .init(x: 0, y: 0, width: 28, height: 24))
-        well.color = NSColor(Color(hex: hexString))
+        well.color = NSColor(color)
         well.isBordered = true
         well.action = #selector(Coordinator.colorChanged(_:))
         well.target = context.coordinator
@@ -22,9 +22,9 @@ private struct RCMSystemColorWell: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSColorWell, context: Context) {
-        // 外部 hex 变化时同步到 NSColorWell（避免循环）
-        if nsView.color.toHexRGB() != hexString {
-            nsView.color = NSColor(Color(hex: hexString))
+        // 外部 Color 变化时同步到 NSColorWell（避免循环）
+        if nsView.color != NSColor(color) {
+            nsView.color = NSColor(color)
         }
     }
 
@@ -37,7 +37,7 @@ private struct RCMSystemColorWell: NSViewRepresentable {
 
         @objc func colorChanged(_ sender: NSColorWell) {
             // 用户在系统面板中选择了新颜色（已在 MainActor 上）
-            parent.hexString = sender.color.toHexRGB()
+            parent.color = Color(sender.color)
         }
     }
 }
@@ -159,11 +159,11 @@ public struct RCMDesignSystemPreview: View {
                 // 颜色预览
                 previewSection("颜色") {
                     VStack(alignment: .leading, spacing: 8) {
-                        colorSwatchRow("Primary", hex: draftColors.primary)
-                        colorSwatchRow("Accent", hex: draftColors.accent)
-                        colorSwatchRow("Success", hex: draftColors.success)
-                        colorSwatchRow("Warning", hex: draftColors.warning)
-                        colorSwatchRow("Danger", hex: draftColors.danger)
+                        colorSwatchRow("Primary", color: draftColors.primary)
+                        colorSwatchRow("Accent", color: draftColors.accent)
+                        colorSwatchRow("Success", color: draftColors.success)
+                        colorSwatchRow("Warning", color: draftColors.warning)
+                        colorSwatchRow("Danger", color: draftColors.danger)
                     }
                 }
 
@@ -190,10 +190,10 @@ public struct RCMDesignSystemPreview: View {
                     VStack(alignment: .leading, spacing: draftSpacing.xs) {
                         Text("页面大标题 Hero")
                             .font(previewFont(draftTypography.heroSize, weight: draftTypography.heroWeight))
-                            .foregroundStyle(Color(hex: draftColors.primary))
+                            .foregroundStyle(draftColors.primary)
                         Text("章节标题 Section")
                             .font(previewFont(draftTypography.sectionTitleSize, weight: draftTypography.sectionTitleWeight))
-                            .foregroundStyle(Color(hex: draftColors.primary))
+                            .foregroundStyle(draftColors.primary)
                         Text("正文内容 Body")
                             .font(previewFont(draftTypography.bodySize, weight: draftTypography.bodyWeight))
                             .foregroundStyle(.primary)
@@ -267,13 +267,13 @@ public struct RCMDesignSystemPreview: View {
 
     private var colorEditor: some View {
         editorSection("颜色") {
-            colorRow("Primary", hex: $draftColors.primary)
-            colorRow("Accent", hex: $draftColors.accent)
-            colorRow("Success", hex: $draftColors.success)
-            colorRow("Warning", hex: $draftColors.warning)
-            colorRow("Danger", hex: $draftColors.danger)
-            colorRow("Hero Start", hex: $draftHeroGradient.startColor)
-            colorRow("Hero End", hex: $draftHeroGradient.endColor)
+            colorRow("Primary", color: $draftColors.primary)
+            colorRow("Accent", color: $draftColors.accent)
+            colorRow("Success", color: $draftColors.success)
+            colorRow("Warning", color: $draftColors.warning)
+            colorRow("Danger", color: $draftColors.danger)
+            colorRow("Hero Start", color: $draftHeroGradient.startColor)
+            colorRow("Hero End", color: $draftHeroGradient.endColor)
         }
     }
 
@@ -345,23 +345,22 @@ public struct RCMDesignSystemPreview: View {
         }
     }
 
-    private func colorRow(_ label: String, hex: Binding<String>) -> some View {
+    private func colorRow(_ label: String, color: Binding<Color>) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption)
                 .frame(width: 80, alignment: .leading)
 
             // 点击弹出 macOS 系统颜色选择器（NSColorPanel）
-            RCMSystemColorWell(hexString: hex)
+            RCMSystemColorWell(color: color)
                 .frame(width: 28, height: 24)
                 .help("点击选择颜色")
 
-            TextField("", text: hex)
+            // hex 文本框（只读显示，方便复制）
+            Text(color.wrappedValue.toHex())
                 .font(.system(.caption, design: .monospaced))
-                .textFieldStyle(.roundedBorder)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // 手工输入时同步颜色块
-                .onChange(of: hex.wrappedValue) { _, _ in }
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
     }
 
@@ -400,15 +399,15 @@ public struct RCMDesignSystemPreview: View {
 
     // MARK: - 预览辅助视图
 
-    private func colorSwatchRow(_ label: String, hex: String) -> some View {
+    private func colorSwatchRow(_ label: String, color: Color) -> some View {
         HStack(spacing: 8) {
             Circle()
-                .fill(Color(hex: hex))
+                .fill(color)
                 .frame(width: 20, height: 20)
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(hex)
+            Text(color.toHex())
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
@@ -429,7 +428,7 @@ public struct RCMDesignSystemPreview: View {
     private func roundedRectPreview(label: String, radius: CGFloat) -> some View {
         VStack(spacing: 4) {
             RoundedRectangle(cornerRadius: radius)
-                .fill(Color(hex: draftColors.primary))
+                .fill(draftColors.primary)
                 .frame(width: 48, height: 48)
             Text("\(Int(radius))")
                 .font(.system(size: 10, design: .monospaced))
@@ -448,31 +447,31 @@ public struct RCMDesignSystemPreview: View {
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(Color(hex: draftColors.primary))
+                    .fill(draftColors.primary)
             )
     }
 
     private func previewSecondaryButton() -> some View {
         Button("次要") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.primary))
+            .foregroundColor(draftColors.primary)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .stroke(Color(hex: draftColors.primary), lineWidth: 1.5)
+                    .stroke(draftColors.primary, lineWidth: 1.5)
             )
     }
 
     private func previewSoftButton() -> some View {
         Button("柔和") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.primary))
+            .foregroundColor(draftColors.primary)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(Color(hex: draftColors.accent).opacity(0.12))
+                    .fill(draftColors.accent.opacity(0.12))
             )
     }
 
@@ -484,44 +483,44 @@ public struct RCMDesignSystemPreview: View {
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(Color(hex: draftColors.danger))
+                    .fill(draftColors.danger)
             )
     }
 
     private func previewAccentBadge() -> some View {
         Text("Pro")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.primary))
+            .foregroundColor(draftColors.primary)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(Color(hex: draftColors.primary).opacity(0.12)))
+            .background(Capsule().fill(draftColors.primary.opacity(0.12)))
     }
 
     private func previewSuccessBadge() -> some View {
         Text("成功")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.success))
+            .foregroundColor(draftColors.success)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(Color(hex: draftColors.success).opacity(0.12)))
+            .background(Capsule().fill(draftColors.success.opacity(0.12)))
     }
 
     private func previewWarningBadge() -> some View {
         Text("警告")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.warning))
+            .foregroundColor(draftColors.warning)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(Color(hex: draftColors.warning).opacity(0.12)))
+            .background(Capsule().fill(draftColors.warning.opacity(0.12)))
     }
 
     private func previewDangerBadge() -> some View {
         Text("危险")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(Color(hex: draftColors.danger))
+            .foregroundColor(draftColors.danger)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(Color(hex: draftColors.danger).opacity(0.12)))
+            .background(Capsule().fill(draftColors.danger.opacity(0.12)))
     }
 
     private func sidebarPreview() -> some View {
@@ -541,12 +540,12 @@ public struct RCMDesignSystemPreview: View {
         HStack(spacing: draftSpacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isSelected ? Color(hex: draftColors.accent) : .secondary)
+                .foregroundStyle(isSelected ? draftColors.accent : .secondary)
                 .frame(width: 20)
 
             Text(label)
                 .font(.system(size: draftTypography.body15Size))
-                .foregroundStyle(isSelected ? Color(hex: draftColors.accent) : .primary)
+                .foregroundStyle(isSelected ? draftColors.accent : .primary)
 
             Spacer()
         }
@@ -554,7 +553,7 @@ public struct RCMDesignSystemPreview: View {
         .padding(.vertical, draftSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: draftRadius.sm)
-                .fill(isSelected ? Color(hex: draftColors.accent).opacity(0.12) : Color.clear)
+                .fill(isSelected ? draftColors.accent.opacity(0.12) : Color.clear)
         )
     }
 
@@ -571,7 +570,7 @@ public struct RCMDesignSystemPreview: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [Color(hex: draftHeroGradient.startColor), Color(hex: draftHeroGradient.endColor)],
+                colors: [draftHeroGradient.startColor, draftHeroGradient.endColor],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -609,7 +608,7 @@ public struct RCMDesignSystemPreview: View {
             Spacer()
             Text("值")
                 .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-                .foregroundStyle(Color(hex: draftColors.primary))
+                .foregroundStyle(draftColors.primary)
         }
         .padding(.vertical, draftSpacing.sm)
         .frame(minHeight: draftControlSize.rowMinHeight)

@@ -193,9 +193,9 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
         name: "默认蓝色",
         tokens: {
             var t = RCMDesignTokens()
-            t.colors.primary = "#3185FF"
-            t.colors.accent = "#3185FF"
-            t.heroGradient = RCMDesignTokens.heroGradientBlue
+            t.colors.primary = Color(hex: "#3185FF")
+            t.colors.accent  = Color(hex: "#3185FF")
+            t.heroGradient   = RCMDesignTokens.heroGradientBlue
             return t
         }()
     )
@@ -206,12 +206,12 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
         name: "RightClickMate",
         tokens: {
             var t = RCMDesignTokens()
-            t.colors.primary = "#FF6B00"
-            t.colors.accent = "#FF6B00"
-            t.colors.success = "#27B15A"
-            t.colors.warning = "#F9B135"
-            t.colors.danger = "#E54444"
-            t.heroGradient = RCMDesignTokens.heroGradientOrange
+            t.colors.primary = Color(hex: "#FF6B00")
+            t.colors.accent  = Color(hex: "#FF6B00")
+            t.colors.success = Color(hex: "#27B15A")
+            t.colors.warning = Color(hex: "#F9B135")
+            t.colors.danger  = Color(hex: "#E54444")
+            t.heroGradient   = RCMDesignTokens.heroGradientOrange
             return t
         }()
     )
@@ -222,12 +222,12 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
         name: "VideoHero",
         tokens: {
             var t = RCMDesignTokens()
-            t.colors.primary = "#8B5CF6"
-            t.colors.accent = "#8B5CF6"
-            t.colors.success = "#10B981"
-            t.colors.warning = "#F59E0B"
-            t.colors.danger = "#EF4444"
-            t.heroGradient = RCMDesignTokens.heroGradientPurple
+            t.colors.primary = Color(hex: "#8B5CF6")
+            t.colors.accent  = Color(hex: "#8B5CF6")
+            t.colors.success = Color(hex: "#10B981")
+            t.colors.warning = Color(hex: "#F59E0B")
+            t.colors.danger  = Color(hex: "#EF4444")
+            t.heroGradient   = RCMDesignTokens.heroGradientPurple
             return t
         }()
     )

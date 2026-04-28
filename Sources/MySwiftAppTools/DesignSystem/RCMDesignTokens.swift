@@ -45,17 +45,22 @@ extension Color {
 
 
 // MARK: - RCMColorTokens：所有可配置颜色
+//
+// 公开属性直接是 Color 类型，方便使用。
+// JSON 编解码通过自定义 Codable 实现（内部用 hex 字符串中转）。
 
 public struct RCMColorTokens: Codable, Equatable, Sendable {
-    public var primary: String = "#3185FF"
-    public var accent: String = "#3185FF"
-    public var success: String = "#27B15A"
-    public var warning: String = "#F9B135"
-    public var danger: String = "#E54444"
+    public var primary: Color = .blue
+    public var accent: Color = .blue
+    public var success: Color = .green
+    public var warning: Color = .orange
+    public var danger: Color = .red
 
     public init() {}
 
-    public init(primary: String, accent: String, success: String, warning: String, danger: String) {
+    /// 用 Color 直接初始化
+    public init(primary: Color = .blue, accent: Color = .blue,
+                success: Color = .green, warning: Color = .orange, danger: Color = .red) {
         self.primary = primary
         self.accent = accent
         self.success = success
@@ -63,25 +68,9 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
         self.danger = danger
     }
 
-    // MARK: - 运行时 Color 值
+    // MARK: - 派生色
 
-    public var primaryColor: Color { Color(hex: primary) }
-    public var accentColor: Color { Color(hex: accent) }
-    public var successColor: Color { Color(hex: success) }
-    public var warningColor: Color { Color(hex: warning) }
-    public var dangerColor: Color { Color(hex: danger) }
-
-    // MARK: - 用 Color 直接赋值（更直觉的写法）
-
-    /// 设置主色，支持 `tokens.colors.setPrimary(.orange)` 写法
-    public mutating func setPrimary(_ color: Color) { primary = color.toHex() }
-    public mutating func setAccent(_ color: Color) { accent = color.toHex() }
-    public mutating func setSuccess(_ color: Color) { success = color.toHex() }
-    public mutating func setWarning(_ color: Color) { warning = color.toHex() }
-    public mutating func setDanger(_ color: Color) { danger = color.toHex() }
-
-    public var accentSoft: Color { accentColor.opacity(0.12) }
-
+    public var accentSoft: Color { accent.opacity(0.12) }
     public var textPrimary: Color { Color.primary }
     public var textSecondary: Color { Color.secondary }
     public var textTertiary: Color { Color.secondary.opacity(0.72) }
@@ -99,6 +88,32 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
     public var subtleFill: Color { Color(.secondarySystemFill) }
     public var border: Color { Color.primary.opacity(0.10) }
     #endif
+
+    // MARK: - Codable（hex 字符串 ↔ Color）
+
+    private enum CodingKeys: String, CodingKey {
+        case primary, accent, success, warning, danger
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // JSON 中存的是 hex 字符串，解码时转成 Color
+        primary  = try Color(hex: container.decode(String.self, forKey: .primary))
+        accent   = try Color(hex: container.decode(String.self, forKey: .accent))
+        success  = try Color(hex: container.decode(String.self, forKey: .success))
+        warning  = try Color(hex: container.decode(String.self, forKey: .warning))
+        danger   = try Color(hex: container.decode(String.self, forKey: .danger))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        // 编码时将 Color 转回 hex 字符串
+        try container.encode(primary.toHex(),  forKey: .primary)
+        try container.encode(accent.toHex(),   forKey: .accent)
+        try container.encode(success.toHex(),  forKey: .success)
+        try container.encode(warning.toHex(),  forKey: .warning)
+        try container.encode(danger.toHex(),   forKey: .danger)
+    }
 }
 
 
@@ -275,22 +290,39 @@ public struct RCMControlSizeTokens: Codable, Equatable, Sendable {
 // MARK: - RCMHeroGradient
 
 public struct RCMHeroGradient: Codable, Equatable, Sendable {
-    public var startColor: String = "#3185FF"
-    public var endColor: String = "#0A6BFF"
+    public var startColor: Color = .blue
+    public var endColor: Color = .blue
 
     public init() {}
 
-    public init(startColor: String, endColor: String) {
+    /// 用 Color 直接初始化
+    public init(startColor: Color, endColor: Color) {
         self.startColor = startColor
         self.endColor = endColor
     }
 
     public var gradient: LinearGradient {
         LinearGradient(
-            colors: [Color(hex: startColor), Color(hex: endColor)],
+            colors: [startColor, endColor],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+
+    // MARK: - Codable（hex 字符串 ↔ Color）
+
+    private enum CodingKeys: String, CodingKey { case startColor, endColor }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        startColor = try Color(hex: container.decode(String.self, forKey: .startColor))
+        endColor   = try Color(hex: container.decode(String.self, forKey: .endColor))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(startColor.toHex(), forKey: .startColor)
+        try container.encode(endColor.toHex(),   forKey: .endColor)
     }
 }
 
@@ -312,17 +344,17 @@ public struct RCMDesignTokens: Codable, Equatable, Sendable {
     // MARK: - 预设 Hero 渐变
 
     public static let heroGradientBlue = RCMHeroGradient(
-        startColor: "#3185FF",
-        endColor: "#0A6BFF"
+        startColor: Color(hex: "#3185FF"),
+        endColor:   Color(hex: "#0A6BFF")
     )
 
     public static let heroGradientOrange = RCMHeroGradient(
-        startColor: "#FF6B00",
-        endColor: "#FF3D00"
+        startColor: Color(hex: "#FF6B00"),
+        endColor:   Color(hex: "#FF3D00")
     )
 
     public static let heroGradientPurple = RCMHeroGradient(
-        startColor: "#8B5CF6",
-        endColor: "#6D28D9"
+        startColor: Color(hex: "#8B5CF6"),
+        endColor:   Color(hex: "#6D28D9")
     )
 }

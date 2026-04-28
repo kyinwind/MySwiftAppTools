@@ -149,7 +149,7 @@ public struct RCMSidebarItemButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? RCMTheme.shared.colors.accentColor : RCMTheme.shared.colors.textPrimary)
+        .foregroundStyle(isSelected ? RCMTheme.shared.colors.accent : RCMTheme.shared.colors.textPrimary)
     }
 }
 
