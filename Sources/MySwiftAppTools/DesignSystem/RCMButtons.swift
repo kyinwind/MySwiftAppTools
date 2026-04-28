@@ -202,7 +202,7 @@ public struct RCMSidebarIcon: View {
 // MARK: - RCMSidebarIconPresetTint
 
 public enum RCMSidebarIconPresetTint {
-    case blue, green, orange, red, gray
+    case blue, green, orange, red, gray,pink,purple,teal,indigo
 
     public var color: Color {
         switch self {
@@ -211,6 +211,10 @@ public enum RCMSidebarIconPresetTint {
         case .orange: return RCMTheme.shared.colors.warning
         case .red: return RCMTheme.shared.colors.danger
         case .gray: return .secondary
+        case .pink: return .pink
+        case .purple: return .purple
+        case .teal: return .teal
+        case .indigo: return .indigo
         }
     }
 }
