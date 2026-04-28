@@ -1,84 +1,268 @@
 import SwiftUI
-
-
-// MARK: - App 启动时配置
-// 在 App.init 或 AppDelegate.applicationDidFinishLaunching 中：
-// RCMColor.shared.primary = .blue  // 每个 App 自行设置
-
-public final class RCMColor {
-    @MainActor public static let shared = RCMColor()
-    
-    // 可配置的主色调，每个 App 启动时设置
-    public var primary: Color = Color.blue
-    
-    public static let accent = Color(red: 0.192, green: 0.514, blue: 1.0)
-    public static let accentSoft = Color.accentColor.opacity(0.12)
-    public static let success = Color(red: 0.153, green: 0.694, blue: 0.353)
-    public static let warning = Color(red: 0.976, green: 0.694, blue: 0.208)
-    public static let danger = Color(red: 0.898, green: 0.267, blue: 0.267)
-    
-    public static let textPrimary = Color.primary
-    public static let textSecondary = Color.secondary
-    public static let textTertiary = Color.secondary.opacity(0.72)
-    
-#if os(macOS)
-    public static let pageBackground = Color(nsColor: .windowBackgroundColor)
-    public static let cardBackground = Color(nsColor: .controlBackgroundColor)
-    public static let cardGrayBackground = Color(.secondarySystemFill)
-    public static let subtleFill = Color(nsColor: .quaternaryLabelColor).opacity(0.08)
-    public static let border = Color.primary.opacity(0.10)
-#else
-    public static let pageBackground = Color(.systemBackground)
-    public static let cardBackground = Color(.secondarySystemBackground)
-    public static let cardGrayBackground = Color(.secondarySystemFill)
-    public static let subtleFill = Color(.secondarySystemFill)
-    public static let border = Color.primary.opacity(0.10)
+#if canImport(AppKit)
+import AppKit
 #endif
-    
+
+
+// MARK: - Color 扩展：支持 hex 字符串解析
+
+extension Color {
+    /// 从 hex 字符串解析颜色，支持 "#RRGGBB" 和 "#AARRGGBB"
+    public init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+
+    /// 将 Color 转换为 hex 字符串（保留到 RGB）
+    public func toHex() -> String {
+        guard let components = NSColor(self).cgColor.components else { return "#000000" }
+        let r = Int((components[0] * 255).rounded())
+        let g = Int((components[1] * 255).rounded())
+        let b = Int((components[2] * 255).rounded())
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
+
+// MARK: - RCMColorTokens：所有可配置颜色
+
+public struct RCMColorTokens: Codable, Equatable, Sendable {
+    public var primary: String = "#3185FF"
+    public var accent: String = "#3185FF"
+    public var success: String = "#27B15A"
+    public var warning: String = "#F9B135"
+    public var danger: String = "#E54444"
+
+    public init() {}
+
+    public init(primary: String, accent: String, success: String, warning: String, danger: String) {
+        self.primary = primary
+        self.accent = accent
+        self.success = success
+        self.warning = warning
+        self.danger = danger
+    }
+
+    // MARK: - 运行时 Color 值
+
+    public var primaryColor: Color { Color(hex: primary) }
+    public var accentColor: Color { Color(hex: accent) }
+    public var successColor: Color { Color(hex: success) }
+    public var warningColor: Color { Color(hex: warning) }
+    public var dangerColor: Color { Color(hex: danger) }
+
+    public var accentSoft: Color { accentColor.opacity(0.12) }
+
+    public var textPrimary: Color { Color.primary }
+    public var textSecondary: Color { Color.secondary }
+    public var textTertiary: Color { Color.secondary.opacity(0.72) }
+
+    #if os(macOS)
+    public var pageBackground: Color { Color(nsColor: .windowBackgroundColor) }
+    public var cardBackground: Color { Color(nsColor: .controlBackgroundColor) }
+    public var cardGrayBackground: Color { Color(.secondarySystemFill) }
+    public var subtleFill: Color { Color(nsColor: .quaternaryLabelColor).opacity(0.08) }
+    public var border: Color { Color.primary.opacity(0.10) }
+    #else
+    public var pageBackground: Color { Color(.systemBackground) }
+    public var cardBackground: Color { Color(.secondarySystemBackground) }
+    public var cardGrayBackground: Color { Color(.secondarySystemFill) }
+    public var subtleFill: Color { Color(.secondarySystemFill) }
+    public var border: Color { Color.primary.opacity(0.10) }
+    #endif
+}
+
+
+// MARK: - RCMSpacingTokens
+
+public struct RCMSpacingTokens: Codable, Equatable, Sendable {
+    public var xxs: CGFloat = 4
+    public var xs: CGFloat = 8
+    public var sm: CGFloat = 12
+    public var md: CGFloat = 16
+    public var lg: CGFloat = 20
+    public var xl: CGFloat = 24
+    public var xxl: CGFloat = 32
+    public var xxxl: CGFloat = 40
+
     public init() {}
 }
 
-public enum RCMSpacing {
-    public static let xxs: CGFloat = 4
-    public static let xs: CGFloat = 8
-    public static let sm: CGFloat = 12
-    public static let md: CGFloat = 16
-    public static let lg: CGFloat = 20
-    public static let xl: CGFloat = 24
-    public static let xxl: CGFloat = 32
-    public static let xxxl: CGFloat = 40
+
+// MARK: - RCMRadiusTokens
+
+public struct RCMRadiusTokens: Codable, Equatable, Sendable {
+    public var sm: CGFloat = 8
+    public var md: CGFloat = 12
+    public var lg: CGFloat = 16
+    public var xl: CGFloat = 24
+
+    public init() {}
 }
 
-public enum RCMRadius {
-    public static let sm: CGFloat = 8
-    public static let md: CGFloat = 12
-    public static let lg: CGFloat = 16
-    public static let xl: CGFloat = 24
+
+// MARK: - RCMTypographyTokens（只存数值，运行时生成 Font）
+
+public struct RCMTypographyTokens: Codable, Equatable, Sendable {
+    public var heroSize: CGFloat = 30
+    public var heroWeight: String = "bold"
+
+    public var pageTitleSize: CGFloat = 17
+    public var pageTitleWeight: String = "bold"
+
+    public var sectionTitleSize: CGFloat = 15
+    public var sectionTitleWeight: String = "semibold"
+
+    public var body15Size: CGFloat = 15
+    public var body15Weight: String = "regular"
+
+    public var body15StrongSize: CGFloat = 15
+    public var body15StrongWeight: String = "semibold"
+
+    public var bodySize: CGFloat = 13
+    public var bodyWeight: String = "regular"
+
+    public var bodyStrongSize: CGFloat = 13
+    public var bodyStrongWeight: String = "semibold"
+
+    public var captionSize: CGFloat = 12
+    public var captionWeight: String = "regular"
+
+    public var captionStrongSize: CGFloat = 12
+    public var captionStrongWeight: String = "semibold"
+
+    public var monoCaptionSize: CGFloat = 11
+    public var monoCaptionWeight: String = "regular"
+
+    public init() {}
+
+    // MARK: - 运行时 Font 值
+
+    private func weight(from string: String) -> Font.Weight {
+        switch string {
+        case "bold": return .bold
+        case "semibold": return .semibold
+        case "medium": return .medium
+        case "regular": return .regular
+        case "light": return .light
+        case "thin": return .thin
+        default: return .regular
+        }
+    }
+
+    public var hero: Font {
+        .system(size: heroSize, weight: weight(from: heroWeight), design: .rounded)
+    }
+    public var pageTitle: Font {
+        .system(size: pageTitleSize, weight: weight(from: pageTitleWeight), design: .rounded)
+    }
+    public var sectionTitle: Font {
+        .system(size: sectionTitleSize, weight: weight(from: sectionTitleWeight))
+    }
+    public var body15: Font {
+        .system(size: body15Size, weight: weight(from: body15Weight))
+    }
+    public var body15Strong: Font {
+        .system(size: body15StrongSize, weight: weight(from: body15StrongWeight))
+    }
+    public var body: Font {
+        .system(size: bodySize, weight: weight(from: bodyWeight))
+    }
+    public var bodyStrong: Font {
+        .system(size: bodyStrongSize, weight: weight(from: bodyStrongWeight))
+    }
+    public var caption: Font {
+        .system(size: captionSize, weight: weight(from: captionWeight))
+    }
+    public var captionStrong: Font {
+        .system(size: captionStrongSize, weight: weight(from: captionStrongWeight))
+    }
+    public var monoCaption: Font {
+        .system(size: monoCaptionSize, weight: weight(from: monoCaptionWeight), design: .monospaced)
+    }
 }
 
-public enum RCMStroke {
-    public static let hairline: CGFloat = 1
+
+// MARK: - RCMControlSizeTokens
+
+public struct RCMControlSizeTokens: Codable, Equatable, Sendable {
+    public var buttonHeight: CGFloat = 34
+    public var fieldHeight: CGFloat = 34
+    public var rowMinHeight: CGFloat = 52
+
+    public init() {}
 }
 
-public enum RCMShadow {
-    public static let card = Color.black.opacity(0.06)
+
+// MARK: - RCMHeroGradient
+
+public struct RCMHeroGradient: Codable, Equatable, Sendable {
+    public var startColor: String = "#3185FF"
+    public var endColor: String = "#0A6BFF"
+
+    public init() {}
+
+    public init(startColor: String, endColor: String) {
+        self.startColor = startColor
+        self.endColor = endColor
+    }
+
+    public var gradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(hex: startColor), Color(hex: endColor)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
 }
 
-public enum RCMTypography {
-    public static let hero = Font.system(size: 30, weight: .bold, design: .rounded)
-    public static let pageTitle = Font.system(size: 17, weight: .bold, design: .rounded)
-    public static let sectionTitle = Font.system(size: 15, weight: .semibold)
-    public static let body15 = Font.system(size: 15, weight: .regular)
-    public static let body15Strong = Font.system(size: 15, weight: .semibold)
-    public static let body = Font.system(size: 13, weight: .regular)
-    public static let bodyStrong = Font.system(size: 13, weight: .semibold)
-    public static let caption = Font.system(size: 12, weight: .regular)
-    public static let captionStrong = Font.system(size: 12, weight: .semibold)
-    public static let monoCaption = Font.system(size: 11, weight: .regular, design: .monospaced)
-}
 
-public enum RCMControlSize {
-    public static let buttonHeight: CGFloat = 34
-    public static let fieldHeight: CGFloat = 34
-    public static let rowMinHeight: CGFloat = 52
+// MARK: - RCMDesignTokens：完整设计 Token 集合
+
+public struct RCMDesignTokens: Codable, Equatable, Sendable {
+    public var colors: RCMColorTokens = RCMColorTokens()
+    public var spacing: RCMSpacingTokens = RCMSpacingTokens()
+    public var radius: RCMRadiusTokens = RCMRadiusTokens()
+    public var typography: RCMTypographyTokens = RCMTypographyTokens()
+    public var controlSize: RCMControlSizeTokens = RCMControlSizeTokens()
+    public var heroGradient: RCMHeroGradient = RCMHeroGradient()
+
+    public init() {}
+
+    // MARK: - 预设 Hero 渐变
+
+    public static let heroGradientBlue = RCMHeroGradient(
+        startColor: "#3185FF",
+        endColor: "#0A6BFF"
+    )
+
+    public static let heroGradientOrange = RCMHeroGradient(
+        startColor: "#FF6B00",
+        endColor: "#FF3D00"
+    )
+
+    public static let heroGradientPurple = RCMHeroGradient(
+        startColor: "#8B5CF6",
+        endColor: "#6D28D9"
+    )
 }

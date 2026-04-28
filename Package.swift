@@ -24,7 +24,8 @@ let package = Package(
             exclude: ["DesignSystem/README.md"],
             resources: [
                 .process("Resources/en.lproj"),
-                .process("Resources/zh-Hans.lproj")
+                .process("Resources/zh-Hans.lproj"),
+                .copy("DesignSystem/RCMDefaultTheme.json")
             ]
         ),
 

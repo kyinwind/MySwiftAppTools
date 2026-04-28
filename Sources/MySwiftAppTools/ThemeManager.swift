@@ -99,40 +99,7 @@ public extension Color {
     static let myYellow3 = Color(hex: "#E1AD01")
 }
 
-// UIColor 扩展用于从十六进制字符串创建颜色
-public extension Color {
-    init?(hex: String) {
-        let r, g, b, a: Double
-        
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-        
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb) // 修复此行
-        
-        switch hexSanitized.count {
-        case 3: // RGB (12-bit)
-            r = Double((rgb >> 8) & 0xF) / 15.0
-            g = Double((rgb >> 4) & 0xF) / 15.0
-            b = Double(rgb & 0xF) / 15.0
-            a = 1
-        case 6: // RGB (24-bit)
-            r = Double((rgb >> 16) & 0xFF) / 255.0
-            g = Double((rgb >> 8) & 0xFF) / 255.0
-            b = Double(rgb & 0xFF) / 255.0
-            a = 1
-        case 8: // RGBA (32-bit)
-            r = Double((rgb >> 24) & 0xFF) / 255.0
-            g = Double((rgb >> 16) & 0xFF) / 255.0
-            b = Double((rgb >> 8) & 0xFF) / 255.0
-            a = Double(rgb & 0xFF) / 255.0
-        default:
-            return nil
-        }
-        
-        self.init(red: r, green: g, blue: b, opacity: a)
-    }
-}
+
 
 //MARK: 自定义的组件
 
@@ -1000,7 +967,7 @@ public struct ActionBarButtonDisplayStyle:  Sendable {
     public init(
         backgroundColor: Color,
         foregroundColor: Color,
-        cornerRadius: CGFloat = RCMRadius.md
+        cornerRadius: CGFloat = RCMTheme.shared.radius.md
     ) {
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
@@ -1020,10 +987,10 @@ private struct ActionBarDisplayButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(RCMTypography.bodyStrong)
+            .font(RCMTheme.shared.typography.bodyStrong)
             .foregroundStyle(displayStyle.foregroundColor.opacity(isEnabled ? 1 : 0.72))
-            .frame(height: RCMControlSize.buttonHeight)
-            .padding(.horizontal, RCMSpacing.md)
+            .frame(height: RCMTheme.shared.controlSize.buttonHeight)
+            .padding(.horizontal, RCMTheme.shared.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: displayStyle.cornerRadius, style: .continuous)
                     .fill(displayStyle.backgroundColor.opacity(backgroundOpacity(isPressed: configuration.isPressed)))

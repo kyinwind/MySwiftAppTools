@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - RCMSettingRow
+
 public struct RCMSettingRow<Trailing: View>: View {
     let title: LocalizedStringKey
     let subtitle: String?
@@ -16,54 +18,58 @@ public struct RCMSettingRow<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .center, spacing: RCMSpacing.md) {
-            VStack(alignment: .leading, spacing: RCMSpacing.xxs) {
+        HStack(alignment: .center, spacing: RCMTheme.shared.spacing.md) {
+            VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xxs) {
                 Text(title)
-                    .font(RCMTypography.bodyStrong)
-                    .foregroundStyle(RCMColor.textPrimary)
+                    .font(RCMTheme.shared.typography.bodyStrong)
+                    .foregroundStyle(RCMTheme.shared.colors.textPrimary)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(RCMTypography.caption)
-                        .foregroundStyle(RCMColor.textSecondary)
+                        .font(RCMTheme.shared.typography.caption)
+                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
 
-            Spacer(minLength: RCMSpacing.md)
+            Spacer(minLength: RCMTheme.shared.spacing.md)
             trailing
         }
-        .frame(minHeight: RCMControlSize.rowMinHeight)
+        .frame(minHeight: RCMTheme.shared.controlSize.rowMinHeight)
     }
 }
+
+// MARK: - RCMValueRow
 
 public struct RCMValueRow: View {
     let title: LocalizedStringKey
     let value: String
     let tone: Color
 
-    public init(_ title: LocalizedStringKey, value: String, tone: Color = RCMColor.textPrimary) {
+    public init(_ title: LocalizedStringKey, value: String, tone: Color = RCMTheme.shared.colors.textPrimary) {
         self.title = title
         self.value = value
         self.tone = tone
     }
 
     public var body: some View {
-        HStack(spacing: RCMSpacing.md) {
+        HStack(spacing: RCMTheme.shared.spacing.md) {
             Text(title)
-                .font(RCMTypography.body)
-                .foregroundStyle(RCMColor.textSecondary)
+                .font(RCMTheme.shared.typography.body)
+                .foregroundStyle(RCMTheme.shared.colors.textSecondary)
 
             Spacer()
 
             Text(value)
-                .font(RCMTypography.bodyStrong)
+                .font(RCMTheme.shared.typography.bodyStrong)
                 .foregroundStyle(tone)
         }
         .frame(minHeight: 28)
     }
 }
+
+// MARK: - RCMInlineField
 
 public struct RCMInlineField<Content: View>: View {
     let label: LocalizedStringKey
@@ -75,7 +81,7 @@ public struct RCMInlineField<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: RCMSpacing.xs) {
+        VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xs) {
             RCMLabelText(label)
             content
         }
