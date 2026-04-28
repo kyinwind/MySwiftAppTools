@@ -136,6 +136,12 @@ public final class RCMTheme: @unchecked Sendable {
     /// Hero 渐变 Token 快捷访问
     public var heroGradient: RCMHeroGradient { tokens.heroGradient }
 
+    /// stroke Token 快捷访问
+    public var stroke: RCMStrokeTokens { tokens.stroke }
+    
+    /// 阴影 Token 快捷访问
+    public var shadow: RCMShadowTokens { tokens.shadow }
+
     // MARK: - 导出 JSON
 
     /// 将当前 Token 导出为 JSON Data

@@ -117,8 +117,58 @@ public struct RCMSpacingTokens: Codable, Equatable, Sendable {
     public init() {}
 }
 
+// MARK: - RCMStrokeTokens
 
-// MARK: - RCMRadiusTokens
+public struct RCMStrokeTokens: Codable, Equatable, Sendable {
+    public var hairline: CGFloat = 1
+    public init() {}
+}
+// MARK: - RCMShadowTokens
+
+public struct RCMShadowTokens: Codable, Equatable, Sendable {
+    /// 阴影颜色（hex 字符串）
+    public var color: String = "#000000"
+    /// 透明度 (0.0 ~ 1.0)
+    public var opacity: Double = 0.06
+    /// 模糊半径
+    public var radius: CGFloat = 18
+    /// X 偏移
+    public var x: CGFloat = 0
+    /// Y 偏移
+    public var y: CGFloat = 10
+
+    public init() {}
+
+    public init(color: String, opacity: Double = 0.06, radius: CGFloat = 18, x: CGFloat = 0, y: CGFloat = 10) {
+        self.color = color
+        self.opacity = opacity
+        self.radius = radius
+        self.x = x
+        self.y = y
+    }
+
+    // MARK: - 运行时 Shadow 值
+
+    /// 阴影颜色（已应用透明度），用于 `.shadow(color:radius:x:y:)`
+    public var shadowColor: Color { Color(hex: color).opacity(opacity) }
+
+    // MARK: - 预设
+
+    /// 默认卡片阴影：微弱、大范围
+    public static let card = RCMShadowTokens(
+        color: "#000000", opacity: 0.06, radius: 18, x: 0, y: 10
+    )
+
+    /// 轻量阴影：更淡更小
+    public static let subtle = RCMShadowTokens(
+        color: "#000000", opacity: 0.04, radius: 8, x: 0, y: 2
+    )
+
+    /// 强调阴影：更深更明显（用于浮层）
+    public static let prominent = RCMShadowTokens(
+        color: "#000000", opacity: 0.15, radius: 24, x: 0, y: 16
+    )
+}
 
 public struct RCMRadiusTokens: Codable, Equatable, Sendable {
     public var sm: CGFloat = 8
@@ -128,7 +178,6 @@ public struct RCMRadiusTokens: Codable, Equatable, Sendable {
 
     public init() {}
 }
-
 
 // MARK: - RCMTypographyTokens（只存数值，运行时生成 Font）
 
@@ -255,6 +304,8 @@ public struct RCMDesignTokens: Codable, Equatable, Sendable {
     public var typography: RCMTypographyTokens = RCMTypographyTokens()
     public var controlSize: RCMControlSizeTokens = RCMControlSizeTokens()
     public var heroGradient: RCMHeroGradient = RCMHeroGradient()
+    public var stroke:RCMStrokeTokens = RCMStrokeTokens()
+    public var shadow: RCMShadowTokens = RCMShadowTokens()
 
     public init() {}
 
