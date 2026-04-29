@@ -42,6 +42,8 @@ struct YourApp: App {
         KeychainTools.configure(defaultService: "YourApp")
         Log.configure(subsystem: "com.yourcompany.yourapp")
 
+        RCMTheme.shared.applyPreset(.blue)
+
         ToastManager.shared.configure(
             maxVisibleToasts: 5,
             toastWidth: 420,
@@ -59,6 +61,8 @@ struct YourApp: App {
 ```
 
 如果某个 App 不需要 App Group，可以不调用 `DefaultsTools.configure(...)`。
+
+`RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
 
 ## 工具清单
 
@@ -385,9 +389,109 @@ let canExport = flow.isEnabled(.export)
 
 ### 基础 UI 与 Design System
 
+#### `RCMTheme`
+
+DesignSystem 的主题入口。所有 `RCMButton`、`RCMBadge`、`RCMCard`、`RCMPageSection`、`RCMHeroPanel` 等组件都会从 `RCMTheme.shared` 读取颜色、间距、字体、圆角、阴影等 token。
+
+推荐在 App 启动时配置一次：
+
+```swift
+@main
+struct YourApp: App {
+    init() {
+        RCMTheme.shared.applyPreset(.orange)
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+内置预设：
+
+- `.blue` / `.default`：通用蓝色主题
+- `.orange` / `.rightClickMate`：通用橙色主题
+- `.purple` / `.videoHero`：通用紫色主题
+
+也可以用闭包按 App 微调：
+
+```swift
+RCMTheme.shared.configure { tokens in
+    tokens.colors.primary = Color(hex: "#FF6B00")
+    tokens.colors.accent = Color(hex: "#FF6B00")
+    tokens.spacing.lg = 24
+    tokens.radius.md = 10
+    tokens.shadow = RCMShadowTokens(
+        color: "#000000",
+        opacity: 0.08,
+        radius: 16,
+        x: 0,
+        y: 8
+    )
+}
+```
+
+如果想用 JSON 管理主题：
+
+```swift
+// 读取 App 自己 Bundle 里的 MyAppTheme.json
+try RCMTheme.shared.configure(jsonResource: "MyAppTheme")
+
+// 读取 Swift Package 内置的默认主题
+try RCMTheme.shared.applyDefaultThemeFromPackage()
+
+// 读取任意文件 URL
+try RCMTheme.shared.configure(jsonFileURL: themeURL)
+```
+
+主题 JSON 可以只写需要覆盖的字段，缺失字段会自动使用默认 token：
+
+```json
+{
+  "colors": {
+    "primary": "#FF6B00",
+    "accent": "#FF6B00"
+  },
+  "shadow": {
+    "opacity": 0.08,
+    "radius": 16
+  }
+}
+```
+
+常用读取方式：
+
+```swift
+RCMTheme.shared.colors.primary
+RCMTheme.shared.spacing.md
+RCMTheme.shared.radius.lg
+RCMTheme.shared.typography.body
+RCMTheme.shared.controlSize.buttonHeight
+RCMTheme.shared.heroGradient.gradient
+RCMTheme.shared.shadow.shadowColor
+```
+
 #### DesignSystem
 
 位于 `Sources/MySwiftAppTools/DesignSystem`，提供一套基础 SwiftUI 组件。
+
+核心思路是 Token 数据驱动：`RCMTheme` 持有统一 token，文本、按钮、卡片、行组件都会自动跟随主题。
+
+文件总览：
+
+| 文件 | 角色 | 说明 |
+|------|------|------|
+| `RCMDesignTokens.swift` | 数据层 | 颜色、间距、圆角、字体、渐变、阴影等 token |
+| `RCMTheme.swift` | 配置层 | 全局主题单例、闭包配置、JSON 配置、预设主题、导出 JSON |
+| `RCMDefaultTheme.json` | 资源文件 | 包内默认主题模板 |
+| `RCMText.swift` | 文本组件 | 页面标题、章节标题、标签文字、说明文字、等宽文字 |
+| `RCMButtons.swift` | 按钮组件 | 按钮样式、侧边栏图标、徽章、开关 |
+| `RCMSurfaces.swift` | 容器组件 | 卡片、分区、Hero 面板、侧边栏、折叠面板、多行行 |
+| `RCMRows.swift` | 行组件 | 设置行、键值行、带标签的内联字段 |
+| `RCMDesignSystemPreview.swift` | 预览工具 | Design Token 可视化编辑器，可调整并导出 JSON |
 
 主要内容：
 
@@ -423,21 +527,166 @@ let canExport = flow.isEnabled(.export)
 - `MultilineSubtitleRow`
 - `CollapsibleSection`
 
-示例：
+快速页面示例：
 
 ```swift
-RCMPageTitle("Settings", subtitle: "Manage app preferences")
+VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xl) {
+    RCMPageTitle("目录权限设置", subtitle: "请选择文件复制功能使用的目标目录。")
 
-RCMCard {
-    RCMSettingRow("Enable Feature", subtitle: "Optional helper text") {
-        RCMToggle(isOn: $enabled, label: "Enabled")
+    RCMPageSection("已授权目录") {
+        RCMSettingRow("Documents", subtitle: "/Users/name/Documents") {
+            RCMBadge("已授权", style: .success)
+        }
+    }
+
+    HStack(spacing: RCMTheme.shared.spacing.md) {
+        RCMButton("新增", role: .primary, systemImage: "plus") {
+            add()
+        }
+        RCMButton("删除", role: .soft, systemImage: "trash") {
+            remove()
+        }
     }
 }
+.padding(RCMTheme.shared.spacing.xxl)
+```
 
-RCMButton("Save", role: .primary, systemImage: "checkmark") {
+Token 类型：
+
+| 类型 | 内容 |
+|------|------|
+| `RCMColorTokens` | primary / accent / success / warning / danger + 派生语义色 |
+| `RCMSpacingTokens` | xxs 到 xxxl 的 8 级间距 |
+| `RCMRadiusTokens` | sm / md / lg / xl 的 4 级圆角 |
+| `RCMTypographyTokens` | hero / pageTitle / sectionTitle / body / caption / monoCaption 等 |
+| `RCMControlSizeTokens` | buttonHeight / fieldHeight / rowMinHeight |
+| `RCMStrokeTokens` | hairline |
+| `RCMShadowTokens` | color / opacity / radius / x / y |
+| `RCMHeroGradient` | startColor / endColor 渐变 |
+
+颜色工具：
+
+```swift
+let color = Color(hex: "#3185FF")
+let hex = color.toHex()
+```
+
+文本组件：
+
+```swift
+RCMPageTitle("设置", subtitle: "管理应用偏好")
+RCMSectionTitle("通用")
+RCMLabelText("用户名")
+RCMCaptionText("仅支持英文")
+RCMMonoText("/usr/local/bin")
+```
+
+按钮、徽章、开关：
+
+```swift
+RCMButton("保存", role: .primary, systemImage: "checkmark") {
     save()
 }
+
+RCMButton(.danger, action: delete) {
+    Label("删除", systemImage: "trash")
+}
+
+Button("取消") {}
+    .buttonStyle(RCMSoftButtonStyle())
+
+let statusText = "已完成"
+RCMBadge(statusText, style: .success)
+RCMBadge(verbatim: "v1.0.0", style: .neutral)
+
+RCMToggle(isOn: $isEnabled, label: "自动更新")
+RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
 ```
+
+容器组件：
+
+```swift
+RCMCard {
+    Text("卡片内容")
+}
+
+RCMCard(background: Color.red.opacity(0.1)) {
+    Text("红色调卡片")
+}
+
+RCMPageSection("存储管理") {
+    RCMValueRow("已用空间", value: "12.4 GB")
+    RCMValueRow("剩余空间", value: "86.1 GB", tone: .green)
+}
+
+RCMHeroPanel {
+    VStack(alignment: .leading) {
+        Text("欢迎使用").font(.title).foregroundColor(.white)
+        Text("当前面板会跟随 RCMTheme 的 heroGradient 和 shadow")
+            .foregroundColor(.white.opacity(0.8))
+    }
+}
+```
+
+侧边栏：
+
+```swift
+@State private var selection = "home"
+
+let menuItems = [
+    RCMSidebarMenuItem(id: "home", label: "首页", icon: "house", tint: .blue),
+    RCMSidebarMenuItem(id: "settings", label: "设置", icon: "gearshape", tint: .gray),
+]
+
+RCMSidebarGroupView(title: nil, items: menuItems, selection: $selection)
+```
+
+行组件：
+
+```swift
+RCMSettingRow("文档目录", subtitle: "/Users/name/Documents") {
+    RCMBadge("已授权", style: .success)
+}
+
+RCMValueRow("版本号", value: "2.1.0")
+RCMValueRow("磁盘用量", value: "89%", tone: .orange)
+
+RCMInlineField("服务器地址") {
+    TextField("https://...", text: $serverURL)
+}
+```
+
+折叠面板和多行行：
+
+```swift
+CollapsibleSection("高级选项") {
+    Toggle("启用调试模式", isOn: $debugMode)
+}
+
+MultilineSubtitleRow(
+    systemIcon: "folder",
+    iconColor: .blue,
+    title: "项目目录",
+    subtitle: "这是一个很长的描述文字，可以换行显示"
+) {
+    Button("更改") {}
+}
+```
+
+可视化编辑器：
+
+```swift
+RCMDesignSystemPreview()
+```
+
+`RCMDesignSystemPreview` 可以预览组件、调整 token，并导出 JSON。它目前仍在主 library target 中，适合作为内部开发工具使用。
+
+建议迁移路径：
+
+1. 新项目优先使用 `RCMTheme + DesignSystem`。
+2. 旧项目先从 Purchase、About、Settings 这类简单页面替换按钮、标题、卡片。
+3. 再逐步把 `ThemeManager.swift` 中真正通用的组件迁移到 DesignSystem。
+4. `ThemeManager.swift` 作为 legacy 兼容层保留，不建议继续在里面扩展新 UI 能力。
 
 #### `ThemeManager.swift`
 
