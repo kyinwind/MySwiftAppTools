@@ -224,6 +224,59 @@ ShowToast(
 )
 ```
 
+### macOS 系统能力
+
+#### `AutoLaunchManager`
+
+macOS 登录时自动启动管理工具，基于 `SMAppService.mainApp`。适用于 macOS 13+；本工具包最低支持 macOS 14，所以不再兼容旧的 `LSSharedFileList` API。
+
+常用能力：
+
+- `AutoLaunchManager.shared.isEnabled`
+- `AutoLaunchManager.shared.enable()`
+- `AutoLaunchManager.shared.disable()`
+- `AutoLaunchManager.shared.setEnabled(_:)`
+- `AutoLaunchManager.shared.toggle()`
+
+在设置页里绑定开关：
+
+```swift
+struct SettingsView: View {
+    @State private var launchAtLogin = false
+
+    var body: some View {
+        Toggle("登录时自动启动", isOn: $launchAtLogin)
+            .onAppear {
+                launchAtLogin = AutoLaunchManager.shared.isEnabled
+            }
+            .onChange(of: launchAtLogin) { _, newValue in
+                let success = AutoLaunchManager.shared.setEnabled(newValue)
+                if !success {
+                    launchAtLogin = AutoLaunchManager.shared.isEnabled
+                    ShowToastError("自动启动设置失败")
+                }
+            }
+    }
+}
+```
+
+也可以在按钮里直接切换：
+
+```swift
+Button("切换自动启动") {
+    if AutoLaunchManager.shared.toggle() {
+        ShowToastSuccess("设置已更新")
+    } else {
+        ShowToastError("设置失败")
+    }
+}
+```
+
+注意：
+
+- 这个能力需要在真实 macOS App bundle 中验证；Swift Package 测试 target 或命令行 demo 只能做编译验证。
+- 用户也可以在系统设置的登录项里手动修改状态，所以设置页出现时建议重新读取 `AutoLaunchManager.shared.isEnabled`。
+
 ### 购买与 Pro 权限
 
 #### `StoreManager`
@@ -310,6 +363,32 @@ if await ProGatekeeper.shared.check(AppProFeature.privacyOCR) {
 #### `PermissionManager`
 
 macOS 沙盒目录授权和 security-scoped bookmark 管理工具。
+
+默认情况下，`DirectoryManager` 会把授权目录和 bookmark 保存到 `UserDefaults.standard`。如果 App 有 Finder Extension、Share Extension 等扩展，并且主 App 与扩展需要共享同一份目录授权数据，请在主 App 和扩展启动时都配置同一个 App Group：
+
+```swift
+@main
+struct YourApp: App {
+    init() {
+        DirectoryManager.configure(appGroupID: "group.com.yourcompany.yourapp")
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+如果你已经自己创建了 `UserDefaults`，也可以直接传入：
+
+```swift
+let sharedDefaults = UserDefaults(suiteName: "group.com.yourcompany.yourapp")!
+DirectoryManager.configure(userDefaults: sharedDefaults)
+```
+
+扩展里也要使用同一个 `groupID` 或同一个 suite。这样 `PermissionManager` 通过 `DirectoryManager` 保存的 bookmark 才能在主 App 和扩展之间共享。
 
 相关类型：
 

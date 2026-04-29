@@ -45,6 +45,9 @@ final class PublicAPITests: XCTestCase {
         ToastManager.shared.show("测试", duration: 0.01)
         ToastManager.shared.hideAll()
 
+        _ = AutoLaunchManager.shared
+        _ = AutoLaunchManager.shared.isEnabled
+
         _ = StoreManager(productIDs: ["test.product"], proProductID: "test.product", autoStart: false)
 
         ProGatekeeper.shared.configure(
@@ -58,5 +61,15 @@ final class PublicAPITests: XCTestCase {
         _ = ComponentState(isBusy: false, isFinished: true)
         _ = ComponentsFlowManager<String, String>()
         _ = PermissionManager.shared
+
+        let suiteName = "MySwiftAppToolsTests.DirectoryManager.\(UUID().uuidString)"
+        let suite = UserDefaults(suiteName: suiteName) ?? .standard
+        DirectoryManager.configure(userDefaults: suite)
+        DirectoryManager.save([
+            MyDirectory(url: URL(fileURLWithPath: "/tmp"), label: "tmp", type: .history)
+        ])
+        XCTAssertEqual(DirectoryManager.loadHistory().first?.label, "tmp")
+        DirectoryManager.save([])
+        DirectoryManager.resetStorageToStandard()
     }
 }

@@ -166,11 +166,12 @@ public final class PermissionManager {
                         includingResourceValuesForKeys: nil,
                         relativeTo: nil
                     )
-                    
+                    //取出目录名
+                    let name = url.normalized.deletingPathExtension().lastPathComponent
                     let entry = MyDirectory(
                         url: url,
                         bookmarkData: bookmark,
-                        label: nil, type: .history
+                        label: name, type: .history
                     )
                     // 覆盖旧记录
                     DirectoryManager.removeInType(url, type: .history)
@@ -264,12 +265,13 @@ public final class PermissionManager {
                         includingResourceValuesForKeys: nil,
                         relativeTo: nil
                     )
-                    
+                    //取出目录名
+                    let name = url.normalized.deletingPathExtension().lastPathComponent
                     let entry = MyDirectory(
                         url: url,
                         bookmarkData: bookmark,
-                        label: nil,
-                        type: .noLabel
+                        label: name,
+                        type: .history
                     )
                     // 覆盖旧记录
                     DirectoryManager.remove(url)

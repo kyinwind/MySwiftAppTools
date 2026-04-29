@@ -101,15 +101,52 @@ public protocol DirectoryStore {
 
 public final class DirectoryManager: DirectoryStore {
 
-    private static var defaults: UserDefaults {
-            UserDefaults.standard
-        }
+    nonisolated(unsafe) private static var defaults: UserDefaults = .standard
+
     public static let key = "AuthorizedDirectories"
 
+    /// 配置目录授权书签的存储空间。
+    ///
+    /// 默认使用 `.standard`。如果 App 有扩展，并且需要在主 App 与扩展之间共享
+    /// security-scoped bookmark，请在主 App 和扩展启动时都传入同一个 App Group：
+    ///
+    /// ```swift
+    /// DirectoryManager.configure(appGroupID: "group.com.yourcompany.yourapp")
+    /// ```
+    @discardableResult
+    public static func configure(appGroupID: String) -> Bool {
+        guard let userDefaults = UserDefaults(suiteName: appGroupID) else {
+            return false
+        }
+
+        configure(userDefaults: userDefaults)
+        return true
+    }
+
+    /// 使用调用方提供的 `UserDefaults` 存储目录授权书签。
+    ///
+    /// 适合测试，或调用方已经自己创建好 App Group `UserDefaults` 的场景。
+    public static func configure(userDefaults: UserDefaults) {
+        defaults = userDefaults
+    }
+
+    /// 恢复到默认的 `.standard` 存储空间。
+    public static func resetStorageToStandard() {
+        defaults = .standard
+    }
 
     public static func load() -> [MyDirectory] {
         guard let data = defaults.data(forKey: key) else { return [] }
-        return (try? JSONDecoder().decode([MyDirectory].self, from: data)) ?? []
+        let all = (try? JSONDecoder().decode([MyDirectory].self, from: data)) ?? []
+        let sort = all.sorted {
+            //按照类型、时间排序
+            if $0.type.rawValue == $1.type.rawValue {
+                return $0.createDate > $1.createDate
+            }
+            return $0.type.rawValue > $1.type.rawValue
+        }
+        
+        return sort
     }
     
     public static func loadByUrl(url: URL) -> MyDirectory? {
@@ -125,12 +162,15 @@ public final class DirectoryManager: DirectoryStore {
             $0.url.standardizedFileURL.path == targetPath
         }
     }
-
-    /// 有 label 的目录（例如 Backup 目标目录）
-    public static func loadTargetDirectories() -> [MyDirectory] {
+    /// 用户手工录入的目录，也就是不是历史目录，也不是临时目录
+    static func loadNormalDirectories() -> [MyDirectory] {
         load().filter { $0.type == .normal }
-            .sorted { $0.createDate > $1.createDate }
-            //.sorted {$0.label!.localizedCaseInsensitiveCompare($1.label!) == .orderedAscending}
+            .sorted {
+                if $0.type.rawValue == $1.type.rawValue {
+                    return $0.createDate > $1.createDate
+                }
+                return $0.type.rawValue > $1.type.rawValue
+            }
     }
     
     public static func save(_ list: [MyDirectory]) {
@@ -161,15 +201,18 @@ public final class DirectoryManager: DirectoryStore {
     
     /// load 历史记录
     public static func loadHistory() -> [MyDirectory] {
-        load().filter { $0.type == .history }
-            .sorted { $0.createDate > $1.createDate }
+        load().filter { $0.type == .history || $0.type == .noLabel }
+            .sorted { if $0.type.rawValue == $1.type.rawValue {
+                return $0.createDate > $1.createDate
+            }
+            return $0.type.rawValue > $1.type.rawValue }
             //.sorted {$0.label!.localizedCaseInsensitiveCompare($1.label!) == .orderedAscending}
     }
     
     public static func saveHistory(_ list: [MyDirectory]) {
         var alllist = load()
         
-        alllist.removeAll(where: {$0.type == .history})
+        alllist.removeAll(where: {$0.type == .history  || $0.type == .noLabel})
         alllist += list
         save(alllist)
         
