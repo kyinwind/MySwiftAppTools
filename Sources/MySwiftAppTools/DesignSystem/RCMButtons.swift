@@ -262,16 +262,33 @@ public struct RCMBadge: View {
         case danger    // 危险：红色
     }
 
-    private let text: LocalizedStringKey
+    private enum TextSource {
+        case localized(LocalizedStringKey)
+        case verbatim(String)
+    }
+
+    private let text: TextSource
     private let style: Style
 
     public init(_ text: LocalizedStringKey, style: Style = .accent) {
-        self.text = text
+        self.text = .localized(text)
+        self.style = style
+    }
+
+    /// 支持外部项目直接传入 `String` 变量。
+    public init(_ text: String, style: Style = .accent) {
+        self.text = .localized(LocalizedStringKey(text))
+        self.style = style
+    }
+
+    /// 明确按原文显示，不走本地化 key 查找。
+    public init(verbatim text: String, style: Style = .accent) {
+        self.text = .verbatim(text)
         self.style = style
     }
 
     public var body: some View {
-        Text(text)
+        badgeText
             .font(RCMTheme.shared.typography.captionStrong)
             .foregroundColor(foregroundColor)
             .padding(.horizontal, RCMTheme.shared.spacing.xs)
@@ -280,6 +297,16 @@ public struct RCMBadge: View {
                 Capsule()
                     .fill(backgroundColor)
             )
+    }
+
+    @ViewBuilder
+    private var badgeText: some View {
+        switch text {
+        case .localized(let key):
+            Text(key)
+        case .verbatim(let string):
+            Text(verbatim: string)
+        }
     }
 
     /// 前景色（文字颜色）

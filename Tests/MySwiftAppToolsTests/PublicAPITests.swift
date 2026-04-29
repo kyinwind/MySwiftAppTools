@@ -22,6 +22,9 @@ final class PublicAPITests: XCTestCase {
 
         _ = RCMButton("保存", role: .primary, systemImage: "checkmark") {}
         _ = RCMBadge("Pro", style: .accent)
+        let badgeText = "String Variable"
+        _ = RCMBadge(badgeText, style: .success)
+        _ = RCMBadge(verbatim: "1.0.0", style: .neutral)
         _ = RCMToggle(isOn: .constant(true), localizedLabel: "自动更新")
         _ = RCMCard { Text("Card") }
         _ = RCMPageSection("设置") { Text("Content") }
