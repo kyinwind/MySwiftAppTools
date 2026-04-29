@@ -163,7 +163,7 @@ public final class DirectoryManager: DirectoryStore {
         }
     }
     /// 用户手工录入的目录，也就是不是历史目录，也不是临时目录
-    static func loadNormalDirectories() -> [MyDirectory] {
+    public static func loadNormalDirectories() -> [MyDirectory] {
         load().filter { $0.type == .normal }
             .sorted {
                 if $0.type.rawValue == $1.type.rawValue {
