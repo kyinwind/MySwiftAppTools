@@ -3,6 +3,15 @@ import SwiftUI
 import AppKit
 #endif
 
+private extension KeyedDecodingContainer {
+    func decodeValue<T: Decodable>(
+        _ type: T.Type,
+        forKey key: Key,
+        default defaultValue: @autoclosure () -> T
+    ) throws -> T {
+        try decodeIfPresent(type, forKey: key) ?? defaultValue()
+    }
+}
 
 // MARK: - Color 扩展：支持 hex 字符串解析
 
@@ -35,11 +44,24 @@ extension Color {
 
     /// 将 Color 转换为 hex 字符串（保留到 RGB）
     public func toHex() -> String {
-        guard let components = NSColor(self).cgColor.components else { return "#000000" }
-        let r = Int((components[0] * 255).rounded())
-        let g = Int((components[1] * 255).rounded())
-        let b = Int((components[2] * 255).rounded())
+        #if canImport(AppKit)
+        guard let color = NSColor(self).usingColorSpace(.sRGB) else {
+            return "#000000"
+        }
+
+        let r = Int((color.redComponent * 255).rounded()).clamped(to: 0...255)
+        let g = Int((color.greenComponent * 255).rounded()).clamped(to: 0...255)
+        let b = Int((color.blueComponent * 255).rounded()).clamped(to: 0...255)
         return String(format: "#%02X%02X%02X", r, g, b)
+        #else
+        return "#000000"
+        #endif
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 
@@ -97,12 +119,13 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMColorTokens()
         // JSON 中存的是 hex 字符串，解码时转成 Color
-        primary  = try Color(hex: container.decode(String.self, forKey: .primary))
-        accent   = try Color(hex: container.decode(String.self, forKey: .accent))
-        success  = try Color(hex: container.decode(String.self, forKey: .success))
-        warning  = try Color(hex: container.decode(String.self, forKey: .warning))
-        danger   = try Color(hex: container.decode(String.self, forKey: .danger))
+        primary  = Color(hex: try container.decodeValue(String.self, forKey: .primary, default: defaults.primary.toHex()))
+        accent   = Color(hex: try container.decodeValue(String.self, forKey: .accent, default: defaults.accent.toHex()))
+        success  = Color(hex: try container.decodeValue(String.self, forKey: .success, default: defaults.success.toHex()))
+        warning  = Color(hex: try container.decodeValue(String.self, forKey: .warning, default: defaults.warning.toHex()))
+        danger   = Color(hex: try container.decodeValue(String.self, forKey: .danger, default: defaults.danger.toHex()))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -130,6 +153,23 @@ public struct RCMSpacingTokens: Codable, Equatable, Sendable {
     public var xxxl: CGFloat = 40
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case xxs, xs, sm, md, lg, xl, xxl, xxxl
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMSpacingTokens()
+        xxs = try container.decodeValue(CGFloat.self, forKey: .xxs, default: defaults.xxs)
+        xs = try container.decodeValue(CGFloat.self, forKey: .xs, default: defaults.xs)
+        sm = try container.decodeValue(CGFloat.self, forKey: .sm, default: defaults.sm)
+        md = try container.decodeValue(CGFloat.self, forKey: .md, default: defaults.md)
+        lg = try container.decodeValue(CGFloat.self, forKey: .lg, default: defaults.lg)
+        xl = try container.decodeValue(CGFloat.self, forKey: .xl, default: defaults.xl)
+        xxl = try container.decodeValue(CGFloat.self, forKey: .xxl, default: defaults.xxl)
+        xxxl = try container.decodeValue(CGFloat.self, forKey: .xxxl, default: defaults.xxxl)
+    }
 }
 
 // MARK: - RCMStrokeTokens
@@ -137,6 +177,13 @@ public struct RCMSpacingTokens: Codable, Equatable, Sendable {
 public struct RCMStrokeTokens: Codable, Equatable, Sendable {
     public var hairline: CGFloat = 1
     public init() {}
+
+    private enum CodingKeys: String, CodingKey { case hairline }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        hairline = try container.decodeValue(CGFloat.self, forKey: .hairline, default: RCMStrokeTokens().hairline)
+    }
 }
 // MARK: - RCMShadowTokens
 
@@ -160,6 +207,20 @@ public struct RCMShadowTokens: Codable, Equatable, Sendable {
         self.radius = radius
         self.x = x
         self.y = y
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case color, opacity, radius, x, y
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMShadowTokens()
+        color = try container.decodeValue(String.self, forKey: .color, default: defaults.color)
+        opacity = try container.decodeValue(Double.self, forKey: .opacity, default: defaults.opacity)
+        radius = try container.decodeValue(CGFloat.self, forKey: .radius, default: defaults.radius)
+        x = try container.decodeValue(CGFloat.self, forKey: .x, default: defaults.x)
+        y = try container.decodeValue(CGFloat.self, forKey: .y, default: defaults.y)
     }
 
     // MARK: - 运行时 Shadow 值
@@ -192,6 +253,19 @@ public struct RCMRadiusTokens: Codable, Equatable, Sendable {
     public var xl: CGFloat = 24
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case sm, md, lg, xl
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMRadiusTokens()
+        sm = try container.decodeValue(CGFloat.self, forKey: .sm, default: defaults.sm)
+        md = try container.decodeValue(CGFloat.self, forKey: .md, default: defaults.md)
+        lg = try container.decodeValue(CGFloat.self, forKey: .lg, default: defaults.lg)
+        xl = try container.decodeValue(CGFloat.self, forKey: .xl, default: defaults.xl)
+    }
 }
 
 // MARK: - RCMTypographyTokens（只存数值，运行时生成 Font）
@@ -228,6 +302,39 @@ public struct RCMTypographyTokens: Codable, Equatable, Sendable {
     public var monoCaptionWeight: String = "regular"
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case heroSize, heroWeight, pageTitleSize, pageTitleWeight, sectionTitleSize, sectionTitleWeight
+        case body15Size, body15Weight, body15StrongSize, body15StrongWeight
+        case bodySize, bodyWeight, bodyStrongSize, bodyStrongWeight
+        case captionSize, captionWeight, captionStrongSize, captionStrongWeight
+        case monoCaptionSize, monoCaptionWeight
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMTypographyTokens()
+        heroSize = try container.decodeValue(CGFloat.self, forKey: .heroSize, default: defaults.heroSize)
+        heroWeight = try container.decodeValue(String.self, forKey: .heroWeight, default: defaults.heroWeight)
+        pageTitleSize = try container.decodeValue(CGFloat.self, forKey: .pageTitleSize, default: defaults.pageTitleSize)
+        pageTitleWeight = try container.decodeValue(String.self, forKey: .pageTitleWeight, default: defaults.pageTitleWeight)
+        sectionTitleSize = try container.decodeValue(CGFloat.self, forKey: .sectionTitleSize, default: defaults.sectionTitleSize)
+        sectionTitleWeight = try container.decodeValue(String.self, forKey: .sectionTitleWeight, default: defaults.sectionTitleWeight)
+        body15Size = try container.decodeValue(CGFloat.self, forKey: .body15Size, default: defaults.body15Size)
+        body15Weight = try container.decodeValue(String.self, forKey: .body15Weight, default: defaults.body15Weight)
+        body15StrongSize = try container.decodeValue(CGFloat.self, forKey: .body15StrongSize, default: defaults.body15StrongSize)
+        body15StrongWeight = try container.decodeValue(String.self, forKey: .body15StrongWeight, default: defaults.body15StrongWeight)
+        bodySize = try container.decodeValue(CGFloat.self, forKey: .bodySize, default: defaults.bodySize)
+        bodyWeight = try container.decodeValue(String.self, forKey: .bodyWeight, default: defaults.bodyWeight)
+        bodyStrongSize = try container.decodeValue(CGFloat.self, forKey: .bodyStrongSize, default: defaults.bodyStrongSize)
+        bodyStrongWeight = try container.decodeValue(String.self, forKey: .bodyStrongWeight, default: defaults.bodyStrongWeight)
+        captionSize = try container.decodeValue(CGFloat.self, forKey: .captionSize, default: defaults.captionSize)
+        captionWeight = try container.decodeValue(String.self, forKey: .captionWeight, default: defaults.captionWeight)
+        captionStrongSize = try container.decodeValue(CGFloat.self, forKey: .captionStrongSize, default: defaults.captionStrongSize)
+        captionStrongWeight = try container.decodeValue(String.self, forKey: .captionStrongWeight, default: defaults.captionStrongWeight)
+        monoCaptionSize = try container.decodeValue(CGFloat.self, forKey: .monoCaptionSize, default: defaults.monoCaptionSize)
+        monoCaptionWeight = try container.decodeValue(String.self, forKey: .monoCaptionWeight, default: defaults.monoCaptionWeight)
+    }
 
     // MARK: - 运行时 Font 值
 
@@ -284,6 +391,18 @@ public struct RCMControlSizeTokens: Codable, Equatable, Sendable {
     public var rowMinHeight: CGFloat = 52
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case buttonHeight, fieldHeight, rowMinHeight
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = RCMControlSizeTokens()
+        buttonHeight = try container.decodeValue(CGFloat.self, forKey: .buttonHeight, default: defaults.buttonHeight)
+        fieldHeight = try container.decodeValue(CGFloat.self, forKey: .fieldHeight, default: defaults.fieldHeight)
+        rowMinHeight = try container.decodeValue(CGFloat.self, forKey: .rowMinHeight, default: defaults.rowMinHeight)
+    }
 }
 
 
@@ -315,8 +434,9 @@ public struct RCMHeroGradient: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        startColor = try Color(hex: container.decode(String.self, forKey: .startColor))
-        endColor   = try Color(hex: container.decode(String.self, forKey: .endColor))
+        let defaults = RCMHeroGradient()
+        startColor = Color(hex: try container.decodeValue(String.self, forKey: .startColor, default: defaults.startColor.toHex()))
+        endColor = Color(hex: try container.decodeValue(String.self, forKey: .endColor, default: defaults.endColor.toHex()))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -336,10 +456,26 @@ public struct RCMDesignTokens: Codable, Equatable, Sendable {
     public var typography: RCMTypographyTokens = RCMTypographyTokens()
     public var controlSize: RCMControlSizeTokens = RCMControlSizeTokens()
     public var heroGradient: RCMHeroGradient = RCMHeroGradient()
-    public var stroke:RCMStrokeTokens = RCMStrokeTokens()
+    public var stroke: RCMStrokeTokens = RCMStrokeTokens()
     public var shadow: RCMShadowTokens = RCMShadowTokens()
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case colors, spacing, radius, typography, controlSize, heroGradient, stroke, shadow
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        colors = try container.decodeValue(RCMColorTokens.self, forKey: .colors, default: RCMColorTokens())
+        spacing = try container.decodeValue(RCMSpacingTokens.self, forKey: .spacing, default: RCMSpacingTokens())
+        radius = try container.decodeValue(RCMRadiusTokens.self, forKey: .radius, default: RCMRadiusTokens())
+        typography = try container.decodeValue(RCMTypographyTokens.self, forKey: .typography, default: RCMTypographyTokens())
+        controlSize = try container.decodeValue(RCMControlSizeTokens.self, forKey: .controlSize, default: RCMControlSizeTokens())
+        heroGradient = try container.decodeValue(RCMHeroGradient.self, forKey: .heroGradient, default: RCMHeroGradient())
+        stroke = try container.decodeValue(RCMStrokeTokens.self, forKey: .stroke, default: RCMStrokeTokens())
+        shadow = try container.decodeValue(RCMShadowTokens.self, forKey: .shadow, default: RCMShadowTokens())
+    }
 
     // MARK: - 预设 Hero 渐变
 

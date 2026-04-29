@@ -41,11 +41,8 @@ public enum RCMThemeError: LocalizedError {
 /// ```
 public final class RCMTheme: @unchecked Sendable {
 
-    /// 全局单例，在 App 启动阶段（任何 UI 代码之前）即可访问
-    ///
-    /// 使用 `nonisolated(unsafe)` 允许在非主线程初始化，
-    /// 但后续所有配置和读取操作都应在主线程进行（macOS UI 的标准要求）。
-    public nonisolated(unsafe) static let shared = RCMTheme()
+    /// 全局单例。建议在 App 启动阶段完成配置，运行时动态切换主题暂不承诺自动刷新 UI。
+    public static let shared = RCMTheme()
 
     /// 当前生效的设计 Token
     public var tokens: RCMDesignTokens = RCMDesignTokens()
@@ -62,6 +59,7 @@ public final class RCMTheme: @unchecked Sendable {
     ///     tokens.spacing.lg = 24
     /// }
     /// ```
+    @MainActor
     public func configure(_ block: (inout RCMDesignTokens) -> Void) {
         block(&tokens)
     }
@@ -72,6 +70,7 @@ public final class RCMTheme: @unchecked Sendable {
     /// let data = try Data(contentsOf: url)
     /// try RCMTheme.shared.configure(jsonData: data)
     /// ```
+    @MainActor
     public func configure(jsonData: Data) throws {
         do {
             tokens = try JSONDecoder().decode(RCMDesignTokens.self, from: jsonData)
@@ -86,6 +85,7 @@ public final class RCMTheme: @unchecked Sendable {
     /// let url = Bundle.main.url(forResource: "theme", withExtension: "json")!
     /// try RCMTheme.shared.configure(jsonFileURL: url)
     /// ```
+    @MainActor
     public func configure(jsonFileURL url: URL) throws {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw RCMThemeError.fileNotFound(url.path)
@@ -100,6 +100,7 @@ public final class RCMTheme: @unchecked Sendable {
     /// // 从 MyAppTheme.json 加载（扩展名自动追加）
     /// try RCMTheme.shared.configure(jsonResource: "MyAppTheme")
     /// ```
+    @MainActor
     public func configure(jsonResource name: String, bundle: Bundle = .main) throws {
         guard let url = bundle.url(forResource: name, withExtension: "json") else {
             throw RCMThemeError.fileNotFound("'\(name).json' in bundle")
@@ -107,11 +108,24 @@ public final class RCMTheme: @unchecked Sendable {
         try configure(jsonFileURL: url)
     }
 
+    /// 加载包内自带的默认主题 JSON。
+    ///
+    /// 外部 App 无法直接访问 Swift Package 的 `Bundle.module`，因此读取包内默认主题时请使用这个入口：
+    ///
+    /// ```swift
+    /// try RCMTheme.shared.applyDefaultThemeFromPackage()
+    /// ```
+    @MainActor
+    public func applyDefaultThemeFromPackage() throws {
+        try configure(jsonResource: "RCMDefaultTheme", bundle: .module)
+    }
+
     /// 应用预设主题
     ///
     /// ```swift
     /// RCMTheme.shared.applyPreset(.rightClickMate)
     /// ```
+    @MainActor
     public func applyPreset(_ preset: RCMPresetTheme) {
         tokens = preset.tokens
     }
@@ -200,6 +214,9 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
         }()
     )
 
+    /// 通用蓝色主题（`.default` 的别名）
+    public static let blue = RCMPresetTheme.default
+
     /// RightClickMate 橙色主题
     public static let rightClickMate = RCMPresetTheme(
         id: "rightClickMate",
@@ -216,6 +233,9 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
         }()
     )
 
+    /// 通用橙色主题（MichaelDevStudio 内部 `.rightClickMate` 预设的别名）
+    public static let orange = RCMPresetTheme.rightClickMate
+
     /// VideoHero 紫色专业主题
     public static let videoHero = RCMPresetTheme(
         id: "videoHero",
@@ -231,6 +251,9 @@ public struct RCMPresetTheme: Identifiable, Hashable, Sendable {
             return t
         }()
     )
+
+    /// 通用紫色主题（MichaelDevStudio 内部 `.videoHero` 预设的别名）
+    public static let purple = RCMPresetTheme.videoHero
 
     /// 所有内置预设
     public static let allPresets: [RCMPresetTheme] = [

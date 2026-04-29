@@ -22,7 +22,7 @@ import Foundation
 
  2. 在 App 启动时配置一次：
 
-    ProGatekeeper.configure(
+    ProGatekeeper.shared.configure(
         freeLimits: [
             AppProFeature.privacyOCR: 10,
             AppProFeature.privacyAIRepair: 5,
@@ -39,13 +39,13 @@ import Foundation
 
  3. 使用功能前检查权限：
 
-    if await ProGatekeeper.check(AppProFeature.privacyOCR) {
+    if await ProGatekeeper.shared.check(AppProFeature.privacyOCR) {
         // 执行功能
     }
 
  4. 查询免费额度剩余次数：
 
-    let remaining = ProGatekeeper.remaining(AppProFeature.privacyOCR)
+    let remaining = ProGatekeeper.shared.remaining(AppProFeature.privacyOCR)
 
  说明：
  - freeLimits 中没有声明的 feature，会被视为 Pro-only，免费用户不允许使用。

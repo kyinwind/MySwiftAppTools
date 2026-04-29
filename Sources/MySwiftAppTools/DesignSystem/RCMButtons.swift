@@ -126,6 +126,30 @@ public struct RCMButton: View {
         self.label = { AnyView(label()) }
     }
 
+    /// 文本文案按钮的便捷初始化。
+    ///
+    /// ```swift
+    /// RCMButton("保存", role: .primary, systemImage: "checkmark") {
+    ///     save()
+    /// }
+    /// ```
+    public init(
+        _ title: LocalizedStringKey,
+        role: Role = .primary,
+        systemImage: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.role = role
+        self.action = action
+        self.label = {
+            if let systemImage {
+                AnyView(Label(title, systemImage: systemImage))
+            } else {
+                AnyView(Text(title))
+            }
+        }
+    }
+
     public var body: some View {
         Group {
             switch role {
@@ -202,7 +226,15 @@ public struct RCMSidebarIcon: View {
 // MARK: - RCMSidebarIconPresetTint
 
 public enum RCMSidebarIconPresetTint {
-    case blue, green, orange, red, gray,pink,purple,teal,indigo
+    case blue
+    case green
+    case orange
+    case red
+    case gray
+    case pink
+    case purple
+    case teal
+    case indigo
 
     public var color: Color {
         switch self {
@@ -271,11 +303,16 @@ public struct RCMBadge: View {
 
 public struct RCMToggle: View {
     @Binding private var isOn: Bool
-    private let label: String
+    private let label: LocalizedStringKey
 
     public init(isOn: Binding<Bool>, label: String) {
         self._isOn = isOn
-        self.label = label
+        self.label = LocalizedStringKey(label)
+    }
+
+    public init(isOn: Binding<Bool>, localizedLabel: LocalizedStringKey) {
+        self._isOn = isOn
+        self.label = localizedLabel
     }
 
     public var body: some View {

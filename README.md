@@ -275,7 +275,7 @@ enum AppProFeature: String {
     case batchExport
 }
 
-ProGatekeeper.configure(
+ProGatekeeper.shared.configure(
     freeLimits: [
         AppProFeature.privacyOCR: 10,
         AppProFeature.privacyAIRepair: 5,
@@ -290,7 +290,7 @@ ProGatekeeper.configure(
     }
 )
 
-if await ProGatekeeper.check(AppProFeature.privacyOCR) {
+if await ProGatekeeper.shared.check(AppProFeature.privacyOCR) {
     // 执行功能
 }
 ```
@@ -391,17 +391,24 @@ let canExport = flow.isEnabled(.export)
 
 主要内容：
 
-- `RCMColor`
-- `RCMSpacing`
-- `RCMRadius`
-- `RCMStroke`
-- `RCMShadow`
-- `RCMTypography`
-- `RCMControlSize`
-- `RCMButtonStyle`
+- `RCMTheme`
+- `RCMDesignTokens`
+- `RCMPresetTheme`
+- `RCMColorTokens`
+- `RCMSpacingTokens`
+- `RCMRadiusTokens`
+- `RCMStrokeTokens`
+- `RCMShadowTokens`
+- `RCMTypographyTokens`
+- `RCMControlSizeTokens`
+- `RCMButton`
+- `RCMPrimaryButtonStyle`
+- `RCMSecondaryButtonStyle`
+- `RCMSoftButtonStyle`
+- `RCMDangerButtonStyle`
 - `RCMSidebarIcon`
-- `RCMStatusBadge`
-- `RCMStatBadge`
+- `RCMBadge`
+- `RCMToggle`
 - `RCMPageTitle`
 - `RCMSectionTitle`
 - `RCMLabelText`
@@ -423,14 +430,13 @@ RCMPageTitle("Settings", subtitle: "Manage app preferences")
 
 RCMCard {
     RCMSettingRow("Enable Feature", subtitle: "Optional helper text") {
-        Toggle("", isOn: $enabled)
+        RCMToggle(isOn: $enabled, label: "Enabled")
     }
 }
 
-Button("Save") {
+RCMButton("Save", role: .primary, systemImage: "checkmark") {
     save()
 }
-.rcmButton(.primary)
 ```
 
 #### `ThemeManager.swift`
@@ -529,6 +535,7 @@ File > Packages > Update to Latest Package Versions
 
 ```bash
 swift build
+swift test
 ```
 
 如果改了对外 API，建议再建一个外部 consumer 临时验证 `import MySwiftAppTools` 后能否正常调用。

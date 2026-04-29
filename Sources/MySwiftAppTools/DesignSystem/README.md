@@ -44,16 +44,16 @@
 
 ```swift
 // 方式 A：使用预设（推荐）
-RCMTheme.shared.applyPreset(.rightClickMate)
+RCMTheme.shared.applyPreset(.orange)
 
 // 方式 B：闭包微调
 RCMTheme.shared.configure { tokens in
-    tokens.colors.primary = "#FF6B00"
+    tokens.colors.primary = Color(hex: "#FF6B00")
     tokens.spacing.lg = 24
 }
 
 // 方式 C：从 JSON 文件加载
-try? RCMTheme.shared.configure(jsonResource: "RCMDefaultTheme")
+try? RCMTheme.shared.applyDefaultThemeFromPackage()
 ```
 
 ### 第二步：直接用组件写页面
@@ -79,6 +79,9 @@ VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xl) {
         RCMButton(.soft, action: {}) {
             Text("删除")
         }
+        RCMButton("保存", role: .primary, systemImage: "checkmark") {
+            save()
+        }
     }
 }
 .padding(RCMTheme.shared.spacing.xxl)
@@ -99,6 +102,8 @@ VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xl) {
 | `RCMRadiusTokens` | sm(8) / md(12) / lg(16) / xl(24) 4 级圆角 |
 | `RCMTypographyTokens` | hero / pageTitle / sectionTitle / body / caption / monoCaption 等 |
 | `RCMControlSizeTokens` | buttonHeight / fieldHeight / rowMinHeight |
+| `RCMStrokeTokens` | hairline |
+| `RCMShadowTokens` | color / opacity / radius / x / y |
 | `RCMHeroGradient` | startColor → endColor 渐变 |
 
 额外提供了：
@@ -111,7 +116,7 @@ VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xl) {
 // === 配置方式 ===
 
 // ① 闭包配置（最灵活，适合运行时调整）
-RCMTheme.shared.configure { $0.colors.primary = "#FF6B00" }
+RCMTheme.shared.configure { $0.colors.primary = Color(hex: "#FF6B00") }
 
 // ② JSON Data
 let data = try Data(contentsOf: url)
@@ -123,19 +128,22 @@ try RCMTheme.shared.configure(jsonFileURL: url)
 // ④ Bundle 内的 JSON 资源
 try RCMTheme.shared.configure(jsonResource: "MyAppTheme")
 
-// ⑤ 应用内置预设
-RCMTheme.shared.applyPreset(.rightClickMate)
+// ⑤ 加载包内默认主题资源
+try RCMTheme.shared.applyDefaultThemeFromPackage()
+
+// ⑥ 应用内置预设
+RCMTheme.shared.applyPreset(.orange)
 
 // === 内置预设 ===
-// .default      — 蓝色主题
-// .rightClickMate — 橙色主题（RightClickMate 专用）
-// .videoHero     — 紫色专业主题（VideoHero 专用）
+// .blue / .default       — 蓝色主题
+// .orange / .rightClickMate — 橙色主题
+// .purple / .videoHero      — 紫色主题
 
 // === 导出当前 Token 为 JSON ===
 let jsonString = try RCMTheme.shared.exportJSONString()
 
 // === 便捷访问 ===
-RCMTheme.shared.colors.primaryColor   // Color
+RCMTheme.shared.colors.primary        // Color
 RCMTheme.shared.spacing.md            // CGFloat
 RCMTheme.shared.radius.lg             // CGFloat
 RCMTheme.shared.typography.body       // Font

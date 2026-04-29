@@ -54,21 +54,21 @@ public final class ThemeManager {
 public struct Theme {
     
     //背景颜色
-    var myBGColor:Color = Color.myGray ?? Color(.systemGray)
+    var myBGColor:Color = Color.myGray
     //正常字体颜色
     var myFontColor:Color = Color(Color.primary)
     
     //banner背景
-    var myBannerBGColor:Color = Color.myBlue ?? Color(.systemBlue)
+    var myBannerBGColor:Color = Color.myBlue
     //banner字体颜色
     var myBannerFontColor:Color = Color.white
     
     //groupbox背景
-    var myGroupboxBGColor:Color = Color.myGray ?? Color(.systemBlue)
+    var myGroupboxBGColor:Color = Color.myGray
     //groupbox前景
-    var myGroupboxColor:Color = Color.myBlue ?? Color(.systemBlue)
+    var myGroupboxColor:Color = Color.myBlue
     //按钮背景
-    var myBtnBGColor:Color = Color.myBlue ?? Color(.systemBlue)
+    var myBtnBGColor:Color = Color.myBlue
     //按钮字体颜色
     var myBtnFontColor:Color = Color.white
     //按钮红色，例如停止

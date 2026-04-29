@@ -28,6 +28,10 @@ let package = Package(
                 .copy("DesignSystem/RCMDefaultTheme.json")
             ]
         ),
+        .testTarget(
+            name: "MySwiftAppToolsTests",
+            dependencies: ["MySwiftAppTools"]
+        ),
 
     ],
     swiftLanguageModes: [.v6]

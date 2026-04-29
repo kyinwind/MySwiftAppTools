@@ -109,7 +109,7 @@ public struct RCMDesignSystemPreview: View {
             defaultFilename: "MyAppTheme"
         ) { result in
             switch result {
-            case .success(let url):
+            case .success:
                 break
             case .failure(let error):
                 exportError = error.localizedDescription

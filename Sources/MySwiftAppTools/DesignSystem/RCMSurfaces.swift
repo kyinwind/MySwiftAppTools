@@ -253,7 +253,12 @@ public struct RCMHeroPanel<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RCMTheme.shared.heroGradient.gradient)
             .clipShape(RoundedRectangle(cornerRadius: RCMTheme.shared.radius.xl, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 18, x: 0, y: 10)
+            .shadow(
+                color: RCMTheme.shared.shadow.shadowColor,
+                radius: RCMTheme.shared.shadow.radius,
+                x: RCMTheme.shared.shadow.x,
+                y: RCMTheme.shared.shadow.y
+            )
     }
 }
 
@@ -298,7 +303,12 @@ public struct RCMHeroPanelOrange<Content: View>: View {
                 )
             )
             .clipShape(RoundedRectangle(cornerRadius: RCMTheme.shared.radius.xl, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 18, x: 0, y: 10)
+            .shadow(
+                color: RCMTheme.shared.shadow.shadowColor,
+                radius: RCMTheme.shared.shadow.radius,
+                x: RCMTheme.shared.shadow.x,
+                y: RCMTheme.shared.shadow.y
+            )
     }
 }
 
