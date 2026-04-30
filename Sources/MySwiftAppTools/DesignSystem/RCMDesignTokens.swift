@@ -15,9 +15,36 @@ private extension KeyedDecodingContainer {
 
 // MARK: - Color 扩展：支持 hex 字符串解析
 
+/// 8 位 hex 颜色中的 alpha 排列方式。
+public enum ColorHexFormat: Sendable {
+    /// `#AARRGGBB`，例如 `#FFFF0000` 表示不透明红色。
+    case argb
+    /// `#RRGGBBAA`，例如 `#FF0000FF` 表示不透明红色。
+    case rgba
+}
+
 extension Color {
-    /// 从 hex 字符串解析颜色，支持 "#RRGGBB" 和 "#AARRGGBB"
-    public init(hex: String) {
+    /// 从 `#RGB` 或 `#RRGGBB` 解析颜色。
+    public init(hexRGB hex: String) {
+        self.init(hex: hex, format: .argb, allowsEightDigitHex: false)
+    }
+
+    /// 从 `#AARRGGBB`、`#RGB` 或 `#RRGGBB` 解析颜色。
+    public init(hexARGB hex: String) {
+        self.init(hex: hex, format: .argb)
+    }
+
+    /// 从 `#RRGGBBAA`、`#RGB` 或 `#RRGGBB` 解析颜色。
+    public init(hexRGBA hex: String) {
+        self.init(hex: hex, format: .rgba)
+    }
+
+    /// 从 hex 字符串解析颜色，明确指定 8 位 hex 的 alpha 格式。
+    public init(hex: String, format: ColorHexFormat) {
+        self.init(hex: hex, format: format, allowsEightDigitHex: true)
+    }
+
+    private init(hex: String, format: ColorHexFormat, allowsEightDigitHex: Bool) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)
@@ -28,8 +55,13 @@ extension Color {
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
         case 6: // RGB (24-bit)
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        case 8 where allowsEightDigitHex:
+            switch format {
+            case .argb:
+                (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+            case .rgba:
+                (a, r, g, b) = (int & 0xFF, int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF)
+            }
         default:
             (a, r, g, b) = (255, 0, 0, 0)
         }
@@ -121,11 +153,11 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = RCMColorTokens()
         // JSON 中存的是 hex 字符串，解码时转成 Color
-        primary  = Color(hex: try container.decodeValue(String.self, forKey: .primary, default: defaults.primary.toHex()))
-        accent   = Color(hex: try container.decodeValue(String.self, forKey: .accent, default: defaults.accent.toHex()))
-        success  = Color(hex: try container.decodeValue(String.self, forKey: .success, default: defaults.success.toHex()))
-        warning  = Color(hex: try container.decodeValue(String.self, forKey: .warning, default: defaults.warning.toHex()))
-        danger   = Color(hex: try container.decodeValue(String.self, forKey: .danger, default: defaults.danger.toHex()))
+        primary  = Color(hexRGB: try container.decodeValue(String.self, forKey: .primary, default: defaults.primary.toHex()))
+        accent   = Color(hexRGB: try container.decodeValue(String.self, forKey: .accent, default: defaults.accent.toHex()))
+        success  = Color(hexRGB: try container.decodeValue(String.self, forKey: .success, default: defaults.success.toHex()))
+        warning  = Color(hexRGB: try container.decodeValue(String.self, forKey: .warning, default: defaults.warning.toHex()))
+        danger   = Color(hexRGB: try container.decodeValue(String.self, forKey: .danger, default: defaults.danger.toHex()))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -226,7 +258,7 @@ public struct RCMShadowTokens: Codable, Equatable, Sendable {
     // MARK: - 运行时 Shadow 值
 
     /// 阴影颜色（已应用透明度），用于 `.shadow(color:radius:x:y:)`
-    public var shadowColor: Color { Color(hex: color).opacity(opacity) }
+    public var shadowColor: Color { Color(hexRGB: color).opacity(opacity) }
 
     // MARK: - 预设
 
@@ -435,8 +467,8 @@ public struct RCMHeroGradient: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = RCMHeroGradient()
-        startColor = Color(hex: try container.decodeValue(String.self, forKey: .startColor, default: defaults.startColor.toHex()))
-        endColor = Color(hex: try container.decodeValue(String.self, forKey: .endColor, default: defaults.endColor.toHex()))
+        startColor = Color(hexRGB: try container.decodeValue(String.self, forKey: .startColor, default: defaults.startColor.toHex()))
+        endColor = Color(hexRGB: try container.decodeValue(String.self, forKey: .endColor, default: defaults.endColor.toHex()))
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -480,17 +512,17 @@ public struct RCMDesignTokens: Codable, Equatable, Sendable {
     // MARK: - 预设 Hero 渐变
 
     public static let heroGradientBlue = RCMHeroGradient(
-        startColor: Color(hex: "#3185FF"),
-        endColor:   Color(hex: "#0A6BFF")
+        startColor: Color(hexRGB: "#3185FF"),
+        endColor:   Color(hexRGB: "#0A6BFF")
     )
 
     public static let heroGradientOrange = RCMHeroGradient(
-        startColor: Color(hex: "#FF6B00"),
-        endColor:   Color(hex: "#FF3D00")
+        startColor: Color(hexRGB: "#FF6B00"),
+        endColor:   Color(hexRGB: "#FF3D00")
     )
 
     public static let heroGradientPurple = RCMHeroGradient(
-        startColor: Color(hex: "#8B5CF6"),
-        endColor:   Color(hex: "#6D28D9")
+        startColor: Color(hexRGB: "#8B5CF6"),
+        endColor:   Color(hexRGB: "#6D28D9")
     )
 }

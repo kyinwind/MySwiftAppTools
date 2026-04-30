@@ -8,7 +8,7 @@ final class PublicAPITests: XCTestCase {
         try RCMTheme.shared.applyDefaultThemeFromPackage()
         RCMTheme.shared.applyPreset(.orange)
         RCMTheme.shared.configure { tokens in
-            tokens.colors.primary = Color(hex: "#3185FF")
+            tokens.colors.primary = Color(hexRGB: "#3185FF")
             tokens.spacing.md = 16
         }
 
@@ -30,6 +30,13 @@ final class PublicAPITests: XCTestCase {
         _ = RCMPageSection("设置") { Text("Content") }
         _ = RCMHeroPanel { Text("Hero") }
         _ = RCMSettingRow("标题", subtitle: "说明") { Text("Value") }
+    }
+
+    func testColorHexFormatsKeepEightDigitSemanticsExplicit() {
+        XCTAssertEqual(Color(hexRGB: "#FF0000").toHex(), "#FF0000")
+        XCTAssertEqual(Color(hexARGB: "#FF0000FF").toHex(), "#0000FF")
+        XCTAssertEqual(Color(hexRGBA: "#FF0000FF").toHex(), "#FF0000")
+        XCTAssertEqual(Color(hex: "#FF0000FF", format: .rgba).toHex(), "#FF0000")
     }
 
     func testToolPublicEntrypointsCompile() async {

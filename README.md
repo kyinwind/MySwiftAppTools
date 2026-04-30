@@ -499,8 +499,8 @@ struct YourApp: App {
 
 ```swift
 RCMTheme.shared.configure { tokens in
-    tokens.colors.primary = Color(hex: "#FF6B00")
-    tokens.colors.accent = Color(hex: "#FF6B00")
+    tokens.colors.primary = Color(hexRGB: "#FF6B00")
+    tokens.colors.accent = Color(hexRGB: "#FF6B00")
     tokens.spacing.lg = 24
     tokens.radius.md = 10
     tokens.shadow = RCMShadowTokens(
@@ -646,9 +646,26 @@ Token 类型：
 颜色工具：
 
 ```swift
-let color = Color(hex: "#3185FF")
+let color = Color(hexRGB: "#3185FF")
 let hex = color.toHex()
 ```
+
+为了避免 8 位 hex 的 alpha 顺序含义不清，`Color(hex:)` 已废弃不用。请按数据格式选择明确命名的入口：
+
+```swift
+// 普通 RGB：#RGB / #RRGGBB
+let blue = Color(hexRGB: "#3185FF")
+
+// Alpha 在前：#AARRGGBB
+let argbRed = Color(hexARGB: "#FFFF0000")
+let argbRed2 = Color(hex: "#FFFF0000", format: .argb)
+
+// 图片标注、Canvas、部分设计工具常见格式：#RRGGBBAA
+let rgbaRed = Color(hexRGBA: "#FF0000FF")
+let rgbaRed2 = Color(hex: "#FF0000FF", format: .rgba)
+```
+
+这个区分很重要：`#FF0000FF` 如果按 `#AARRGGBB` 解析是蓝色，如果按 `#RRGGBBAA` 解析才是不透明红色。
 
 文本组件：
 
@@ -773,7 +790,9 @@ RCMDesignSystemPreview()
 
 - `ThemeManager`
 - `Theme`
-- `Color(hex:)`
+- `Color(hexRGB:)`
+- `Color(hexARGB:)`
+- `Color(hexRGBA:)`
 - `CustomGroupBoxStyle`
 - `CustomButtonStyle`
 - `PlaceholderTextEditor`

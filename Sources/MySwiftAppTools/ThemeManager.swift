@@ -79,24 +79,24 @@ public struct Theme {
 
 public extension Color {
     //背景颜色
-    static let myGray = Color(hex: "#fdfdfd")
+    static let myGray = Color(hexRGB: "#fdfdfd")
     //其他背景色
     //蓝色
-    static let myBlue = Color(hex: "#3183ff")
-    static let myBlue2 = Color(hex: "#a2d2ff")
+    static let myBlue = Color(hexRGB: "#3183ff")
+    static let myBlue2 = Color(hexRGB: "#a2d2ff")
     //薄荷绿
-    static let myMintGreen = Color(hex: "#A6E3E9")
+    static let myMintGreen = Color(hexRGB: "#A6E3E9")
     //黑灰色，常用于字体颜色
-    static let myDarkGray = Color(hex: "#242424")
+    static let myDarkGray = Color(hexRGB: "#242424")
     //亮橘色
-    static let myOrange = Color(hex: "#FF6F3D")
+    static let myOrange = Color(hexRGB: "#FF6F3D")
     //#FFD700：经典的金黄色，非常接近实际黄金的颜色。
     //#FFC107：一种较亮的金黄色，常用于现代设计。
-    static let myYellow = Color(hex: "#FFC107")
+    static let myYellow = Color(hexRGB: "#FFC107")
     //#FFDF00：略带橙色调的金黄色，显得更加温暖和耀眼。
-    static let myYellow2 = Color(hex: "#FFDF00")
+    static let myYellow2 = Color(hexRGB: "#FFDF00")
     //#E1AD01：较深的金黄色，模拟了金属的厚重感。
-    static let myYellow3 = Color(hex: "#E1AD01")
+    static let myYellow3 = Color(hexRGB: "#E1AD01")
 }
 
 

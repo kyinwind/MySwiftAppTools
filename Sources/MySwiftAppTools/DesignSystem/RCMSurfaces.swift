@@ -294,9 +294,9 @@ public struct RCMHeroPanelOrange<Content: View>: View {
             .background(
                 LinearGradient(
                     colors: [
-                        Color(hex: "#FF6B00"),
-                        Color(hex: "#FF3D00"),
-                        Color(hex: "#1F528C")
+                        Color(hexRGB: "#FF6B00"),
+                        Color(hexRGB: "#FF3D00"),
+                        Color(hexRGB: "#1F528C")
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
