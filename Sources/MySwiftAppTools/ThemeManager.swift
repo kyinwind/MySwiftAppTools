@@ -296,7 +296,11 @@ public extension View {
 public struct PlaceholderTextEditor: View {
     @Binding var text: String
     let placeholder: String
-    
+    // 添加 public 初始化器
+    public init(text: Binding<String>, placeholder: String) {
+        self._text = text
+        self.placeholder = placeholder
+    }
     public var body: some View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
@@ -353,7 +357,18 @@ public struct ReadOnlyTextView: NSViewRepresentable {
     var isEditable: Bool = false
     var isSelectable: Bool = true
     var font: NSFont = .systemFont(ofSize: 14)
-    
+    // MARK: - 公开初始化器
+    public init(
+        text: Binding<String>,
+        isEditable: Bool = false,
+        isSelectable: Bool = true,
+        font: NSFont = .systemFont(ofSize: 14)
+    ) {
+        self._text = text
+        self.isEditable = isEditable
+        self.isSelectable = isSelectable
+        self.font = font
+    }
     // MARK: - 协调器：用于监听 NSTextView 的文本变化，实现双向绑定
     public class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ReadOnlyTextView
