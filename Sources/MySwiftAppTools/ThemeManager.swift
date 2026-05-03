@@ -1446,7 +1446,7 @@ public struct RCMComparisonSection: View {
 
     public var body: some View {
         RCMSection(header: {
-            RCMSectionTitle("RCMComparisonSection.features.title")
+            RCMSectionTitle(title: "RCMComparisonSection.features.title".toPackageNSLocalizedString)
                 .padding(.vertical, 10)
         }) {
             VStack(spacing: RCMTheme.shared.spacing.sm) {

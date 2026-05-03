@@ -54,22 +54,35 @@ public struct RCMPageTitle: View {
 
 /// 章节标题（用于页面内每个区块的标题）
 public struct RCMSectionTitle: View {
-    let title: LocalizedStringKey
-    let subtitle: LocalizedStringKey?
-
+    let titleText: Text
+    let subtitleText: Text?
+    
+    // 1. 支持 LocalizedStringKey（SwiftUI原生方式）
     public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
-        self.title = title
-        self.subtitle = subtitle
+        self.titleText = Text(title)
+        self.subtitleText = subtitle.map { Text($0) }
+    }
+    
+    // 2. 支持 String
+    public init(title: String, subtitle: String? = nil) {
+        self.titleText = Text(title)
+        self.subtitleText = subtitle.map { Text($0) }
+    }
+    
+    // 3. 支持直接传 Text（最灵活）
+    public init(title: Text, subtitle: Text? = nil) {
+        self.titleText = title
+        self.subtitleText = subtitle
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xxs) {
-            Text(title)
+            titleText
                 .font(RCMTheme.shared.typography.sectionTitle)
                 .foregroundStyle(RCMTheme.shared.colors.textPrimary)
 
-            if let subtitle {
-                Text(subtitle)
+            if let subtitleText {
+                subtitleText
                     .font(RCMTheme.shared.typography.caption)
                     .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                     .lineLimit(3)
