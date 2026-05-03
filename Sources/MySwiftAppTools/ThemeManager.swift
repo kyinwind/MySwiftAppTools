@@ -1431,7 +1431,7 @@ public struct AppInfo {
 }
 
 //功能对比
-public struct ComparisonSection: View {
+public struct RCMComparisonSection: View {
     /*这是一个元组数组，类似于：
      let features = [
          ("PurchaseView.features.openTerminal".toPackageNSLocalizedString, true, true),
@@ -1480,10 +1480,10 @@ public struct ComparisonSection: View {
                                 .foregroundStyle(RCMTheme.shared.colors.textPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            IconMark(isOn: features[index].1)
+                            RCMIconMark(isOn: features[index].1)
                                 .frame(width: 72)
                             
-                            IconMark(isOn: features[index].2)
+                            RCMIconMark(isOn: features[index].2)
                                 .frame(width: 72)
                         }
                     }
@@ -1493,7 +1493,7 @@ public struct ComparisonSection: View {
     }
 }
 
-public struct IconMark: View {
+public struct RCMIconMark: View {
     let isOn: Bool
     
     public var body: some View {
