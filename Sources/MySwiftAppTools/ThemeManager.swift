@@ -1307,7 +1307,11 @@ public struct ActionBar: View {
         to view: some View
     ) -> some View {
         if let shortcut, shortcut.displayString != " " {
-            view.keyboardShortcut(shortcut.key, modifiers: shortcut.modifiers)
+            if #available(iOS 14.0, *) {
+                view.keyboardShortcut(shortcut.key, modifiers: shortcut.modifiers)
+            } else {
+                // Fallback on earlier versions
+            }
         } else {
             view
         }
@@ -1424,4 +1428,77 @@ public struct AppInfo {
         ])
     }
     .padding()
+}
+
+//功能对比
+public struct ComparisonSection: View {
+    /*这是一个元组数组，类似于：
+     let features = [
+         ("PurchaseView.features.openTerminal".toPackageNSLocalizedString, true, true),
+         ("PurchaseView.features.copyPath".toPackageNSLocalizedString, true, true),
+     ]
+    */
+    public let features:[(LocalizedStringKey, Bool, Bool)]
+    
+    public init(features:[(LocalizedStringKey, Bool, Bool)]) {
+        self.features = features
+    }
+
+    public var body: some View {
+        RCMSection(header: {
+            RCMSectionTitle("PurchaseView.features.title")
+                .padding(.vertical, 10)
+        }) {
+            VStack(spacing: RCMTheme.shared.spacing.sm) {
+                HStack {
+                    Text("PurchaseView.features.features".toNSLocalizedString)
+                        .font(RCMTheme.shared.typography.captionStrong)
+                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                        .frame(width: 55)
+                    
+                    Spacer()
+                    
+                    Text("PurchaseView.features.free".toNSLocalizedString)
+                        .font(RCMTheme.shared.typography.captionStrong)
+                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                        .frame(width: 72)
+                    
+                    Text("PurchaseView.features.pro".toNSLocalizedString)
+                        .font(RCMTheme.shared.typography.captionStrong)
+                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                        .frame(width: 72)
+                }
+                
+                Divider()
+                
+                ForEach(features.indices, id: \.self) { index in
+                    VStack(spacing: 5) {
+                        HStack(spacing: RCMTheme.shared.spacing.md) {
+                            Text("\(index + 1).")
+                            Text(features[index].0)
+                                .font(RCMTheme.shared.typography.body)
+                                .foregroundStyle(RCMTheme.shared.colors.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            IconMark(isOn: features[index].1)
+                                .frame(width: 72)
+                            
+                            IconMark(isOn: features[index].2)
+                                .frame(width: 72)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+public struct IconMark: View {
+    let isOn: Bool
+    
+    public var body: some View {
+        Image(systemName: isOn ? "checkmark.circle.fill" : "minus.circle")
+            .foregroundStyle(isOn ? RCMTheme.shared.colors.success : RCMTheme.shared.colors.textTertiary)
+            .font(.system(size: 18, weight: .semibold))
+    }
 }
