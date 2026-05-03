@@ -1451,19 +1451,19 @@ public struct RCMComparisonSection: View {
         }) {
             VStack(spacing: RCMTheme.shared.spacing.sm) {
                 HStack {
-                    Text("PurchaseView.features.features".toPackageNSLocalizedString)
+                    Text("RCMComparisonSection.features.features".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 55)
                     
                     Spacer()
                     
-                    Text("PurchaseView.features.free".toPackageNSLocalizedString)
+                    Text("RCMComparisonSection.features.free".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 72)
                     
-                    Text("PurchaseView.features.pro".toPackageNSLocalizedString)
+                    Text("RCMComparisonSection.features.pro".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 72)
