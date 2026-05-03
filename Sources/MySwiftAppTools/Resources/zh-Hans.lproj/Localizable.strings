@@ -2,10 +2,12 @@
 "PermissionManager.authReadMsg" = "请选择需要读取的文件夹。";
 "PermissionManager.authWriteTitle" = "授权访问目录";
 "PermissionManager.authWriteMsg" = "请选择需要应用访问的文件夹。";
-
 "MyDirectoryType.normal" = "固定目录";
 "MyDirectoryType.nolabel" = "临时目录";
 "MyDirectoryType.history" = "历史记录";
-
 "Toast.copiedToPasteboard" = "已复制到剪贴板";
 "Toast.confirmOK" = "确定";
+"RCMComparisonSection.features.title" = "功能对比";
+"RCMComparisonSection.features.features" = "功能";
+"RCMComparisonSection.features.free" = "Free";
+"RCMComparisonSection.features.pro" = "Pro";

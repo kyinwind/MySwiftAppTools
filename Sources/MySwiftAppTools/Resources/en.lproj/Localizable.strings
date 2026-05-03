@@ -2,10 +2,12 @@
 "PermissionManager.authReadMsg" = "Choose the folder you want this app to read.";
 "PermissionManager.authWriteTitle" = "Grant Folder Access";
 "PermissionManager.authWriteMsg" = "Choose the folder you want this app to use.";
-
 "MyDirectoryType.normal" = "Pinned";
 "MyDirectoryType.nolabel" = "Temporary";
 "MyDirectoryType.history" = "History";
-
 "Toast.copiedToPasteboard" = "Copied to clipboard";
 "Toast.confirmOK" = "OK";
+"RCMComparisonSection.features.title" = "Feature Comparison";
+"RCMComparisonSection.features.features" = "Features";
+"RCMComparisonSection.features.free" = "Free";
+"RCMComparisonSection.features.pro" = "Pro";

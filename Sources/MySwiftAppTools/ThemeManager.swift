@@ -1438,32 +1438,32 @@ public struct RCMComparisonSection: View {
          ("PurchaseView.features.copyPath".toPackageNSLocalizedString, true, true),
      ]
     */
-    public let features:[(LocalizedStringKey, Bool, Bool)]
+    public let features:[(String, Bool, Bool)]
     
-    public init(features:[(LocalizedStringKey, Bool, Bool)]) {
+    public init(features:[(String, Bool, Bool)]) {
         self.features = features
     }
 
     public var body: some View {
         RCMSection(header: {
-            RCMSectionTitle("PurchaseView.features.title")
+            RCMSectionTitle("RCMComparisonSection.features.title")
                 .padding(.vertical, 10)
         }) {
             VStack(spacing: RCMTheme.shared.spacing.sm) {
                 HStack {
-                    Text("PurchaseView.features.features".toNSLocalizedString)
+                    Text("PurchaseView.features.features".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 55)
                     
                     Spacer()
                     
-                    Text("PurchaseView.features.free".toNSLocalizedString)
+                    Text("PurchaseView.features.free".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 72)
                     
-                    Text("PurchaseView.features.pro".toNSLocalizedString)
+                    Text("PurchaseView.features.pro".toPackageNSLocalizedString)
                         .font(RCMTheme.shared.typography.captionStrong)
                         .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                         .frame(width: 72)
