@@ -137,3 +137,27 @@ public extension DefaultsTools {
         return ud.string(forKey: key)
     }
 }
+
+// MARK: - Codable 支持，可以保存结构体
+public extension DefaultsTools {
+    /// 保存 Codable 对象
+    func setCodable<T: Codable>(_ value: T, forStringKey key: String) {
+        do {
+            let data = try JSONEncoder().encode(value)
+            ud.set(data, forKey: key)
+        } catch {
+            print("DefaultsTools 保存 Codable 失败：\(error)")
+        }
+    }
+
+    /// 读取 Codable 对象
+    func codable<T: Codable>(_ type: T.Type, forStringKey key: String) -> T? {
+        guard let data = ud.data(forKey: key) else { return nil }
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            print("DefaultsTools 读取 Codable 失败：\(error)")
+            return nil
+        }
+    }
+}
