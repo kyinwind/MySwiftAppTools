@@ -276,6 +276,8 @@ private struct ToastRow: View {
     private var iconView: some View {
         if let customIcon = item.customIcon {
             customIcon
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.white)
         } else {
             item.type.icon
         }
