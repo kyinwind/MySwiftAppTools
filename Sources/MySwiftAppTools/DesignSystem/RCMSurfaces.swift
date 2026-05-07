@@ -347,7 +347,7 @@ public struct MultilineSubtitleRow<Content: View>: View {
                     Text(title)
                         .font(RCMTheme.shared.typography.body)
                         .foregroundStyle(.primary)
-                        .frame(minWidth: 50)
+                        //.frame(minWidth: 50)
                 }
 
                 if let subtitle = subtitle {
@@ -356,7 +356,7 @@ public struct MultilineSubtitleRow<Content: View>: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(nil)  // 允许多行，不限制
                         .fixedSize(horizontal: false, vertical: true)
-                        .frame(minWidth: 150)
+                        //.frame(minWidth: 150)
                 }
             }
 
