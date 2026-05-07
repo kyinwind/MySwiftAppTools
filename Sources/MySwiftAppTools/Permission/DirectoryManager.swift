@@ -1,6 +1,10 @@
 import Foundation
 import SwiftUI
 
+public extension Notification.Name {
+    static let directoryManagerDidChange = Notification.Name("DirectoryManagerDidChange")
+}
+
 /*
  这个工具类是为了保存目录权限的 bookmark而构造的保存结构
  */
@@ -176,10 +180,12 @@ public final class DirectoryManager: DirectoryStore {
     public static func save(_ list: [MyDirectory]) {
         if list.isEmpty {
             defaults.removeObject(forKey: key)
+            NotificationCenter.default.post(name: .directoryManagerDidChange, object: self)
             return
         }
         if let data = try? JSONEncoder().encode(list) {
             defaults.set(data, forKey: key)
+            NotificationCenter.default.post(name: .directoryManagerDidChange, object: self)
         }
     }
 
