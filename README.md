@@ -601,6 +601,7 @@ RCMTheme.shared.shadow.shadowColor
 - `RCMValueRow`
 - `RCMInlineField`
 - `RCMCard`
+- `RCMGroup`
 - `RCMPageSection`
 - `RCMHeroPanel`
 - `MultilineSubtitleRow`
@@ -702,6 +703,26 @@ RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
 容器组件：
 
 ```swift
+// 页面章节：只负责章节标题和内容组织，本身没有背景和边框
+RCMPageSection("存储管理") {
+    RCMValueRow("已用空间", value: "12.4 GB")
+    RCMValueRow("剩余空间", value: "86.1 GB", tone: .green)
+}
+
+// 内容分组：默认有浅背景和圆角，适合包裹一组设置项或状态项
+RCMGroup("基础设置", subtitle: "常用选项") {
+    RCMSettingRow("登录时自动启动") {
+        RCMToggle(isOn: $launchAtLogin, label: "启用")
+    }
+}
+
+// 需要更明确的边界时，可以打开边框
+RCMGroup("高级设置", showsBorder: true) {
+    RCMSettingRow("调试模式") {
+        RCMToggle(isOn: $debugMode, label: "启用")
+    }
+}
+
 // 默认只提供 padding，不绘制背景
 RCMCard {
     Text("无背景内容")
@@ -712,11 +733,6 @@ RCMCard(background: Color.red.opacity(0.1)) {
     Text("红色调卡片")
 }
 
-RCMPageSection("存储管理") {
-    RCMValueRow("已用空间", value: "12.4 GB")
-    RCMValueRow("剩余空间", value: "86.1 GB", tone: .green)
-}
-
 RCMHeroPanel {
     VStack(alignment: .leading) {
         Text("欢迎使用").font(.title).foregroundColor(.white)
@@ -725,6 +741,14 @@ RCMHeroPanel {
     }
 }
 ```
+
+`RCMPageSection`、`RCMGroup`、`RCMCard` 的分工：
+
+| 组件 | 语义 | 默认背景 | 默认边框 | 标题 |
+|------|------|---------|---------|------|
+| `RCMPageSection` | 页面章节 | 无 | 无 | 有 |
+| `RCMGroup` | 内容分组 | 浅背景 | 无，可选开启 | 可选 |
+| `RCMCard` | 底层视觉容器 | 无，显式传入才显示 | 无 | 无 |
 
 侧边栏：
 

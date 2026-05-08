@@ -202,6 +202,78 @@ public struct RCMCard<Content: View>: View {
     }
 }
 
+// MARK: RCMGroup
+
+public struct RCMGroup<Content: View>: View {
+    let title: LocalizedStringKey?
+    let subtitle: LocalizedStringKey?
+    let padding: CGFloat
+    let backgroundStyle: AnyShapeStyle
+    let cornerRadius: CGFloat
+    let showsBorder: Bool
+    let content: Content
+
+    /// 内容分组。默认使用浅背景和圆角，不显示边框。
+    public init(
+        _ title: LocalizedStringKey? = nil,
+        subtitle: LocalizedStringKey? = nil,
+        padding: CGFloat = RCMTheme.shared.spacing.lg,
+        background: some ShapeStyle = RCMTheme.shared.colors.cardGrayBackground,
+        cornerRadius: CGFloat = RCMTheme.shared.radius.md,
+        showsBorder: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.padding = padding
+        self.backgroundStyle = AnyShapeStyle(background)
+        self.cornerRadius = cornerRadius
+        self.showsBorder = showsBorder
+        self.content = content()
+    }
+
+    public var body: some View {
+        RCMCard(
+            padding: padding,
+            background: backgroundStyle,
+            cornerRadius: cornerRadius
+        ) {
+            VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.md) {
+                if title != nil || subtitle != nil {
+                    header
+                }
+
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(
+                    showsBorder ? RCMTheme.shared.colors.border : Color.clear,
+                    lineWidth: RCMTheme.shared.stroke.hairline
+                )
+        )
+    }
+
+    @ViewBuilder
+    private var header: some View {
+        VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xxs) {
+            if let title {
+                Text(title)
+                    .font(RCMTheme.shared.typography.bodyStrong)
+                    .foregroundStyle(RCMTheme.shared.colors.textPrimary)
+            }
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(RCMTheme.shared.typography.caption)
+                    .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+            }
+        }
+    }
+}
+
 // MARK: RCMPageSection
 
 public struct RCMPageSection<Content: View>: View {
@@ -245,7 +317,7 @@ public struct RCMPageSection<Content: View>: View {
             }
 
             // 内容区域 - 有浅灰色背景和圆角
-            RCMCard(background: RCMTheme.shared.colors.cardGrayBackground) {
+            RCMGroup {
                 content
             }
         }

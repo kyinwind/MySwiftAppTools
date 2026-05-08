@@ -27,6 +27,8 @@ final class PublicAPITests: XCTestCase {
         _ = RCMBadge(verbatim: "1.0.0", style: .neutral)
         _ = RCMToggle(isOn: .constant(true), localizedLabel: "自动更新")
         _ = RCMCard { Text("Card") }
+        _ = RCMGroup("分组", subtitle: "说明") { Text("Group") }
+        _ = RCMGroup(showsBorder: true) { Text("Group") }
         _ = RCMPageSection("设置") { Text("Content") }
         _ = RCMHeroPanel { Text("Hero") }
         _ = RCMSettingRow("标题", subtitle: "说明") { Text("Value") }
