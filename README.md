@@ -705,6 +705,14 @@ RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
 ```swift
 // 页面章节：只负责章节标题和内容组织，本身没有背景和边框
 RCMPageSection("存储管理") {
+    RCMGroup {
+        RCMValueRow("已用空间", value: "12.4 GB")
+        RCMValueRow("剩余空间", value: "86.1 GB", tone: .green)
+    }
+}
+
+// 如果内容自己已经有分组，PageSection 不会再额外套一层背景
+RCMPageSection("高级设置", showsDivider: true) {
     RCMValueRow("已用空间", value: "12.4 GB")
     RCMValueRow("剩余空间", value: "86.1 GB", tone: .green)
 }

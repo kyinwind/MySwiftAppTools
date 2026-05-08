@@ -316,10 +316,7 @@ public struct RCMPageSection<Content: View>: View {
                     .padding(.bottom, RCMTheme.shared.spacing.md)
             }
 
-            // 内容区域 - 有浅灰色背景和圆角
-            RCMGroup {
-                content
-            }
+            content
         }
     }
 }
