@@ -702,10 +702,12 @@ RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
 容器组件：
 
 ```swift
+// 默认只提供 padding，不绘制背景
 RCMCard {
-    Text("卡片内容")
+    Text("无背景内容")
 }
 
+// 显式传入 background 后才绘制背景和圆角
 RCMCard(background: Color.red.opacity(0.1)) {
     Text("红色调卡片")
 }

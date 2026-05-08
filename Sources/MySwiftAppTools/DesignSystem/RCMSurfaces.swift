@@ -159,15 +159,25 @@ public struct RCMSidebarItemButton: View {
 
 public struct RCMCard<Content: View>: View {
     let padding: CGFloat
-    let backgroundStyle: AnyShapeStyle
+    let backgroundStyle: AnyShapeStyle?
     let cornerRadius: CGFloat
     let content: Content
 
-    /// Shared card surface. Omit `background` for the neutral default, or pass a
-    /// branded color/gradient for hero cards without creating one-off surfaces.
+    /// 轻量容器。默认只提供 padding，不绘制背景。
     public init(
         padding: CGFloat = RCMTheme.shared.spacing.lg,
-        background: some ShapeStyle = RCMTheme.shared.colors.cardGrayBackground,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.padding = padding
+        self.backgroundStyle = nil
+        self.cornerRadius = RCMTheme.shared.radius.md
+        self.content = content()
+    }
+
+    /// 带背景的卡片容器。只有显式传入 `background` 时才绘制背景和圆角。
+    public init(
+        padding: CGFloat = RCMTheme.shared.spacing.lg,
+        background: some ShapeStyle,
         cornerRadius: CGFloat = RCMTheme.shared.radius.md,
         @ViewBuilder content: () -> Content
     ) {
@@ -178,12 +188,17 @@ public struct RCMCard<Content: View>: View {
     }
 
     public var body: some View {
-        content
-            .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundStyle)
-            )
+        if let backgroundStyle {
+            content
+                .padding(padding)
+                .background(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(backgroundStyle)
+                )
+        } else {
+            content
+                .padding(padding)
+        }
     }
 }
 
@@ -230,7 +245,7 @@ public struct RCMPageSection<Content: View>: View {
             }
 
             // 内容区域 - 有浅灰色背景和圆角
-            RCMCard {
+            RCMCard(background: RCMTheme.shared.colors.cardGrayBackground) {
                 content
             }
         }
