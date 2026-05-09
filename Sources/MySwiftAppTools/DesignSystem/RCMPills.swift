@@ -128,6 +128,7 @@ public struct RCMPill: View {
     let showsRemoveButton: Bool
     let action: (() -> Void)?
     let onRemove: (() -> Void)?
+    @State private var isHovering = false
 
     public init(
         _ title: String,
@@ -146,29 +147,17 @@ public struct RCMPill: View {
     }
 
     public var body: some View {
-        HStack(spacing: RCMTheme.shared.spacing.xs) {
-            Button {
-                action?()
-            } label: {
-                Text(verbatim: title)
-                    .font(RCMTheme.shared.typography.captionStrong)
-                    .foregroundStyle(tone.foreground)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-            }
-            .buttonStyle(.plain)
-            .disabled(action == nil)
+        ZStack {
+            Text(verbatim: title)
+                .font(RCMTheme.shared.typography.captionStrong)
+                .foregroundStyle(tone.foreground)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: .infinity, alignment: .center)
 
-            if showsRemoveButton {
-                Button {
-                    onRemove?()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(tone.foreground.opacity(0.72))
-                }
-                .buttonStyle(.plain)
-                .disabled(onRemove == nil)
+            HStack {
+                Spacer(minLength: 0)
+                removeButton
             }
         }
         .frame(minWidth: minWidth, alignment: .leading)
@@ -181,12 +170,37 @@ public struct RCMPill: View {
         )
         .clipShape(Capsule())
         .contentShape(Capsule())
+        .onTapGesture {
+            action?()
+        }
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    @ViewBuilder
+    private var removeButton: some View {
+        if showsRemoveButton {
+            Button {
+                onRemove?()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(tone.foreground.opacity(0.72))
+                    .frame(width: 16, height: 16)
+            }
+            .buttonStyle(.plain)
+            .disabled(onRemove == nil)
+            .opacity(isHovering ? 1 : 0)
+            .allowsHitTesting(isHovering)
+            .animation(.easeInOut(duration: 0.12), value: isHovering)
+        }
     }
 }
 
 // MARK: - RCMPillFlow
 
-/// 流式 pill 标签列表。每个标签会按文本稳定映射到一组颜色，避免刷新时跳色。
+/// 流式 pill 标签列表。标签会按展示顺序轮换浅色背景，形成轻量的随机色效果。
 public struct RCMPillFlow: View {
     let items: [String]
     let horizontalSpacing: CGFloat
@@ -222,10 +236,10 @@ public struct RCMPillFlow: View {
             horizontalSpacing: horizontalSpacing,
             verticalSpacing: verticalSpacing
         ) {
-            ForEach(items, id: \.self) { item in
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 RCMPill(
                     item,
-                    tone: tone(for: item),
+                    tone: tone(at: index),
                     minWidth: minItemWidth,
                     showsRemoveButton: showsRemoveButton,
                     action: onTap.map { handler in { handler(item) } },
@@ -235,16 +249,7 @@ public struct RCMPillFlow: View {
         }
     }
 
-    private func tone(for item: String) -> RCMPillTone {
-        palette[stableIndex(for: item, count: palette.count)]
-    }
-
-    private func stableIndex(for string: String, count: Int) -> Int {
-        guard count > 0 else { return 0 }
-        var hash = UInt64(5381)
-        for scalar in string.unicodeScalars {
-            hash = ((hash << 5) &+ hash) &+ UInt64(scalar.value)
-        }
-        return Int(hash % UInt64(count))
+    private func tone(at index: Int) -> RCMPillTone {
+        palette[index % palette.count]
     }
 }
