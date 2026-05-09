@@ -200,9 +200,19 @@ public struct RCMPill: View {
 
 // MARK: - RCMPillFlow
 
+public enum RCMPillFlowSortOrder: Sendable {
+    /// 保持调用方传入顺序。
+    case original
+    /// 按字符串本地化升序排序。
+    case ascending
+    /// 按字符串本地化降序排序。
+    case descending
+}
+
 /// 流式 pill 标签列表。标签会按展示顺序轮换浅色背景，形成轻量的随机色效果。
 public struct RCMPillFlow: View {
     let items: [String]
+    let sortOrder: RCMPillFlowSortOrder
     let horizontalSpacing: CGFloat
     let verticalSpacing: CGFloat
     let minItemWidth: CGFloat?
@@ -213,6 +223,7 @@ public struct RCMPillFlow: View {
 
     public init(
         _ items: [String],
+        sortOrder: RCMPillFlowSortOrder = .original,
         horizontalSpacing: CGFloat = RCMTheme.shared.spacing.sm,
         verticalSpacing: CGFloat = RCMTheme.shared.spacing.sm,
         minItemWidth: CGFloat? = nil,
@@ -222,6 +233,7 @@ public struct RCMPillFlow: View {
         onRemove: ((String) -> Void)? = nil
     ) {
         self.items = items
+        self.sortOrder = sortOrder
         self.horizontalSpacing = horizontalSpacing
         self.verticalSpacing = verticalSpacing
         self.minItemWidth = minItemWidth
@@ -236,7 +248,7 @@ public struct RCMPillFlow: View {
             horizontalSpacing: horizontalSpacing,
             verticalSpacing: verticalSpacing
         ) {
-            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+            ForEach(Array(sortedItems.enumerated()), id: \.offset) { index, item in
                 RCMPill(
                     item,
                     tone: tone(at: index),
@@ -245,6 +257,21 @@ public struct RCMPillFlow: View {
                     action: onTap.map { handler in { handler(item) } },
                     onRemove: onRemove.map { handler in { handler(item) } }
                 )
+            }
+        }
+    }
+
+    private var sortedItems: [String] {
+        switch sortOrder {
+        case .original:
+            return items
+        case .ascending:
+            return items.sorted {
+                $0.localizedStandardCompare($1) == .orderedAscending
+            }
+        case .descending:
+            return items.sorted {
+                $0.localizedStandardCompare($1) == .orderedDescending
             }
         }
     }

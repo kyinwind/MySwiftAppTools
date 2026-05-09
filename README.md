@@ -708,6 +708,7 @@ RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
 ```swift
 RCMPillFlow(
     ["2560x1600", "1920x1080", "50%", "200%"],
+    sortOrder: .ascending,
     minItemWidth: 96,
     showsRemoveButton: true,
     onTap: { value in
@@ -718,6 +719,8 @@ RCMPillFlow(
     }
 )
 ```
+
+`sortOrder` 默认是 `.original`，保持传入顺序；也可以使用 `.ascending` 或 `.descending` 按字符串本地化排序。
 
 `RCMPillFlow` 会自动换行显示标签，并按展示顺序从一组浅色背景中轮换取色。单个 pill 的文本默认居中，整个胶囊区域都可点击；删除按钮只在鼠标悬停时显示。
 
