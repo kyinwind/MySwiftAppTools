@@ -50,6 +50,25 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(DefaultsTools.shared.string("public.api.test"), "value")
         DefaultsTools.shared.remove("public.api.test")
 
+        let typedKey: DefaultsTools.Key = "public.api.typed"
+        let date = Date(timeIntervalSince1970: 100)
+        let url = URL(fileURLWithPath: "/tmp/defaults-tools")
+        let data = Data([1, 2, 3])
+        DefaultsTools.shared.set(Float(1.5), for: typedKey)
+        XCTAssertEqual(DefaultsTools.shared.float(typedKey), Float(1.5))
+        DefaultsTools.shared.set(date, for: "public.api.date")
+        XCTAssertEqual(DefaultsTools.shared.date("public.api.date"), date)
+        DefaultsTools.shared.set(url, for: "public.api.url")
+        XCTAssertEqual(DefaultsTools.shared.url("public.api.url"), url)
+        DefaultsTools.shared.set(data, for: "public.api.data")
+        XCTAssertEqual(DefaultsTools.shared.data("public.api.data"), data)
+        DefaultsTools.shared.set(["a", "b"], for: "public.api.array")
+        XCTAssertEqual(DefaultsTools.shared.stringArray("public.api.array"), ["a", "b"])
+        DefaultsTools.shared.set(["count": 2], for: "public.api.dictionary")
+        XCTAssertEqual(DefaultsTools.shared.dictionary("public.api.dictionary", as: Int.self)?["count"], 2)
+        DefaultsTools.shared.setCodable(["name": "tools"], for: "public.api.codable")
+        XCTAssertEqual(DefaultsTools.shared.codable([String: String].self, for: "public.api.codable")?["name"], "tools")
+
         KeychainTools.configure(defaultService: "MySwiftAppToolsTests")
         Log.configure(subsystem: "MySwiftAppToolsTests", isEnabled: false)
 

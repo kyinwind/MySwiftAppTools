@@ -77,7 +77,10 @@ struct YourApp: App {
 - `DefaultsTools.configure(appGroupID:)`
 - `DefaultsTools.shared`
 - `set/value/remove/exists`
-- `bool/int/double/string`
+- `bool/int/double/float/string`
+- `data/date/url`
+- `stringArray/array/dictionary`
+- `setCodable/codable`
 - `DefaultsTools.Key(rawValue:)`
 - 直接使用 string key 的便捷方法
 
@@ -89,6 +92,29 @@ DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
 let key = DefaultsTools.Key(rawValue: "launchCount")
 let count = DefaultsTools.shared.int(key) ?? 0
 DefaultsTools.shared.set(count + 1, for: key)
+```
+
+更多类型：
+
+```swift
+DefaultsTools.shared.set(Date(), for: "lastOpenDate")
+let lastOpenDate = DefaultsTools.shared.date("lastOpenDate")
+
+DefaultsTools.shared.set(URL(fileURLWithPath: "/tmp"), for: "lastFolder")
+let lastFolder = DefaultsTools.shared.url("lastFolder")
+
+DefaultsTools.shared.set(["png", "jpg"], for: "recentExtensions")
+let recentExtensions = DefaultsTools.shared.stringArray("recentExtensions")
+
+DefaultsTools.shared.set(["count": 3], for: "stats")
+let stats = DefaultsTools.shared.dictionary("stats", as: Int.self)
+
+struct UserPreference: Codable {
+    var name: String
+}
+
+DefaultsTools.shared.setCodable(UserPreference(name: "Default"), for: "preference")
+let preference = DefaultsTools.shared.codable(UserPreference.self, for: "preference")
 ```
 
 #### `KeychainTools`
