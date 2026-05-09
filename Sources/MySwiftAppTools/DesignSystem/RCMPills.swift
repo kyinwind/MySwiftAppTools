@@ -115,7 +115,13 @@ public struct RCMPillTone: Sendable {
         RCMPillTone(background: Color(hexRGB: "#FFF4E6"), foreground: Color(hexRGB: "#B76100")),
         RCMPillTone(background: Color(hexRGB: "#F3EDFF"), foreground: Color(hexRGB: "#6F42C1")),
         RCMPillTone(background: Color(hexRGB: "#EAF7FA"), foreground: Color(hexRGB: "#087990")),
-        RCMPillTone(background: Color(hexRGB: "#FDECEF"), foreground: Color(hexRGB: "#C7354D"))
+        RCMPillTone(background: Color(hexRGB: "#FDECEF"), foreground: Color(hexRGB: "#C7354D")),
+        RCMPillTone(background: Color(hexRGB: "#FFF0F7"), foreground: Color(hexRGB: "#B83280")),
+        RCMPillTone(background: Color(hexRGB: "#EEF2FF"), foreground: Color(hexRGB: "#4F46E5")),
+        RCMPillTone(background: Color(hexRGB: "#ECFDF5"), foreground: Color(hexRGB: "#047857")),
+        RCMPillTone(background: Color(hexRGB: "#FEFCE8"), foreground: Color(hexRGB: "#A16207")),
+        RCMPillTone(background: Color(hexRGB: "#F1F5F9"), foreground: Color(hexRGB: "#475569")),
+        RCMPillTone(background: Color(hexRGB: "#F0FDFA"), foreground: Color(hexRGB: "#0F766E"))
     ]
 }
 
