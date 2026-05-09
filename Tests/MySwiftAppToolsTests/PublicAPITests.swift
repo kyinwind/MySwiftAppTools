@@ -32,6 +32,9 @@ final class PublicAPITests: XCTestCase {
         _ = RCMPageSection("设置") { Text("Content") }
         _ = RCMHeroPanel { Text("Hero") }
         _ = RCMSettingRow("标题", subtitle: "说明") { Text("Value") }
+        _ = RCMFlowLayout { Text("Flow") }
+        _ = RCMPill("标签", tone: RCMPillTone.defaultPalette[0], action: {})
+        _ = RCMPillFlow(["2560x1600", "50%", "1280x720"], minItemWidth: 96, showsRemoveButton: true)
     }
 
     func testColorHexFormatsKeepEightDigitSemanticsExplicit() {

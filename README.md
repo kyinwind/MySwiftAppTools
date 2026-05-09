@@ -589,6 +589,9 @@ RCMTheme.shared.shadow.shadowColor
 - `RCMSecondaryButtonStyle`
 - `RCMSoftButtonStyle`
 - `RCMDangerButtonStyle`
+- `RCMFlowLayout`
+- `RCMPill`
+- `RCMPillFlow`
 - `RCMSidebarIcon`
 - `RCMBadge`
 - `RCMToggle`
@@ -698,6 +701,34 @@ RCMBadge(verbatim: "v1.0.0", style: .neutral)
 
 RCMToggle(isOn: $isEnabled, label: "自动更新")
 RCMToggle(isOn: $isEnabled, localizedLabel: "自动更新")
+```
+
+流式标签：
+
+```swift
+RCMPillFlow(
+    ["2560x1600", "1920x1080", "50%", "200%"],
+    minItemWidth: 96,
+    showsRemoveButton: true,
+    onTap: { value in
+        applyHistory(value)
+    },
+    onRemove: { value in
+        deleteHistory(value)
+    }
+)
+```
+
+`RCMPillFlow` 会自动换行显示标签，并按标签文本稳定映射到一组颜色。这里的“随机颜色”不是每次刷新都变，而是同一个文本始终显示同一种颜色，避免界面跳动。
+
+如果只想使用流式布局，也可以直接用底层布局：
+
+```swift
+RCMFlowLayout {
+    ForEach(tags, id: \.self) { tag in
+        Text(tag)
+    }
+}
 ```
 
 容器组件：
