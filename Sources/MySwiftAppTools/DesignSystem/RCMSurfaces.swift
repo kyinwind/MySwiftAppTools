@@ -204,11 +204,17 @@ public struct RCMCard<Content: View>: View {
 
 // MARK: RCMGroup
 
+public enum RCMGroupStyle {
+    case filled
+    case subtle
+    case plain
+}
+
 public struct RCMGroup<Content: View>: View {
     let title: LocalizedStringKey?
     let subtitle: LocalizedStringKey?
     let padding: CGFloat
-    let backgroundStyle: AnyShapeStyle
+    let backgroundStyle: AnyShapeStyle?
     let cornerRadius: CGFloat
     let showsBorder: Bool
     let content: Content
@@ -220,33 +226,28 @@ public struct RCMGroup<Content: View>: View {
         padding: CGFloat = RCMTheme.shared.spacing.lg,
         background: some ShapeStyle = RCMTheme.shared.colors.cardGrayBackground,
         cornerRadius: CGFloat = RCMTheme.shared.radius.md,
+        style: RCMGroupStyle = .filled,
         showsBorder: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.padding = padding
-        self.backgroundStyle = AnyShapeStyle(background)
+        switch style {
+        case .filled:
+            self.backgroundStyle = AnyShapeStyle(background)
+        case .subtle:
+            self.backgroundStyle = AnyShapeStyle(RCMTheme.shared.colors.subtleFill)
+        case .plain:
+            self.backgroundStyle = nil
+        }
         self.cornerRadius = cornerRadius
         self.showsBorder = showsBorder
         self.content = content()
     }
 
     public var body: some View {
-        RCMCard(
-            padding: padding,
-            background: backgroundStyle,
-            cornerRadius: cornerRadius
-        ) {
-            VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.md) {
-                if title != nil || subtitle != nil {
-                    header
-                }
-
-                content
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        groupBody
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
@@ -254,6 +255,34 @@ public struct RCMGroup<Content: View>: View {
                     lineWidth: RCMTheme.shared.stroke.hairline
                 )
         )
+    }
+
+    @ViewBuilder
+    private var groupBody: some View {
+        if let backgroundStyle {
+            RCMCard(
+                padding: padding,
+                background: backgroundStyle,
+                cornerRadius: cornerRadius
+            ) {
+                groupContent
+            }
+        } else {
+            RCMCard(padding: padding) {
+                groupContent
+            }
+        }
+    }
+
+    private var groupContent: some View {
+        VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.md) {
+            if title != nil || subtitle != nil {
+                header
+            }
+
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
