@@ -154,7 +154,106 @@ Log.info("App started")
 Log.log("Export", .error, "Export failed")
 ```
 
-### 文件与日期
+### 文件与网络
+
+#### `MultiSourceDownloader`
+
+多源备源下载工具，适用于模型文件的国内/国外镜像切换下载场景。
+
+**核心能力：**
+
+- 多 URL 备源：一个失败自动切换下一个
+- 并发可访问性探测：启动时用 HEAD 请求筛选可用链接
+- 断点续传：支持 Range 请求，失败后重试从中断处继续
+- 哈希校验：支持 SHA256、SHA1、MD5，下载完成后校验完整性
+- 速度统计：实时计算下载速度和预估剩余时间
+- 原子性移动：校验通过后才替换目标文件
+
+**相关类型：**
+
+```swift
+MultiSourceDownloader
+MultiSourceDownloader.Progress      // 进度信息
+MultiSourceDownloader.HashAlgorithm // SHA256 / SHA1 / MD5
+MultiSourceDownloader.DownloadError // 错误类型
+```
+
+**基本用法：**
+
+```swift
+let urls = [
+    URL(string: "https://www.modelscope.cn/models/...")!,
+    URL(string: "https://github.com/...")!
+]
+
+let destinationURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    .appendingPathComponent("Models")
+    .appendingPathComponent("kokoro-v1.onnx")
+
+let downloader = MultiSourceDownloader(
+    urls: urls,
+    destinationURL: destinationURL,
+    hashAlgorithm: .sha256,
+    expectedHash: "abc123def456..."
+)
+
+try await downloader.startDownload { progress in
+    DispatchQueue.main.async {
+        self.progressBar.value = progress.fractionCompleted
+        self.speedLabel.stringValue = progress.formattedSpeed
+        self.remainingLabel.stringValue = progress.formattedRemainingTime
+    }
+}
+```
+
+**简写方式（仅 SHA256）：**
+
+```swift
+let downloader = MultiSourceDownloader(
+    urls: urls,
+    destinationURL: destinationURL,
+    expectedSHA256: "abc123def456..."
+)
+```
+
+**Progress 字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `fractionCompleted` | `Double` | 进度 0.0 - 1.0 |
+| `downloadedBytes` | `Int64` | 已下载字节数 |
+| `totalBytes` | `Int64` | 文件总大小 |
+| `speed` | `Double` | 下载速度 (bytes/s) |
+| `remainingSeconds` | `Double?` | 预估剩余秒数 |
+| `formattedSpeed` | `String` | 格式化速度，如 "1.5 MB/s" |
+| `formattedRemainingTime` | `String` | 格式化剩余时间，如 "1:30" |
+
+**取消下载：**
+
+```swift
+let downloader = MultiSourceDownloader(...)
+let task = Task {
+    try await downloader.startDownload { ... }
+}
+
+Button("取消") {
+    downloader.cancel()
+}
+```
+
+**错误处理：**
+
+```swift
+do {
+    try await downloader.startDownload { ... }
+} catch MultiSourceDownloader.DownloadError.noValidUrls {
+    ShowToastError("所有下载源都不可访问")
+} catch MultiSourceDownloader.DownloadError.verificationFailed(let algo, let url, let expected, let actual) {
+    ShowToastError("\(algo.displayName) 校验失败：\(url.lastPathComponent)")
+} catch {
+    ShowToastError("下载失败: \(error.localizedDescription)")
+}
+```
 
 #### `FileTools`
 
