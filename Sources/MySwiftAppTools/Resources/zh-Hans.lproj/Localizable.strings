@@ -7,6 +7,11 @@
 "MyDirectoryType.history" = "历史记录";
 "Toast.copiedToPasteboard" = "已复制到剪贴板";
 "Toast.confirmOK" = "确定";
+"MultiSourceDownloader.noValidUrls" = "所有提供的链接都无法访问。";
+"MultiSourceDownloader.allSourcesFailed" = "尝试了所有链接及重试机会，下载全部失败。";
+"MultiSourceDownloader.verificationFailed" = "文件下载成功（来源：%@），但 %@ 校验未通过。期望：%@，实际：%@";
+"MultiSourceDownloader.invalidResponse" = "服务器返回了无效的响应。";
+"MultiSourceDownloader.fileAlreadyExists" = "临时文件已存在，无法开始下载。";
 "RCMComparisonSection.features.title" = "功能对比";
 "RCMComparisonSection.features.features" = "功能";
 "RCMComparisonSection.features.free" = "Free";

@@ -711,11 +711,23 @@ RCMTheme.shared.shadow.shadowColor
 | `RCMDesignTokens.swift` | 数据层 | 颜色、间距、圆角、字体、渐变、阴影等 token |
 | `RCMTheme.swift` | 配置层 | 全局主题单例、闭包配置、JSON 配置、预设主题、导出 JSON |
 | `RCMDefaultTheme.json` | 资源文件 | 包内默认主题模板 |
+| `RCMLayouts.swift` | 页面骨架 | 标准页面容器、页面内容栈 |
 | `RCMText.swift` | 文本组件 | 页面标题、章节标题、标签文字、说明文字、等宽文字 |
 | `RCMButtons.swift` | 按钮组件 | 按钮样式、侧边栏图标、徽章、开关 |
 | `RCMSurfaces.swift` | 容器组件 | 卡片、分区、Hero 面板、侧边栏、折叠面板、多行行 |
 | `RCMRows.swift` | 行组件 | 设置行、键值行、带标签的内联字段 |
+| `RCMStates.swift` | 状态模式 | 空状态、错误状态、加载状态、进度面板 |
 | `RCMDesignSystemPreview.swift` | 预览工具 | Design Token 可视化编辑器，可调整并导出 JSON |
+| `RCMDesignSystemGallery.swift` | 组件展厅 | 用真实页面场景展示推荐 UI 组合 |
+
+推荐按三层理解 DesignSystem：
+
+| 层级 | 作用 | 例子 |
+|------|------|------|
+| Tokens | 视觉决策 | 颜色、字体、间距、圆角、阴影 |
+| Layouts | 页面骨架 | 页面容器、内容栈、章节组织 |
+| Primitives | 基础组件 | 按钮、徽章、文本、卡片、行 |
+| Patterns | 页面模式 | 空状态、错误状态、加载状态、下载进度 |
 
 主要内容：
 
@@ -729,6 +741,8 @@ RCMTheme.shared.shadow.shadowColor
 - `RCMShadowTokens`
 - `RCMTypographyTokens`
 - `RCMControlSizeTokens`
+- `RCMPage`
+- `RCMPageStack`
 - `RCMButton`
 - `RCMPrimaryButtonStyle`
 - `RCMSecondaryButtonStyle`
@@ -752,31 +766,78 @@ RCMTheme.shared.shadow.shadowColor
 - `RCMGroup`
 - `RCMPageSection`
 - `RCMHeroPanel`
+- `RCMEmptyState`
+- `RCMErrorState`
+- `RCMLoadingState`
+- `RCMProgressPanel`
+- `RCMDesignSystemGallery`
 - `MultilineSubtitleRow`
 - `CollapsibleSection`
+
+推荐页面结构：
+
+```text
+RCMPage
+└── RCMPageSection 可选
+    └── RCMGroup
+        ├── RCMSettingRow / RCMValueRow / RCMInlineField
+        ├── RCMButton / RCMBadge / RCMToggle
+        └── RCMEmptyState / RCMProgressPanel / 自定义内容
+```
+
+这套结构是 DesignSystem 当前推荐的主路径。新页面优先按这个层级搭建，通常不需要直接处理圆角、背景、行间距和按钮样式。
+
+不过这不是强制模板。有些层是“推荐组件”，有些层是“可选组件”。页面足够简单时，可以跳过 `RCMPageSection`，直接在 `RCMPage` 里放 `RCMGroup`。
+
+最佳实践速查表：
+
+| 层级 | 组件 | 是否推荐 | 是否必选 | 什么时候用 | 什么时候可以跳过 | 默认视觉 |
+|------|------|----------|----------|------------|----------------|----------|
+| 页面骨架 | `RCMPage` | 推荐 | 通常必选 | 一个完整页面，外层没有现成滚动容器 | 外层已经有 `ScrollView`、`NavigationSplitView` detail 或自定义页面容器 | 默认透明，可选页面背景 |
+| 页面内容栈 | `RCMPageStack` | 推荐 | 可选 | 只想复用标题、最大宽度、padding、section 间距 | 已经使用 `RCMPage`，因为 `RCMPage` 内部已经包含它 | 默认透明 |
+| 页面章节 | `RCMPageSection` | 推荐 | 可选 | 页面有多个明确区域，例如“基础设置”“高级设置” | 页面只有一组内容，或内容自身已经足够明确 | 无背景、无边框，可选分割线 |
+| 内容分组 | `RCMGroup` | 推荐 | 通常必选 | 把一组相关设置项、状态项、操作项放在一个浅色区域里 | 页面内容本身已经是特殊自定义容器，或需要完全无容器布局 | 浅背景、圆角、无边框 |
+| 设置行 | `RCMSettingRow` | 推荐 | 可选 | 左侧标题说明，右侧放开关、按钮、状态 | 内容不是“设置行”语义，例如大段预览、自定义编辑器 | 默认透明 |
+| 键值行 | `RCMValueRow` | 推荐 | 可选 | 展示只读信息，例如版本、路径、状态、用量 | 需要复杂交互控件时用 `RCMSettingRow` 或自定义布局 | 默认透明 |
+| 内联字段 | `RCMInlineField` | 推荐 | 可选 | 标题 + 输入控件，例如 TextField、Picker | 输入控件需要更复杂布局 | 默认透明 |
+| 状态模式 | `RCMEmptyState` / `RCMErrorState` / `RCMLoadingState` / `RCMProgressPanel` | 推荐 | 可选 | 空列表、错误重试、加载中、下载进度 | 页面没有状态反馈需求 | 由组件自己决定 |
+| 底层容器 | `RCMCard` | 谨慎使用 | 可选 | 自定义预览块、特殊视觉容器、实现新的 pattern | 普通设置页和工具页优先用 `RCMGroup` | 默认无背景，显式传入才显示 |
+
+为什么 `RCMPageSection` 和 `RCMGroup` 暂时不合并：
+
+- `RCMPageSection` 是页面结构语义，用来告诉用户当前内容属于哪个章节。
+- `RCMGroup` 是视觉分组语义，用来告诉用户这些控件彼此相关。
+- 一个 section 里可以有多个 group，也可以没有 group。这样能避免“章节标题”和“视觉容器”绑死。
+
+`RCMSettingRow` 默认不再自己绘制更深的背景。设置页里最稳定的层级是：`RCMGroup` 提供浅色底，row 只负责内容排列。只有未来出现“警告行、选中行、推荐项”这类特殊语义时，才应该给 row 增加单独的强调样式。
+
+`RCMCard` 不属于推荐页面结构的主路径。它是更底层的视觉容器，适合做自定义预览块、实现新的 DesignSystem pattern，或者承载需要显式背景的特殊内容。普通设置页、工具页、状态页优先使用 `RCMGroup`。
 
 快速页面示例：
 
 ```swift
-VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xl) {
-    RCMPageTitle("目录权限设置", subtitle: "请选择文件复制功能使用的目标目录。")
-
+RCMPage("目录权限设置", subtitle: "请选择文件复制功能使用的目标目录。") {
     RCMPageSection("已授权目录") {
-        RCMSettingRow("Documents", subtitle: "/Users/name/Documents") {
-            RCMBadge("已授权", style: .success)
+        RCMGroup {
+            RCMSettingRow("Documents", subtitle: "/Users/name/Documents") {
+                RCMBadge("已授权", style: .success)
+            }
         }
     }
 
-    HStack(spacing: RCMTheme.shared.spacing.md) {
-        RCMButton("新增", role: .primary, systemImage: "plus") {
-            add()
-        }
-        RCMButton("删除", role: .soft, systemImage: "trash") {
-            remove()
+    RCMPageSection("操作") {
+        RCMGroup(style: .plain) {
+            HStack(spacing: RCMTheme.shared.spacing.md) {
+                RCMButton("新增", role: .primary, systemImage: "plus") {
+                    add()
+                }
+                RCMButton("删除", role: .soft, systemImage: "trash") {
+                    remove()
+                }
+            }
         }
     }
 }
-.padding(RCMTheme.shared.spacing.xxl)
 ```
 
 Token 类型：
@@ -815,6 +876,32 @@ let rgbaRed2 = Color(hex: "#FF0000FF", format: .rgba)
 ```
 
 这个区分很重要：`#FF0000FF` 如果按 `#AARRGGBB` 解析是蓝色，如果按 `#RRGGBBAA` 解析才是不透明红色。
+
+页面骨架：
+
+```swift
+RCMPage("设置", subtitle: "管理应用偏好") {
+    RCMPageSection("通用") {
+        RCMGroup {
+            RCMSettingRow("自动更新") {
+                RCMToggle(isOn: $autoUpdate, label: "启用")
+            }
+        }
+    }
+}
+```
+
+如果外层已经有 `ScrollView`、`NavigationSplitView` 或自定义窗口容器，可以只使用内容栈：
+
+```swift
+RCMPageStack(title: "设置", subtitle: "管理应用偏好") {
+    RCMPageSection("通用") {
+        RCMGroup {
+            RCMValueRow("版本", value: "1.0.0")
+        }
+    }
+}
+```
 
 文本组件：
 
@@ -929,13 +1016,21 @@ RCMHeroPanel {
 }
 ```
 
-`RCMPageSection`、`RCMGroup`、`RCMCard` 的分工：
+`RCMPage`、`RCMPageSection`、`RCMGroup`、`RCMCard` 的分工：
 
 | 组件 | 语义 | 默认背景 | 默认边框 | 标题 |
 |------|------|---------|---------|------|
+| `RCMPage` | 页面骨架 | 无，可选开启 | 无 | 有 |
 | `RCMPageSection` | 页面章节 | 无 | 无 | 有 |
 | `RCMGroup` | 内容分组 | 浅背景 | 无，可选开启 | 可选 |
 | `RCMCard` | 底层视觉容器 | 无，显式传入才显示 | 无 | 无 |
+
+简单判断规则：
+
+- 需要完整页面骨架：用 `RCMPage`。
+- 需要一个章节标题：用 `RCMPageSection`。
+- 需要把一组设置项放在浅色区域里：用 `RCMGroup`。
+- 需要一个特殊视觉容器，且不符合 `RCMGroup` 的语义：用 `RCMCard`。
 
 侧边栏：
 
@@ -965,6 +1060,43 @@ RCMInlineField("服务器地址") {
 }
 ```
 
+状态模式：
+
+```swift
+RCMEmptyState(
+    systemImage: "tray",
+    title: "暂无文件",
+    message: "添加文件后会显示在这里。",
+    actionTitle: "添加文件",
+    actionSystemImage: "plus"
+) {
+    addFiles()
+}
+
+RCMErrorState(
+    title: "加载失败",
+    message: "请检查网络后重试。",
+    actionTitle: "重试"
+) {
+    reload()
+}
+
+RCMLoadingState("正在处理", message: "这通常只需要几秒。")
+
+RCMProgressPanel(
+    "模型下载",
+    subtitle: "LaMa.mlpackage.zip",
+    fractionCompleted: progress,
+    statusText: "正在选择最快的下载源...",
+    actionTitle: "取消",
+    actionSystemImage: "xmark"
+) {
+    cancelDownload()
+}
+```
+
+状态模式是 DesignSystem 的 Patterns 层，推荐用于空列表、加载中、下载模型、错误重试等常见页面片段。调用方只提供语义内容和动作，视觉层级、间距、按钮样式由 DesignSystem 统一决定。
+
 折叠面板和多行行：
 
 ```swift
@@ -989,6 +1121,14 @@ RCMDesignSystemPreview()
 ```
 
 `RCMDesignSystemPreview` 可以预览组件、调整 token，并导出 JSON。它目前仍在主 library target 中，适合作为内部开发工具使用。
+
+组件展厅：
+
+```swift
+RCMDesignSystemGallery()
+```
+
+`RCMDesignSystemGallery` 用真实页面场景展示推荐组合，包括标准页面、状态模式、基础控件、行与标签、容器分层。它不是 token 编辑器，而是用来检查 DesignSystem 的默认 UI 效果是否足够好。
 
 建议迁移路径：
 

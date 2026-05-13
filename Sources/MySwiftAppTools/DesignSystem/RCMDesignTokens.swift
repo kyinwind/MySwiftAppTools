@@ -132,14 +132,14 @@ public struct RCMColorTokens: Codable, Equatable, Sendable {
     #if os(macOS)
     public var pageBackground: Color { Color(nsColor: .windowBackgroundColor) }
     public var cardBackground: Color { Color(nsColor: .controlBackgroundColor) }
-    public var cardGrayBackground: Color { Color(.secondarySystemFill) }
-    public var subtleFill: Color { Color(nsColor: .secondarySystemFill).opacity(0.5) }
+    public var cardGrayBackground: Color { Color.primary.opacity(0.045) }
+    public var subtleFill: Color { Color.primary.opacity(0.030) }
     public var border: Color { Color.primary.opacity(0.10) }
     #else
     public var pageBackground: Color { Color(.systemBackground) }
     public var cardBackground: Color { Color(.secondarySystemBackground) }
-    public var cardGrayBackground: Color { Color(.secondarySystemFill) }
-    public var subtleFill: Color { Color(.secondarySystemFill) }
+    public var cardGrayBackground: Color { Color.primary.opacity(0.045) }
+    public var subtleFill: Color { Color.primary.opacity(0.030) }
     public var border: Color { Color.primary.opacity(0.10) }
     #endif
 

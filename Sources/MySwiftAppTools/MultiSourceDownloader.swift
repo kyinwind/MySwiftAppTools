@@ -80,12 +80,22 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
 
         public var errorDescription: String? {
             switch self {
-            case .noValidUrls: return "所有提供的链接都无法访问。"
-            case .allSourcesFailed: return "尝试了所有链接及重试机会，下载全部失败。"
+            case .noValidUrls:
+                return packageL(MySwiftAppToolsL10n.downloaderNoValidUrls)
+            case .allSourcesFailed:
+                return packageL(MySwiftAppToolsL10n.downloaderAllSourcesFailed)
             case .verificationFailed(let algorithm, let url, let expected, let actual):
-                return "文件下载成功（来源: \(url.lastPathComponent)），但 \(algorithm.displayName) 校验未通过。期望: \(expected)，实际: \(actual)"
-            case .invalidResponse: return "服务器返回了无效的响应。"
-            case .fileAlreadyExists: return "临时文件已存在，无法开始下载。"
+                return packageL(
+                    MySwiftAppToolsL10n.downloaderVerificationFailed,
+                    url.lastPathComponent,
+                    algorithm.displayName,
+                    expected,
+                    actual
+                )
+            case .invalidResponse:
+                return packageL(MySwiftAppToolsL10n.downloaderInvalidResponse)
+            case .fileAlreadyExists:
+                return packageL(MySwiftAppToolsL10n.downloaderFileAlreadyExists)
             }
         }
     }

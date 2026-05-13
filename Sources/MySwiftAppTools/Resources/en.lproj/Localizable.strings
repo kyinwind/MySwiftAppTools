@@ -7,6 +7,11 @@
 "MyDirectoryType.history" = "History";
 "Toast.copiedToPasteboard" = "Copied to clipboard";
 "Toast.confirmOK" = "OK";
+"MultiSourceDownloader.noValidUrls" = "None of the provided URLs can be reached.";
+"MultiSourceDownloader.allSourcesFailed" = "All download sources and retry attempts failed.";
+"MultiSourceDownloader.verificationFailed" = "The file downloaded successfully (source: %@), but %@ verification failed. Expected: %@, actual: %@";
+"MultiSourceDownloader.invalidResponse" = "The server returned an invalid response.";
+"MultiSourceDownloader.fileAlreadyExists" = "The temporary file already exists, so the download cannot start.";
 "RCMComparisonSection.features.title" = "Feature Comparison";
 "RCMComparisonSection.features.features" = "Features";
 "RCMComparisonSection.features.free" = "Free";

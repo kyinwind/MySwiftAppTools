@@ -46,4 +46,9 @@ public enum MySwiftAppToolsL10n {
     public static let authWriteMsg = "PermissionManager.authWriteMsg"
     public static let copiedToPasteboard = "Toast.copiedToPasteboard"
     public static let confirmOK = "Toast.confirmOK"
+    public static let downloaderNoValidUrls = "MultiSourceDownloader.noValidUrls"
+    public static let downloaderAllSourcesFailed = "MultiSourceDownloader.allSourcesFailed"
+    public static let downloaderVerificationFailed = "MultiSourceDownloader.verificationFailed"
+    public static let downloaderInvalidResponse = "MultiSourceDownloader.invalidResponse"
+    public static let downloaderFileAlreadyExists = "MultiSourceDownloader.fileAlreadyExists"
 }

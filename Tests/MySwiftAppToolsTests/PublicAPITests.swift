@@ -27,6 +27,18 @@ final class PublicAPITests: XCTestCase {
         _ = RCMBadge(verbatim: "1.0.0", style: .neutral)
         _ = RCMToggle(isOn: .constant(true), localizedLabel: "自动更新")
         _ = RCMCard { Text("Card") }
+        _ = RCMPage("设置", subtitle: "管理应用偏好") {
+            RCMPageSection("通用") {
+                RCMGroup {
+                    Text("Content")
+                }
+            }
+        }
+        _ = RCMPageStack(title: "设置") {
+            RCMPageSection("通用") {
+                Text("Content")
+            }
+        }
         _ = RCMGroup("分组", subtitle: "说明") { Text("Group") }
         _ = RCMGroup(showsBorder: true) { Text("Group") }
         _ = RCMPageSection("设置") { Text("Content") }
@@ -35,6 +47,11 @@ final class PublicAPITests: XCTestCase {
         _ = RCMFlowLayout { Text("Flow") }
         _ = RCMPill("标签", tone: RCMPillTone.defaultPalette[0], action: {})
         _ = RCMPillFlow(["2560x1600", "50%", "1280x720"], sortOrder: .ascending, minItemWidth: 96, showsRemoveButton: true)
+        _ = RCMEmptyState(systemImage: "tray", title: "暂无内容", message: "创建第一条记录后会显示在这里。", actionTitle: "新增") {}
+        _ = RCMErrorState(title: "加载失败", message: "请稍后重试。", actionTitle: "重试") {}
+        _ = RCMLoadingState("正在加载", message: "这通常只需要几秒。")
+        _ = RCMProgressPanel("模型下载", subtitle: "LaMa.mlpackage.zip", fractionCompleted: 0.5, statusText: "50%", actionTitle: "取消") {}
+        _ = RCMDesignSystemGallery()
     }
     
     func testColorHexFormatsKeepEightDigitSemanticsExplicit() {
