@@ -1,6 +1,5 @@
 import Foundation
 import CryptoKit
-import CommonCrypto
 
 /// ⚠️ 必须在主项目或包的 Build Settings 中将 Swift Language Version 设为 5.5 或以上。
 public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
@@ -91,14 +90,65 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
         }
     }
 
+    /// 下载行为配置。
+    ///
+    /// 调用示例：
+    /// ```swift
+    /// let downloader = MultiSourceDownloader(
+    ///     urls: [chinaMirrorURL, githubURL],
+    ///     destinationURL: localModelURL,
+    ///     hashAlgorithm: .sha256,
+    ///     expectedHash: sha256,
+    ///     configuration: .init(
+    ///         maxRetryCount: 3,
+    ///         requestTimeout: 30,
+    ///         probeTimeout: 6,
+    ///         allowsCrossSourceResume: false
+    ///     )
+    /// )
+    /// ```
+    public struct Configuration: Sendable {
+        /// 单个源最多重试次数。
+        public var maxRetryCount: Int
+        /// 正式下载请求超时时间。
+        public var requestTimeout: TimeInterval
+        /// 可用性探测超时时间。
+        public var probeTimeout: TimeInterval
+        /// 是否允许不同源之间复用同一个临时文件做断点续传。
+        ///
+        /// 默认关闭。不同镜像虽然文件名一样，但内容版本可能不一致；跨源续传可能拼出损坏文件。
+        /// 如果你有强 hash 校验，并且确定多个源完全等价，可以打开。
+        public var allowsCrossSourceResume: Bool
+
+        public init(
+            maxRetryCount: Int = 3,
+            requestTimeout: TimeInterval = 15,
+            probeTimeout: TimeInterval = 5,
+            allowsCrossSourceResume: Bool = false
+        ) {
+            self.maxRetryCount = max(1, maxRetryCount)
+            self.requestTimeout = requestTimeout
+            self.probeTimeout = probeTimeout
+            self.allowsCrossSourceResume = allowsCrossSourceResume
+        }
+
+        public static let `default` = Configuration()
+    }
+
+    private struct SourceProbe: Sendable {
+        let url: URL
+        let responseTime: TimeInterval
+        let supportsRange: Bool
+        let contentLength: Int64
+    }
+
     // MARK: - Properties
     public let urls: [URL]
     public let destinationURL: URL
     public let hashAlgorithm: HashAlgorithm?
     public let expectedHash: String?
+    public let configuration: Configuration
 
-    // 最大重试配置
-    private let maxRetryCount = 3
     private let fileManager = FileManager.default
 
     // 临时文件 URL
@@ -137,22 +187,24 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
         urls: [URL],
         destinationURL: URL,
         hashAlgorithm: HashAlgorithm? = .sha256,
-        expectedHash: String? = nil
+        expectedHash: String? = nil,
+        configuration: Configuration = .default
     ) {
         self.urls = urls
         self.destinationURL = destinationURL
         self.hashAlgorithm = hashAlgorithm
         self.expectedHash = expectedHash
+        self.configuration = configuration
         super.init()
 
         // 初始化临时文件路径
-        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+        let tempDir = destinationURL.deletingLastPathComponent()
         self.tempDestinationURL = tempDir
             .appendingPathComponent(destinationURL.lastPathComponent)
             .appendingPathExtension("\(ProcessInfo.processInfo.globallyUniqueString).tmp")
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 15.0
+        config.timeoutIntervalForRequest = configuration.requestTimeout
         self.session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }
 
@@ -160,21 +212,23 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
     public init(
         urls: [URL],
         destinationURL: URL,
-        expectedSHA256: String?
+        expectedSHA256: String?,
+        configuration: Configuration = .default
     ) {
         self.urls = urls
         self.destinationURL = destinationURL
         self.hashAlgorithm = expectedSHA256 != nil ? .sha256 : nil
         self.expectedHash = expectedSHA256
+        self.configuration = configuration
         super.init()
 
-        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+        let tempDir = destinationURL.deletingLastPathComponent()
         self.tempDestinationURL = tempDir
             .appendingPathComponent(destinationURL.lastPathComponent)
             .appendingPathExtension("\(ProcessInfo.processInfo.globallyUniqueString).tmp")
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 15.0
+        config.timeoutIntervalForRequest = configuration.requestTimeout
         self.session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }
 
@@ -189,30 +243,42 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
         self.lastTimeSnapshot = Date()
         self.currentSpeed = 0
 
-        // 1. 并发检测所有链接的可访问性
-        let accessibleUrls = await filterAccessibleUrls(from: self.urls)
-        guard !accessibleUrls.isEmpty else {
+        try fileManager.createDirectory(
+            at: destinationURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        // 1. 并发检测所有链接的可访问性，并按稳定度排序
+        let accessibleSources = await probeAccessibleSources(from: self.urls)
+        guard !accessibleSources.isEmpty else {
             throw DownloadError.noValidUrls
         }
 
         // 2. 依次尝试可用的链接进行断点续传下载
         var downloadSuccess = false
-        for url in accessibleUrls {
+        var isFirstSource = true
+        for source in accessibleSources {
             if isCancelled { break }
 
+            if !isFirstSource && !configuration.allowsCrossSourceResume {
+                removeTemporaryFile()
+                currentDownloadedBytes = 0
+            }
+            isFirstSource = false
+
             var retryAttempt = 0
-            while retryAttempt < maxRetryCount {
+            while retryAttempt < configuration.maxRetryCount {
                 if isCancelled { break }
 
                 do {
-                    try await performDownload(from: url)
+                    try await performDownload(from: source.url)
                     downloadSuccess = true
                     break
                 } catch {
                     retryAttempt += 1
                     cleanTemporaryState()
 
-                    if retryAttempt < maxRetryCount {
+                    if retryAttempt < configuration.maxRetryCount {
                         let delaySeconds = pow(2.0, Double(retryAttempt))
                         try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
                     }
@@ -239,12 +305,18 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
             }
         }
 
-        // 4. 原子性移动：只有校验通过才替换目标文件
+        // 4. 原子性替换：只有校验通过才替换目标文件
         do {
             if fileManager.fileExists(atPath: destinationURL.path) {
-                try fileManager.removeItem(at: destinationURL)
+                _ = try fileManager.replaceItemAt(
+                    destinationURL,
+                    withItemAt: tempDestinationURL,
+                    backupItemName: nil,
+                    options: []
+                )
+            } else {
+                try fileManager.moveItem(at: tempDestinationURL, to: destinationURL)
             }
-            try fileManager.moveItem(at: tempDestinationURL, to: destinationURL)
         } catch {
             try? fileManager.removeItem(at: tempDestinationURL)
             throw error
@@ -259,10 +331,7 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
             self.cleanTemporaryState()
 
             // 清理临时文件
-            if let tempURL = self.tempDestinationURL,
-               self.fileManager.fileExists(atPath: tempURL.path) {
-                try? self.fileManager.removeItem(at: tempURL)
-            }
+            self.removeTemporaryFile()
 
             self.continuation?.resume(throwing: CancellationError())
             self.continuation = nil
@@ -322,37 +391,105 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
         }
     }
 
-    /// 并发检测链接是否可用 (HEAD 请求)
-    private func filterAccessibleUrls(from sourceUrls: [URL]) async -> [URL] {
+    /// 并发检测链接是否可用。
+    ///
+    /// 优先使用 HEAD；如果服务端不支持 HEAD，再退回到 `GET Range: bytes=0-0`。
+    /// 返回结果会按“支持 Range、响应快、原始顺序靠前”排序。
+    private func probeAccessibleSources(from sourceUrls: [URL]) async -> [SourceProbe] {
         let probeSession = URLSession(configuration: URLSessionConfiguration.default)
 
-        return await withTaskGroup(of: (URL, Bool).self) { group in
-            for url in sourceUrls {
+        return await withTaskGroup(of: (Int, SourceProbe?).self) { group in
+            for (index, url) in sourceUrls.enumerated() {
                 group.addTask {
+                    let startedAt = Date()
                     var request = URLRequest(url: url)
                     request.httpMethod = "HEAD"
-                    request.timeoutInterval = 5.0
+                    request.timeoutInterval = self.configuration.probeTimeout
 
                     do {
                         let (_, response) = try await probeSession.data(for: request)
-                        if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                            return (url, true)
+                        if let probe = Self.makeProbe(
+                            url: url,
+                            response: response,
+                            responseTime: Date().timeIntervalSince(startedAt)
+                        ) {
+                            return (index, probe)
                         }
                     } catch {
-                        // 静默失败
+                        // 继续尝试 Range GET。
                     }
-                    return (url, false)
+
+                    var fallbackRequest = URLRequest(url: url)
+                    fallbackRequest.httpMethod = "GET"
+                    fallbackRequest.setValue("bytes=0-0", forHTTPHeaderField: "Range")
+                    fallbackRequest.timeoutInterval = self.configuration.probeTimeout
+
+                    do {
+                        let (_, response) = try await probeSession.data(for: fallbackRequest)
+                        if let probe = Self.makeProbe(
+                            url: url,
+                            response: response,
+                            responseTime: Date().timeIntervalSince(startedAt)
+                        ) {
+                            return (index, probe)
+                        }
+                    } catch {
+                        // 静默失败，让下一个源接管。
+                    }
+
+                    return (index, nil)
                 }
             }
 
-            var validUrls: [URL] = []
-            for await (url, isAccessible) in group {
-                if isAccessible {
-                    validUrls.append(url)
+            var probes: [(Int, SourceProbe)] = []
+            for await (index, probe) in group {
+                if let probe {
+                    probes.append((index, probe))
                 }
             }
-            return sourceUrls.filter { validUrls.contains($0) }
+
+            return probes.sorted { lhs, rhs in
+                if lhs.1.supportsRange != rhs.1.supportsRange {
+                    return lhs.1.supportsRange && !rhs.1.supportsRange
+                }
+
+                let responseDelta = abs(lhs.1.responseTime - rhs.1.responseTime)
+                if responseDelta > 0.05 {
+                    return lhs.1.responseTime < rhs.1.responseTime
+                }
+
+                return lhs.0 < rhs.0
+            }.map(\.1)
         }
+    }
+
+    private static func makeProbe(url: URL, response: URLResponse, responseTime: TimeInterval) -> SourceProbe? {
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) || httpResponse.statusCode == 206
+        else {
+            return nil
+        }
+
+        let acceptRanges = httpResponse.value(forHTTPHeaderField: "Accept-Ranges")?.lowercased()
+        let supportsRange = httpResponse.statusCode == 206 || acceptRanges == "bytes"
+        let contentLength = Self.contentLength(from: httpResponse)
+
+        return SourceProbe(
+            url: url,
+            responseTime: responseTime,
+            supportsRange: supportsRange,
+            contentLength: contentLength
+        )
+    }
+
+    private static func contentLength(from response: HTTPURLResponse) -> Int64 {
+        if let contentRange = response.value(forHTTPHeaderField: "Content-Range"),
+           let totalString = contentRange.components(separatedBy: "/").last,
+           let total = Int64(totalString) {
+            return total
+        }
+
+        return response.expectedContentLength
     }
 
     /// 哈希校验
@@ -387,17 +524,13 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
             hashString = digest.map { String(format: "%02hhx", $0) }.joined()
 
         case .md5:
-            var context = CC_MD5_CTX()
-            CC_MD5_Init(&context)
+            var hasher = Insecure.MD5()
             while !self.isCancelled {
                 guard let data = try? fileHandle.read(upToCount: bufferSize), !data.isEmpty else { break }
-                data.withUnsafeBytes { buffer in
-                    _ = CC_MD5_Update(&context, buffer.baseAddress, CC_LONG(data.count))
-                }
+                hasher.update(data: data)
             }
             guard !self.isCancelled else { return (false, "") }
-            var digest = [UInt8](repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
-            CC_MD5_Final(&digest, &context)
+            let digest = hasher.finalize()
             hashString = digest.map { String(format: "%02hhx", $0) }.joined()
         }
 
@@ -447,16 +580,22 @@ public final class MultiSourceDownloader: NSObject, @unchecked Sendable {
         try? self.fileHandle?.close()
         self.fileHandle = nil
     }
+
+    private func removeTemporaryFile() {
+        if let tempURL = tempDestinationURL,
+           fileManager.fileExists(atPath: tempURL.path) {
+            try? fileManager.removeItem(at: tempURL)
+        }
+    }
 }
 
 // MARK: - URLSessionDataDelegate
 extension MultiSourceDownloader: URLSessionDataDelegate {
 
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        queue.async(flags: .barrier) {
+        let disposition: URLSession.ResponseDisposition = queue.sync(flags: .barrier) {
             guard let httpResponse = response as? HTTPURLResponse else {
-                completionHandler(.cancel)
-                return
+                return .cancel
             }
 
             let statusCode = httpResponse.statusCode
@@ -468,18 +607,20 @@ extension MultiSourceDownloader: URLSessionDataDelegate {
                 } else {
                     self.totalExpectedBytes = httpResponse.expectedContentLength
                 }
-                completionHandler(.allow)
+                return .allow
             } else if statusCode == 200 {
                 // 服务器不支持断点续传，重置
                 self.currentDownloadedBytes = 0
                 self.totalExpectedBytes = httpResponse.expectedContentLength
                 try? self.fileHandle?.seek(toOffset: 0)
                 try? self.fileHandle?.truncate(atOffset: 0)
-                completionHandler(.allow)
+                return .allow
             } else {
-                completionHandler(.cancel)
+                return .cancel
             }
         }
+
+        completionHandler(disposition)
     }
 
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {

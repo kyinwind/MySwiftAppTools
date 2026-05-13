@@ -163,17 +163,20 @@ Log.log("Export", .error, "Export failed")
 **核心能力：**
 
 - 多 URL 备源：一个失败自动切换下一个
-- 并发可访问性探测：启动时用 HEAD 请求筛选可用链接
+- 并发可访问性探测：启动时优先 HEAD，失败后用 `Range: bytes=0-0` 兜底
+- 自动源选择：优先选择支持 Range 且响应更快的源
 - 断点续传：支持 Range 请求，失败后重试从中断处继续
+- 安全跨源策略：默认不在不同镜像之间复用临时文件，避免拼接出损坏文件
 - 哈希校验：支持 SHA256、SHA1、MD5，下载完成后校验完整性
 - 速度统计：实时计算下载速度和预估剩余时间
-- 原子性移动：校验通过后才替换目标文件
+- 原子性替换：校验通过后才替换目标文件
 
 **相关类型：**
 
 ```swift
 MultiSourceDownloader
 MultiSourceDownloader.Progress      // 进度信息
+MultiSourceDownloader.Configuration // 下载配置
 MultiSourceDownloader.HashAlgorithm // SHA256 / SHA1 / MD5
 MultiSourceDownloader.DownloadError // 错误类型
 ```
@@ -194,7 +197,13 @@ let downloader = MultiSourceDownloader(
     urls: urls,
     destinationURL: destinationURL,
     hashAlgorithm: .sha256,
-    expectedHash: "abc123def456..."
+    expectedHash: "abc123def456...",
+    configuration: .init(
+        maxRetryCount: 3,
+        requestTimeout: 30,
+        probeTimeout: 6,
+        allowsCrossSourceResume: false
+    )
 )
 
 try await downloader.startDownload { progress in
@@ -205,6 +214,17 @@ try await downloader.startDownload { progress in
     }
 }
 ```
+
+**Configuration 字段：**
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `maxRetryCount` | `3` | 每个下载源的最大重试次数 |
+| `requestTimeout` | `15` | 正式下载请求超时时间 |
+| `probeTimeout` | `5` | 下载源可用性探测超时时间 |
+| `allowsCrossSourceResume` | `false` | 是否允许不同源之间复用临时文件断点续传 |
+
+`allowsCrossSourceResume` 默认关闭。即使两个 URL 文件名相同，也可能来自不同版本或不同压缩结果；跨源续传可能导致文件损坏。只有在你确认多个源内容完全一致，并且有 hash 校验兜底时，再考虑打开。
 
 **简写方式（仅 SHA256）：**
 

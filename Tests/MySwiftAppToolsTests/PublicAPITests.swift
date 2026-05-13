@@ -111,31 +111,44 @@ final class PublicAPITests: XCTestCase {
     }
 
     @MainActor
-    func testMultiSourceDownloaderAPICompile() async throws {
-        // 此测试仅验证 API 编译正确性，不依赖真实网络
-        // 实际下载测试请在有网络的环境中手动运行
+    func testMultiSourceDownloaderAPICompile() {
+        // 此测试仅验证 API 编译正确性，不依赖真实网络。
+        // 实际下载测试请在有网络的环境中手动运行。
 
-        // 验证初始化器编译
         let urls = [
             URL(string: "https://www.modelscope.cn/models/kylinwind/Lama-Inpainting-Swift/resolve/master/LaMa.mlpackage.zip")!,
             URL(string: "https://github.com/kyinwind/MichaelDevStudio/releases/download/1.0.0/LaMa.mlpackage.zip")!
         ]
-        let destination = URL(fileURLWithPath: "/Users/yangxuehui/Desktop/test.zip")
+        let destination = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("test.zip")
         let sha256 = "15021d7a4cab01279edc78cdd8fa78c35584d8c3050309682ffa0944603d78bd"
-        // 完整参数初始化
+
         let downloader = MultiSourceDownloader(
             urls: urls,
             destinationURL: destination,
             hashAlgorithm: .sha256,
-            expectedHash: sha256
+            expectedHash: sha256,
+            configuration: .init(
+                maxRetryCount: 2,
+                requestTimeout: 10,
+                probeTimeout: 3,
+                allowsCrossSourceResume: false
+            )
         )
 
-        try await downloader.startDownload { progress in
-            DispatchQueue.main.async {
-                print(progress.fractionCompleted)
-                print(progress.formattedSpeed)
-                print(progress.formattedRemainingTime)
-            }
-        }
+        XCTAssertEqual(downloader.urls, urls)
+        XCTAssertEqual(downloader.destinationURL, destination)
+        XCTAssertEqual(downloader.hashAlgorithm, .sha256)
+        XCTAssertEqual(downloader.expectedHash, sha256)
+        XCTAssertEqual(downloader.configuration.maxRetryCount, 2)
+
+        let progress = MultiSourceDownloader.Progress(
+            fractionCompleted: 0.5,
+            downloadedBytes: 500,
+            totalBytes: 1000,
+            speed: 1_500,
+            remainingSeconds: 10
+        )
+        XCTAssertEqual(progress.formattedSpeed, "1.5 KB/s")
+        XCTAssertEqual(progress.formattedRemainingTime, "0:10")
     }
 }
