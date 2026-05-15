@@ -51,4 +51,12 @@ public enum MySwiftAppToolsL10n {
     public static let downloaderVerificationFailed = "MultiSourceDownloader.verificationFailed"
     public static let downloaderInvalidResponse = "MultiSourceDownloader.invalidResponse"
     public static let downloaderFileAlreadyExists = "MultiSourceDownloader.fileAlreadyExists"
+    public static let themeCustomTextViewPlaceholder = "ThemeManager.CustomTextView.placeholder"
+    public static let actionBarAdd = "ThemeManager.ActionBar.add"
+    public static let actionBarEdit = "ThemeManager.ActionBar.edit"
+    public static let actionBarDelete = "ThemeManager.ActionBar.delete"
+    public static let actionBarSave = "ThemeManager.ActionBar.save"
+    public static let actionBarExit = "ThemeManager.ActionBar.exit"
+    public static let actionBarPreviewDragWidth = "ThemeManager.ActionBar.preview.dragWidth"
+    public static let actionBarPreviewExport = "ThemeManager.ActionBar.preview.export"
 }

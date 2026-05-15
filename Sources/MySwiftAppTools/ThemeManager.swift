@@ -452,7 +452,7 @@ public struct ReadOnlyTextView: NSViewRepresentable {
 //为了解决TextEditor文字上面被截的问题，特意写了CustomTextView
 public struct CustomTextView: NSViewRepresentable {
     @Binding var text: String
-    var placeholder: String = "请输入..."
+    var placeholder: String = packageL(MySwiftAppToolsL10n.themeCustomTextViewPlaceholder)
     var maxLength: Int? = nil
     
     public func makeNSView(context: Context) -> NSScrollView {
@@ -1165,50 +1165,55 @@ public struct ActionBar: View {
     private func buildButton(for item: ActionItem) -> some View {
         switch item {
         case let .add(enabled, shortcut, action):
+            let title = packageL(MySwiftAppToolsL10n.actionBarAdd)
             applyShortcut(shortcut,
                 to: styledButton(enabled: enabled, displayStyle: nil, view: Button(action: action) {
-                    actionLabel(title: "新增", systemImage: "plus", shortcut: shortcut)
+                    actionLabel(title: title, systemImage: "plus", shortcut: shortcut)
                 }
                 .disabled(!enabled)
-                .help("新增")
+                .help(title)
                 )
             )
 
         case let .edit(enabled, shortcut, action):
+            let title = packageL(MySwiftAppToolsL10n.actionBarEdit)
             applyShortcut(shortcut,
                 to: styledButton(enabled: enabled, displayStyle: nil, view: Button(action: action) {
-                    actionLabel(title: "修改", systemImage: "pencil", shortcut: shortcut)
+                    actionLabel(title: title, systemImage: "pencil", shortcut: shortcut)
                 }
                 .disabled(!enabled)
-                .help("修改")
+                .help(title)
                 )
             )
 
         case let .delete(enabled, action):
+            let title = packageL(MySwiftAppToolsL10n.actionBarDelete)
             styledButton(enabled: enabled, displayStyle: nil, view: Button(role: .destructive, action: action) {
-                actionLabel(title: "删除", systemImage: "trash", shortcut: nil)
+                actionLabel(title: title, systemImage: "trash", shortcut: nil)
             }
             .disabled(!enabled)
-            .help("删除")
+            .help(title)
             )
 
         case let .save(enabled, shortcut, action):
+            let title = packageL(MySwiftAppToolsL10n.actionBarSave)
             applyShortcut(shortcut,
                 to: styledButton(enabled: enabled, displayStyle: nil, view: Button(action: action) {
-                    actionLabel(title: "保存", systemImage: "square.and.arrow.down", shortcut: shortcut)
+                    actionLabel(title: title, systemImage: "square.and.arrow.down", shortcut: shortcut)
                 }
                 .disabled(!enabled)
-                .help("保存")
+                .help(title)
                 )
             )
 
         case let .exit(enabled, shortcut, action):
+            let title = packageL(MySwiftAppToolsL10n.actionBarExit)
             applyShortcut(shortcut,
                 to: styledButton(enabled: enabled, displayStyle: nil, view: Button(role: .destructive, action: action) {
-                    actionLabel(title: "退出", systemImage: "xmark.circle", shortcut: shortcut)
+                    actionLabel(title: title, systemImage: "xmark.circle", shortcut: shortcut)
                 }
                 .disabled(!enabled)
-                .help("退出")
+                .help(title)
                 )
             )
 
@@ -1356,7 +1361,7 @@ public struct AppInfo {
 #Preview {
     VStack(spacing: 16) {
         Spacer()
-        Text("拖动窗口宽度试试")
+        Text(packageL(MySwiftAppToolsL10n.actionBarPreviewDragWidth))
             .font(.headline)
         
         ActionBar(items: [
@@ -1364,7 +1369,7 @@ public struct AppInfo {
             .edit(enabled: false) { },
             .delete { },
             .custom(
-                title: "导出",
+                title: packageL(MySwiftAppToolsL10n.actionBarPreviewExport),
                 systemImage: "square.and.arrow.up"
             ) { }
         ])
@@ -1380,7 +1385,7 @@ public struct AppInfo {
 #Preview {
     VStack(spacing: 16) {
         Spacer()
-        Text("拖动窗口宽度试试")
+        Text(packageL(MySwiftAppToolsL10n.actionBarPreviewDragWidth))
             .font(.headline)
         
         ActionBar(items: [
@@ -1388,7 +1393,7 @@ public struct AppInfo {
             .edit(enabled: false) { },
             .delete { },
             .custom(
-                title: "导出",
+                title: packageL(MySwiftAppToolsL10n.actionBarPreviewExport),
                 systemImage: "square.and.arrow.up"
             ) { }
         ])
@@ -1420,7 +1425,7 @@ public struct AppInfo {
                 print("exit")
             },
             .custom(
-                title: "导出",
+                title: packageL(MySwiftAppToolsL10n.actionBarPreviewExport),
                 systemImage: "square.and.arrow.up"
             ) {
                 print("Export")

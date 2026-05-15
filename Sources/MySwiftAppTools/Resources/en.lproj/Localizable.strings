@@ -12,6 +12,14 @@
 "MultiSourceDownloader.verificationFailed" = "The file downloaded successfully (source: %@), but %@ verification failed. Expected: %@, actual: %@";
 "MultiSourceDownloader.invalidResponse" = "The server returned an invalid response.";
 "MultiSourceDownloader.fileAlreadyExists" = "The temporary file already exists, so the download cannot start.";
+"ThemeManager.CustomTextView.placeholder" = "Enter text...";
+"ThemeManager.ActionBar.add" = "Add";
+"ThemeManager.ActionBar.edit" = "Edit";
+"ThemeManager.ActionBar.delete" = "Delete";
+"ThemeManager.ActionBar.save" = "Save";
+"ThemeManager.ActionBar.exit" = "Exit";
+"ThemeManager.ActionBar.preview.dragWidth" = "Try dragging the window width";
+"ThemeManager.ActionBar.preview.export" = "Export";
 "RCMComparisonSection.features.title" = "Feature Comparison";
 "RCMComparisonSection.features.features" = "Features";
 "RCMComparisonSection.features.free" = "Free";
