@@ -1203,6 +1203,101 @@ L("Some.Key")
 
 App 自己的业务文案建议仍放在 App 自己的本地化文件中。
 
+## `FeedbackManager`
+
+多通道用户反馈管理器，支持将反馈发送到 **Discord**、**钉钉机器人**、**邮箱** 三个渠道。
+
+### 功能特性
+
+- 支持 Discord Webhook（纯文本 + 文件上传）
+- 支持钉钉机器人（纯文本）
+- 支持邮件（通过 `mailto:` 打开系统邮件客户端）
+- 内置系统信息收集（App 名称、版本、macOS 版本、CPU 类型等）
+- 内置 App Store 评分跳转
+- 开箱即用的 SwiftUI 反馈视图
+- 中英文国际化支持
+
+### 配置
+
+在 App 启动时调用一次 `configure`：
+
+```swift
+import MySwiftAppTools
+
+// 在 App.init() 中
+FeedbackManager.shared.configure(
+    appleID: "6752127439",           // Mac App Store 应用 ID（必填）
+    supportURL: "https://...",       // 技术支持页面 URL（必填）
+    email: "your@email.com",         // 接收反馈的邮箱（可选，有默认值）
+    discordWebhook: "https://...",   // Discord Webhook URL（可选，有默认值）
+    dingTalkWebhook: "https://...",  // 钉钉机器人 Webhook URL（可选，有默认值）
+    appName: "MyApp"                 // 应用名称，用于系统信息（可选）
+)
+```
+
+其中 `email`、`discordWebhook`、`dingTalkWebhook` 均有默认值，通常无需传入。
+
+### 发送反馈
+
+使用 `FeedbackPayload` 构造反馈内容，调用 `sendFeedback`：
+
+```swift
+let payload = FeedbackPayload(
+    content: "这里填写反馈内容",
+    attachments: [],                 // 附件 URL 列表
+    includeSystemInfo: true,
+    channels: [.discord]             // 发送渠道
+)
+
+Task {
+    do {
+        try await FeedbackManager.shared.sendFeedback(payload)
+        print("发送成功")
+    } catch {
+        print("发送失败: \(error)")
+    }
+}
+```
+
+### 使用内置反馈视图
+
+```swift
+import MySwiftAppTools
+
+struct SettingsView: View {
+    var body: some View {
+        NavigationStack {
+            List {
+                NavigationLink("意见反馈") {
+                    FeedbackView()
+                }
+            }
+        }
+    }
+}
+```
+
+### 评分跳转
+
+```swift
+guard let config = FeedbackManager.shared.config else { return }
+AppStoreHelper.rateApp(appleID: config.appleID)
+```
+
+### API 概览
+
+| API | 说明 |
+|-----|------|
+| `FeedbackManager.shared.configure(...)` | 配置管理器（必调） |
+| `FeedbackManager.shared.sendFeedback(_:)` | 发送反馈 |
+| `FeedbackManager.shared.isSending` | 发送状态 |
+| `FeedbackView()` | 内置反馈表单视图 |
+| `AppStoreHelper.rateApp(appleID:)` | 打开 Mac App Store 评分页 |
+| `SystemInfoProvider.collect(appName:)` | 收集系统信息 |
+| `FeedbackConfiguration` | 配置数据结构 |
+| `FeedbackChannel` | 反馈渠道枚举（discord / dingTalk / mail） |
+| `FeedbackPayload` | 反馈内容数据模型 |
+
 ## 版本发布流程
 
 建议每次给其他 App 使用前打 tag。
