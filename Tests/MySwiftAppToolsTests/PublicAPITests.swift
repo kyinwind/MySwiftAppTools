@@ -51,6 +51,26 @@ final class PublicAPITests: XCTestCase {
         _ = RCMErrorState(title: "加载失败", message: "请稍后重试。", actionTitle: "重试") {}
         _ = RCMLoadingState("正在加载", message: "这通常只需要几秒。")
         _ = RCMProgressPanel("模型下载", subtitle: "LaMa.mlpackage.zip", fractionCompleted: 0.5, statusText: "50%", actionTitle: "取消") {}
+        let helpItem = RCMVersionHistoryItem(
+            versionName: "v1.0.0",
+            publishedAt: Date(timeIntervalSince1970: 100),
+            changes: "初始版本",
+            videoTitle: "版本介绍",
+            bilibiliURL: URL(string: "https://www.bilibili.com/video/test"),
+            youtubeURL: URL(string: "https://www.youtube.com/watch?v=test")
+        )
+        let helpManager = RCMHelpCenterManager()
+        helpManager.configure(
+            items: [helpItem],
+            storageKey: "MySwiftAppToolsTests.HelpCenter.\(UUID().uuidString)",
+            markExistingItemsAsReadOnFirstConfigure: false
+        )
+        XCTAssertTrue(helpManager.hasUnreadUpdates)
+        XCTAssertTrue(helpManager.isUnread(helpItem))
+        helpManager.markAsRead(helpItem)
+        XCTAssertFalse(helpManager.hasUnreadUpdates)
+        _ = RCMHelpButton(manager: helpManager) {}
+        _ = RCMVersionHistoryListView(manager: helpManager)
         _ = RCMDesignSystemGallery()
     }
     

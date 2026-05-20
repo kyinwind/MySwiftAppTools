@@ -20,6 +20,16 @@
 "ThemeManager.ActionBar.exit" = "Exit";
 "ThemeManager.ActionBar.preview.dragWidth" = "Try dragging the window width";
 "ThemeManager.ActionBar.preview.export" = "Export";
+"RCMHelpCenter.help" = "Help";
+"RCMHelpCenter.versionHistory" = "Version History";
+"RCMHelpCenter.versionHistorySubtitle" = "Watch training videos and review what changed in each version.";
+"RCMHelpCenter.viewContent" = "View Details";
+"RCMHelpCenter.bilibili" = "Bilibili";
+"RCMHelpCenter.youtube" = "YouTube";
+"RCMHelpCenter.new" = "New";
+"RCMHelpCenter.unread" = "Unread";
+"RCMHelpCenter.noVersionHistory" = "No version history yet";
+"RCMHelpCenter.noVersionHistoryMessage" = "Configured version records will appear here.";
 "RCMComparisonSection.features.title" = "Feature Comparison";
 "RCMComparisonSection.features.features" = "Features";
 "RCMComparisonSection.features.free" = "Free";

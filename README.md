@@ -1137,6 +1137,98 @@ RCMDesignSystemGallery()
 3. 再逐步把 `ThemeManager.swift` 中真正通用的组件迁移到 DesignSystem。
 4. `ThemeManager.swift` 作为 legacy 兼容层保留，不建议继续在里面扩展新 UI 能力。
 
+#### HelpCenter
+
+位于 `Sources/MySwiftAppTools/HelpCenter`。
+
+`DesignSystem` 是 UI 原料，提供按钮、行、分组、页面骨架等基础组件；`HelpCenter` 是用这些原料组合出来的功能模块，带有自己的数据模型、状态管理和业务流程。它更像一份可直接放进 App 的“预制组件”。
+
+文件总览：
+
+| 文件 | 角色 | 说明 |
+|------|------|------|
+| `RCMHelpCenter.swift` | 帮助中心 | 帮助按钮、未读红点、版本历史、培训视频入口 |
+
+主要内容：
+
+- `RCMVersionHistoryItem`
+- `RCMHelpVideoLinks`
+- `RCMHelpCenterManager`
+- `RCMHelpButton`
+- `RCMVersionHistoryListView`
+
+配置版本历史数据：
+
+```swift
+let items = [
+    RCMVersionHistoryItem(
+        versionName: "v1.1.5",
+        publishedAtString: "2026-05-15",
+        changes: L("VersionHistory.v1_1_5.changes"),
+        videoTitle: L("VersionHistory.v1_1_5.videoTitle"),
+        bilibiliURL: URL(string: "https://www.bilibili.com/video/xxx"),
+        youtubeURL: URL(string: "https://www.youtube.com/watch?v=xxx")
+    )
+].compactMap { $0 }
+
+RCMHelpCenterManager.shared.configure(
+    items: items,
+    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt"
+)
+```
+
+主界面放帮助按钮：
+
+```swift
+@State private var showVersionHistory = false
+
+RCMHelpButton {
+    showVersionHistory = true
+}
+.sheet(isPresented: $showVersionHistory) {
+    RCMVersionHistoryListView()
+        .frame(minWidth: 680, minHeight: 520)
+}
+```
+
+`RCMHelpButton` 会根据 `RCMHelpCenterManager.shared.hasUnreadUpdates` 自动显示红点。`RCMVersionHistoryListView` 中每条未读版本记录也会显示红点和 `New` 标记。
+
+未读判断只看版本发布时间：
+
+```swift
+item.publishedAt > lastViewedPublishedAt
+```
+
+用户点击某条版本记录的“查看内容”、`Bilibili` 或 `YouTube` 后，组件会调用 `markAsRead(_:)`，把 `lastViewedPublishedAt` 更新到这条记录的发布时间。下次发布新版本时，只要新记录的 `publishedAt` 更晚，主界面帮助按钮和对应版本记录就会重新显示红点。
+
+首次配置时，`markExistingItemsAsReadOnFirstConfigure` 默认是 `true`。这表示新安装或第一次接入组件时，不会把所有历史版本都显示成未读；之后 App 升级新增更晚的版本记录，才会显示红点。如果希望第一次打开也提示最新版本内容，可以设为 `false`：
+
+```swift
+RCMHelpCenterManager.shared.configure(
+    items: items,
+    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
+    markExistingItemsAsReadOnFirstConfigure: false
+)
+```
+
+如果 App 和扩展需要共享红点状态，可以传入 App Group 的 `UserDefaults`：
+
+```swift
+let groupDefaults = UserDefaults(suiteName: "group.com.michaeldev") ?? .standard
+
+RCMHelpCenterManager.shared.configure(
+    items: items,
+    storageKey: "RightClickMate.helpCenter.lastViewedPublishedAt",
+    defaults: groupDefaults
+)
+```
+
+国际化边界：
+
+- 组件固定 UI 文案由 MySwiftAppTools 负责国际化，例如“帮助”“版本历史”“查看内容”“暂无版本历史”。
+- 版本号、更新内容、视频标题属于具体 App 的业务内容，调用方负责国际化后再传入。
+- `publishedAt` 使用 `Date` 保存，显示时由组件按当前系统语言和地区格式化。
+
 #### `ThemeManager.swift`
 
 历史项目中沉淀的 UI 辅助组件集合，包含：

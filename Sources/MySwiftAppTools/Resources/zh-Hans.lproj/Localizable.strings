@@ -20,6 +20,16 @@
 "ThemeManager.ActionBar.exit" = "退出";
 "ThemeManager.ActionBar.preview.dragWidth" = "拖动窗口宽度试试";
 "ThemeManager.ActionBar.preview.export" = "导出";
+"RCMHelpCenter.help" = "帮助";
+"RCMHelpCenter.versionHistory" = "版本历史";
+"RCMHelpCenter.versionHistorySubtitle" = "查看培训视频和每个版本的更新内容。";
+"RCMHelpCenter.viewContent" = "查看内容";
+"RCMHelpCenter.bilibili" = "Bilibili";
+"RCMHelpCenter.youtube" = "YouTube";
+"RCMHelpCenter.new" = "新";
+"RCMHelpCenter.unread" = "未读";
+"RCMHelpCenter.noVersionHistory" = "暂无版本历史";
+"RCMHelpCenter.noVersionHistoryMessage" = "配置版本记录后会显示在这里。";
 "RCMComparisonSection.features.title" = "功能对比";
 "RCMComparisonSection.features.features" = "功能";
 "RCMComparisonSection.features.free" = "Free";
