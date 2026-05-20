@@ -1174,7 +1174,8 @@ let items = [
 RCMHelpCenterManager.shared.configure(
     items: items,
     storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
-    supportURL: URL(string: "https://example.com/support")
+    supportURL: URL(string: "https://example.com/support"),
+    unreadColor: .red
 )
 ```
 
@@ -1214,6 +1215,17 @@ item.publishedAt > lastViewedPublishedAt
 
 如果 `configure` 传入了 `supportURL`，版本历史窗口右上角会显示“打开技术支持”按钮。
 
+未读提示颜色也可以通过 `configure` 统一配置，默认是红色。这个颜色会同步用于主界面帮助按钮红点、版本记录红点、以及 `New` 标签：
+
+```swift
+RCMHelpCenterManager.shared.configure(
+    items: items,
+    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
+    supportURL: URL(string: "https://example.com/support"),
+    unreadColor: .blue
+)
+```
+
 首次配置时，`markExistingItemsAsReadOnFirstConfigure` 默认是 `true`。这表示新安装或第一次接入组件时，不会把所有历史版本都显示成未读；之后 App 升级新增更晚的版本记录，才会显示红点。如果希望第一次打开也提示最新版本内容，可以设为 `false`：
 
 ```swift
@@ -1233,6 +1245,7 @@ RCMHelpCenterManager.shared.configure(
     items: items,
     storageKey: "RightClickMate.helpCenter.lastViewedPublishedAt",
     supportURL: URL(string: "https://example.com/support"),
+    unreadColor: .orange,
     defaults: groupDefaults
 )
 ```

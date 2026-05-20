@@ -127,6 +127,7 @@ public final class RCMHelpCenterManager {
     public private(set) var items: [RCMVersionHistoryItem] = []
     public private(set) var lastViewedPublishedAt: Date = .distantPast
     public private(set) var supportURL: URL?
+    public private(set) var unreadColor: Color = RCMTheme.shared.colors.danger
 
     private var defaults: UserDefaults = .standard
     private var storageKey = "MySwiftAppTools.RCMHelpCenter.lastViewedPublishedAt"
@@ -138,12 +139,14 @@ public final class RCMHelpCenterManager {
         items: [RCMVersionHistoryItem],
         storageKey: String,
         supportURL: URL? = nil,
+        unreadColor: Color = RCMTheme.shared.colors.danger,
         defaults: UserDefaults = .standard,
         markExistingItemsAsReadOnFirstConfigure: Bool = true
     ) {
         self.items = items.sorted { $0.publishedAt > $1.publishedAt }
         self.storageKey = storageKey
         self.supportURL = supportURL
+        self.unreadColor = unreadColor
         self.defaults = defaults
         self.isConfigured = true
 
@@ -236,12 +239,30 @@ public final class RCMHelpCenterWindowPresenter {
         )
         newWindow.title = title
         newWindow.contentViewController = hostingController
-        newWindow.center()
+        center(newWindow)
         newWindow.isReleasedWhenClosed = false
         newWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
         window = newWindow
+    }
+
+    private func center(_ window: NSWindow) {
+        let targetScreen = NSApp.keyWindow?.screen
+            ?? NSApp.mainWindow?.screen
+            ?? NSScreen.main
+
+        guard let visibleFrame = targetScreen?.visibleFrame else {
+            window.center()
+            return
+        }
+
+        let windowSize = window.frame.size
+        let origin = NSPoint(
+            x: visibleFrame.midX - windowSize.width / 2,
+            y: visibleFrame.midY - windowSize.height / 2
+        )
+        window.setFrameOrigin(origin)
     }
 }
 #endif
@@ -262,15 +283,15 @@ public struct RCMHelpButton: View {
 
         var iconFrame: CGFloat {
             switch self {
-            case .toolbar: return 24
-            case .large: return 28
+            case .toolbar: return 22
+            case .large: return 26
             }
         }
 
         var iconFontSize: CGFloat {
             switch self {
-            case .toolbar: return 15
-            case .large: return 18
+            case .toolbar: return 22
+            case .large: return 26
             }
         }
 
@@ -318,13 +339,9 @@ public struct RCMHelpButton: View {
         Button(action: action) {
             HStack(spacing: RCMTheme.shared.spacing.sm) {
                 Image(systemName: systemImage)
-                    .font(.system(size: size.iconFontSize, weight: .semibold))
+                    .font(.system(size: size.iconFontSize, weight: .regular))
                     .foregroundStyle(RCMTheme.shared.colors.textSecondary)
                     .frame(width: size.iconFrame, height: size.iconFrame)
-                    .background(
-                        Circle()
-                            .stroke(RCMTheme.shared.colors.textSecondary.opacity(0.7), lineWidth: 1.8)
-                    )
 
                 Text(title)
                     .font(RCMTheme.shared.typography.bodyStrong)
@@ -339,7 +356,7 @@ public struct RCMHelpButton: View {
             .contentShape(Capsule(style: .continuous))
             .overlay(alignment: .topTrailing) {
                 if manager.hasUnreadUpdates {
-                    RCMUnreadDot(size: size.dotSize)
+                    RCMUnreadDot(color: manager.unreadColor, size: size.dotSize)
                         .offset(x: -5, y: 5)
                 }
             }
@@ -387,6 +404,7 @@ public struct RCMVersionHistoryListView: View {
                             RCMVersionHistoryRow(
                                 item: item,
                                 isUnread: manager.isUnread(item),
+                                unreadColor: manager.unreadColor,
                                 preferredPlatform: preferredPlatform,
                                 markAsRead: {
                                     manager.markAsRead(item)
@@ -432,6 +450,7 @@ private struct RCMVersionHistoryRow: View {
 
     let item: RCMVersionHistoryItem
     let isUnread: Bool
+    let unreadColor: Color
     let preferredPlatform: RCMHelpVideoPreferredPlatform
     let markAsRead: () -> Void
 
@@ -459,7 +478,7 @@ private struct RCMVersionHistoryRow: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: RCMTheme.shared.spacing.sm) {
             if isUnread {
-                RCMUnreadDot()
+                RCMUnreadDot(color: unreadColor)
             }
 
             Text(item.versionName)
@@ -467,7 +486,7 @@ private struct RCMVersionHistoryRow: View {
                 .foregroundStyle(RCMTheme.shared.colors.textPrimary)
 
             if isUnread {
-                RCMBadge(packageL(MySwiftAppToolsL10n.helpCenterNew), style: .danger)
+                RCMUnreadBadge(text: packageL(MySwiftAppToolsL10n.helpCenterNew), color: unreadColor)
             }
 
             Spacer(minLength: RCMTheme.shared.spacing.md)
@@ -521,12 +540,30 @@ private struct RCMVersionHistoryRow: View {
 }
 
 private struct RCMUnreadDot: View {
+    var color: Color
     var size: CGFloat = 8
 
     var body: some View {
         Circle()
-            .fill(RCMTheme.shared.colors.danger)
+            .fill(color)
             .frame(width: size, height: size)
             .accessibilityLabel(packageL(MySwiftAppToolsL10n.helpCenterUnread))
+    }
+}
+
+private struct RCMUnreadBadge: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(RCMTheme.shared.typography.captionStrong)
+            .foregroundStyle(color)
+            .padding(.horizontal, RCMTheme.shared.spacing.xs)
+            .padding(.vertical, RCMTheme.shared.spacing.xxs)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(color.opacity(0.12))
+            )
     }
 }
