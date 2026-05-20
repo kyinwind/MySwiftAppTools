@@ -249,15 +249,57 @@ public final class RCMHelpCenterWindowPresenter {
 // MARK: - Help Button
 
 public struct RCMHelpButton: View {
+    public enum Size {
+        case toolbar
+        case large
+
+        var height: CGFloat {
+            switch self {
+            case .toolbar: return 34
+            case .large: return 48
+            }
+        }
+
+        var iconFrame: CGFloat {
+            switch self {
+            case .toolbar: return 24
+            case .large: return 28
+            }
+        }
+
+        var iconFontSize: CGFloat {
+            switch self {
+            case .toolbar: return 15
+            case .large: return 18
+            }
+        }
+
+        var horizontalPadding: CGFloat {
+            switch self {
+            case .toolbar: return RCMTheme.shared.spacing.sm
+            case .large: return RCMTheme.shared.spacing.md
+            }
+        }
+
+        var dotSize: CGFloat {
+            switch self {
+            case .toolbar: return 7
+            case .large: return 9
+            }
+        }
+    }
+
     @State private var manager: RCMHelpCenterManager
 
     private let title: String
     private let systemImage: String
+    private let size: Size
     private let action: () -> Void
 
     public init(
         title: String = packageL(MySwiftAppToolsL10n.helpCenterHelp),
         systemImage: String = "questionmark.circle",
+        size: Size = .toolbar,
         manager: RCMHelpCenterManager = .shared,
         action: @escaping () -> Void = {
 #if os(macOS)
@@ -268,6 +310,7 @@ public struct RCMHelpButton: View {
         self._manager = State(initialValue: manager)
         self.title = title
         self.systemImage = systemImage
+        self.size = size
         self.action = action
     }
 
@@ -275,9 +318,9 @@ public struct RCMHelpButton: View {
         Button(action: action) {
             HStack(spacing: RCMTheme.shared.spacing.sm) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: size.iconFontSize, weight: .semibold))
                     .foregroundStyle(RCMTheme.shared.colors.textSecondary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: size.iconFrame, height: size.iconFrame)
                     .background(
                         Circle()
                             .stroke(RCMTheme.shared.colors.textSecondary.opacity(0.7), lineWidth: 1.8)
@@ -287,8 +330,8 @@ public struct RCMHelpButton: View {
                     .font(RCMTheme.shared.typography.bodyStrong)
                     .foregroundStyle(RCMTheme.shared.colors.textPrimary)
             }
-            .padding(.horizontal, RCMTheme.shared.spacing.md)
-            .frame(height: 48)
+            .padding(.horizontal, size.horizontalPadding)
+            .frame(height: size.height)
             .background(
                 Capsule(style: .continuous)
                     .fill(RCMTheme.shared.colors.cardGrayBackground)
@@ -296,8 +339,8 @@ public struct RCMHelpButton: View {
             .contentShape(Capsule(style: .continuous))
             .overlay(alignment: .topTrailing) {
                 if manager.hasUnreadUpdates {
-                    RCMUnreadDot(size: 9)
-                        .offset(x: -6, y: 7)
+                    RCMUnreadDot(size: size.dotSize)
+                        .offset(x: -5, y: 5)
                 }
             }
         }

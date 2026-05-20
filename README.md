@@ -1173,25 +1173,34 @@ let items = [
 
 RCMHelpCenterManager.shared.configure(
     items: items,
-    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt"
+    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
+    supportURL: URL(string: "https://example.com/support")
 )
 ```
 
 主界面放帮助按钮：
 
 ```swift
-@State private var showVersionHistory = false
+RCMHelpButton()
+```
 
+`RCMHelpButton` 会根据 `RCMHelpCenterManager.shared.hasUnreadUpdates` 自动显示红点。点击后默认打开一个标准 macOS 窗口，带关闭、最小化和缩放按钮；不需要调用方再用 `.sheet` 包一层。
+
+`RCMHelpButton` 默认使用适合 toolbar 的尺寸。如果要放在普通页面里，可以使用大号按钮：
+
+```swift
+RCMHelpButton(size: .large)
+```
+
+如果需要自己控制打开行为，也可以传入 action：
+
+```swift
 RCMHelpButton {
-    showVersionHistory = true
-}
-.sheet(isPresented: $showVersionHistory) {
-    RCMVersionHistoryListView()
-        .frame(minWidth: 680, minHeight: 520)
+    RCMHelpCenterWindowPresenter.shared.show()
 }
 ```
 
-`RCMHelpButton` 会根据 `RCMHelpCenterManager.shared.hasUnreadUpdates` 自动显示红点。`RCMVersionHistoryListView` 中每条未读版本记录也会显示红点和 `New` 标记。
+`RCMVersionHistoryListView` 中每条未读版本记录也会显示红点和 `New` 标记。
 
 未读判断只看版本发布时间：
 
@@ -1200,6 +1209,10 @@ item.publishedAt > lastViewedPublishedAt
 ```
 
 用户点击某条版本记录的“查看内容”、`Bilibili` 或 `YouTube` 后，组件会调用 `markAsRead(_:)`，把 `lastViewedPublishedAt` 更新到这条记录的发布时间。下次发布新版本时，只要新记录的 `publishedAt` 更晚，主界面帮助按钮和对应版本记录就会重新显示红点。
+
+如果某条版本记录没有传 `bilibiliURL` 或 `youtubeURL`，这一条不会显示“查看内容”按钮。顶部的“标记为已读”按钮可以用于没有培训视频的版本记录，用户点击后会清除所有当前未读红点。
+
+如果 `configure` 传入了 `supportURL`，版本历史窗口右上角会显示“打开技术支持”按钮。
 
 首次配置时，`markExistingItemsAsReadOnFirstConfigure` 默认是 `true`。这表示新安装或第一次接入组件时，不会把所有历史版本都显示成未读；之后 App 升级新增更晚的版本记录，才会显示红点。如果希望第一次打开也提示最新版本内容，可以设为 `false`：
 
@@ -1219,6 +1232,7 @@ let groupDefaults = UserDefaults(suiteName: "group.com.michaeldev") ?? .standard
 RCMHelpCenterManager.shared.configure(
     items: items,
     storageKey: "RightClickMate.helpCenter.lastViewedPublishedAt",
+    supportURL: URL(string: "https://example.com/support"),
     defaults: groupDefaults
 )
 ```

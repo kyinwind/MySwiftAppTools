@@ -63,8 +63,10 @@ final class PublicAPITests: XCTestCase {
         helpManager.configure(
             items: [helpItem],
             storageKey: "MySwiftAppToolsTests.HelpCenter.\(UUID().uuidString)",
+            supportURL: URL(string: "https://example.com/support"),
             markExistingItemsAsReadOnFirstConfigure: false
         )
+        XCTAssertEqual(helpManager.supportURL, URL(string: "https://example.com/support"))
         XCTAssertTrue(helpManager.hasUnreadUpdates)
         XCTAssertTrue(helpManager.isUnread(helpItem))
         helpManager.markAsRead(helpItem)
