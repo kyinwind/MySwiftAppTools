@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - Help Center Models
 
@@ -123,6 +126,7 @@ public final class RCMHelpCenterManager {
 
     public private(set) var items: [RCMVersionHistoryItem] = []
     public private(set) var lastViewedPublishedAt: Date = .distantPast
+    public private(set) var supportURL: URL?
 
     private var defaults: UserDefaults = .standard
     private var storageKey = "MySwiftAppTools.RCMHelpCenter.lastViewedPublishedAt"
@@ -133,11 +137,13 @@ public final class RCMHelpCenterManager {
     public func configure(
         items: [RCMVersionHistoryItem],
         storageKey: String,
+        supportURL: URL? = nil,
         defaults: UserDefaults = .standard,
         markExistingItemsAsReadOnFirstConfigure: Bool = true
     ) {
         self.items = items.sorted { $0.publishedAt > $1.publishedAt }
         self.storageKey = storageKey
+        self.supportURL = supportURL
         self.defaults = defaults
         self.isConfigured = true
 
@@ -192,6 +198,54 @@ public final class RCMHelpCenterManager {
     }
 }
 
+// MARK: - Help Center Window
+
+#if os(macOS)
+@MainActor
+public final class RCMHelpCenterWindowPresenter {
+    public static let shared = RCMHelpCenterWindowPresenter()
+
+    private var window: NSWindow?
+
+    public init() {}
+
+    public func show(
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterVersionHistory),
+        preferredPlatform: RCMHelpVideoPreferredPlatform = .automatic,
+        manager: RCMHelpCenterManager = .shared
+    ) {
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let rootView = RCMVersionHistoryListView(
+            title: title,
+            preferredPlatform: preferredPlatform,
+            manager: manager
+        )
+        .frame(minWidth: 760, minHeight: 560)
+
+        let hostingController = NSHostingController(rootView: rootView)
+        let newWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 860, height: 680),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        newWindow.title = title
+        newWindow.contentViewController = hostingController
+        newWindow.center()
+        newWindow.isReleasedWhenClosed = false
+        newWindow.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        window = newWindow
+    }
+}
+#endif
+
 // MARK: - Help Button
 
 public struct RCMHelpButton: View {
@@ -199,33 +253,55 @@ public struct RCMHelpButton: View {
 
     private let title: String
     private let systemImage: String
-    private let role: RCMButton.Role
     private let action: () -> Void
 
     public init(
         title: String = packageL(MySwiftAppToolsL10n.helpCenterHelp),
         systemImage: String = "questionmark.circle",
-        role: RCMButton.Role = .soft,
         manager: RCMHelpCenterManager = .shared,
-        action: @escaping () -> Void
+        action: @escaping () -> Void = {
+#if os(macOS)
+            RCMHelpCenterWindowPresenter.shared.show()
+#endif
+        }
     ) {
         self._manager = State(initialValue: manager)
         self.title = title
         self.systemImage = systemImage
-        self.role = role
         self.action = action
     }
 
     public var body: some View {
-        RCMButton(role, action: action) {
-            Label(title, systemImage: systemImage)
-                .overlay(alignment: .topTrailing) {
-                    if manager.hasUnreadUpdates {
-                        RCMUnreadDot()
-                            .offset(x: 8, y: -8)
-                    }
+        Button(action: action) {
+            HStack(spacing: RCMTheme.shared.spacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .stroke(RCMTheme.shared.colors.textSecondary.opacity(0.7), lineWidth: 1.8)
+                    )
+
+                Text(title)
+                    .font(RCMTheme.shared.typography.bodyStrong)
+                    .foregroundStyle(RCMTheme.shared.colors.textPrimary)
+            }
+            .padding(.horizontal, RCMTheme.shared.spacing.md)
+            .frame(height: 48)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(RCMTheme.shared.colors.cardGrayBackground)
+            )
+            .contentShape(Capsule(style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                if manager.hasUnreadUpdates {
+                    RCMUnreadDot(size: 9)
+                        .offset(x: -6, y: 7)
                 }
+            }
         }
+        .buttonStyle(.plain)
         .help(title)
     }
 }
@@ -254,7 +330,7 @@ public struct RCMVersionHistoryListView: View {
     public var body: some View {
         ScrollView {
             RCMPageStack(maxWidth: 820) {
-                RCMSectionTitle(title: title, subtitle: subtitle)
+                header
 
                 if manager.items.isEmpty {
                     RCMEmptyState(
@@ -276,6 +352,33 @@ public struct RCMVersionHistoryListView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: RCMTheme.shared.spacing.md) {
+            RCMSectionTitle(title: title, subtitle: subtitle)
+
+            Spacer(minLength: RCMTheme.shared.spacing.md)
+
+            HStack(spacing: RCMTheme.shared.spacing.sm) {
+                if let supportURL = manager.supportURL {
+                    RCMButton(.soft, action: {
+#if os(macOS)
+                        NSWorkspace.shared.open(supportURL)
+#endif
+                    }) {
+                        Label(packageL(MySwiftAppToolsL10n.helpCenterOpenSupport), systemImage: "safari")
+                    }
+                }
+
+                RCMButton(.secondary, action: {
+                    manager.markAllAsRead()
+                }) {
+                    Label(packageL(MySwiftAppToolsL10n.helpCenterMarkAllRead), systemImage: "checkmark.circle")
+                }
+                .disabled(!manager.hasUnreadUpdates)
             }
         }
     }
@@ -334,8 +437,10 @@ private struct RCMVersionHistoryRow: View {
 
     private var actions: some View {
         HStack(spacing: RCMTheme.shared.spacing.sm) {
-            RCMButton(.primary, action: openPreferredVideoOrMarkRead) {
-                Label(packageL(MySwiftAppToolsL10n.helpCenterViewContent), systemImage: "play.circle")
+            if item.hasVideoLinks {
+                RCMButton(.primary, action: openPreferredVideo) {
+                    Label(packageL(MySwiftAppToolsL10n.helpCenterViewContent), systemImage: "play.circle")
+                }
             }
 
             if let bilibiliURL = item.videoLinks.bilibiliURL {
@@ -356,11 +461,9 @@ private struct RCMVersionHistoryRow: View {
         }
     }
 
-    private func openPreferredVideoOrMarkRead() {
+    private func openPreferredVideo() {
         if let url = item.preferredVideoURL(preferredPlatform) {
             open(url)
-        } else {
-            markAsRead()
         }
     }
 
@@ -375,10 +478,12 @@ private struct RCMVersionHistoryRow: View {
 }
 
 private struct RCMUnreadDot: View {
+    var size: CGFloat = 8
+
     var body: some View {
         Circle()
             .fill(RCMTheme.shared.colors.danger)
-            .frame(width: 8, height: 8)
+            .frame(width: size, height: size)
             .accessibilityLabel(packageL(MySwiftAppToolsL10n.helpCenterUnread))
     }
 }

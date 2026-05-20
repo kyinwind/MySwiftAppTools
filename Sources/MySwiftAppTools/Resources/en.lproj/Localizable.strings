@@ -30,6 +30,8 @@
 "RCMHelpCenter.unread" = "Unread";
 "RCMHelpCenter.noVersionHistory" = "No version history yet";
 "RCMHelpCenter.noVersionHistoryMessage" = "Configured version records will appear here.";
+"RCMHelpCenter.openSupport" = "Open Support";
+"RCMHelpCenter.markAllRead" = "Mark as Read";
 "RCMComparisonSection.features.title" = "Feature Comparison";
 "RCMComparisonSection.features.features" = "Features";
 "RCMComparisonSection.features.free" = "Free";

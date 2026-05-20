@@ -30,6 +30,8 @@
 "RCMHelpCenter.unread" = "未读";
 "RCMHelpCenter.noVersionHistory" = "暂无版本历史";
 "RCMHelpCenter.noVersionHistoryMessage" = "配置版本记录后会显示在这里。";
+"RCMHelpCenter.openSupport" = "打开技术支持";
+"RCMHelpCenter.markAllRead" = "标记为已读";
 "RCMComparisonSection.features.title" = "功能对比";
 "RCMComparisonSection.features.features" = "功能";
 "RCMComparisonSection.features.free" = "Free";

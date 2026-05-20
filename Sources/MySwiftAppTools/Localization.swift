@@ -69,4 +69,6 @@ public enum MySwiftAppToolsL10n {
     public static let helpCenterUnread = "RCMHelpCenter.unread"
     public static let helpCenterNoVersionHistory = "RCMHelpCenter.noVersionHistory"
     public static let helpCenterNoVersionHistoryMessage = "RCMHelpCenter.noVersionHistoryMessage"
+    public static let helpCenterOpenSupport = "RCMHelpCenter.openSupport"
+    public static let helpCenterMarkAllRead = "RCMHelpCenter.markAllRead"
 }
