@@ -100,6 +100,7 @@ struct YourApp: App {
             supportURL: URL(string: "https://example.com/support"),
             quickLinks: quickLinks,
             faqItems: faqItems,
+            accentColor: .orange,
             unreadColor: .red,
             markExistingItemsAsReadOnFirstConfigure: true
         )
@@ -1271,6 +1272,7 @@ RCMHelpCenterManager.shared.configure(
     supportURL: URL(string: "https://example.com/support"),
     quickLinks: quickLinks,
     faqItems: faqItems,
+    accentColor: .orange,
     unreadColor: .red
 )
 ```
@@ -1336,14 +1338,18 @@ item.publishedAt > lastViewedPublishedAt
 
 如果 `configure` 传入了 `supportURL`，版本历史窗口右上角会显示“打开技术支持”按钮。
 
-未读提示颜色也可以通过 `configure` 统一配置，默认是红色。这个颜色会同步用于主界面帮助按钮红点、版本记录红点、以及 `New` 标签：
+帮助中心有两类颜色：
+
+- `accentColor`：操作强调色，用于顶部按钮、快速入口图标、Bilibili/YouTube 等操作按钮，默认使用 `RCMTheme.shared.colors.accent`。
+- `unreadColor`：未读提示色，只用于帮助按钮红点、版本记录红点、`New` 标签等未读状态，默认是红色。
 
 ```swift
 RCMHelpCenterManager.shared.configure(
     items: items,
     storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
     supportURL: URL(string: "https://example.com/support"),
-    unreadColor: .blue
+    accentColor: .orange,
+    unreadColor: .red
 )
 ```
 

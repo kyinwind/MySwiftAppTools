@@ -205,6 +205,7 @@ public final class RCMHelpCenterManager {
     public private(set) var faqItems: [RCMHelpFAQItem] = []
     public private(set) var lastViewedPublishedAt: Date = .distantPast
     public private(set) var supportURL: URL?
+    public private(set) var accentColor: Color = RCMTheme.shared.colors.accent
     public private(set) var unreadColor: Color = RCMTheme.shared.colors.danger
 
     private var defaults: UserDefaults = .standard
@@ -220,6 +221,7 @@ public final class RCMHelpCenterManager {
         quickLinks: [RCMHelpQuickLinkItem] = [],
         faqItems: [RCMHelpFAQItem] = [],
         includeDefaultFeedbackLinks: Bool = true,
+        accentColor: Color = RCMTheme.shared.colors.accent,
         unreadColor: Color = RCMTheme.shared.colors.danger,
         defaults: UserDefaults = .standard,
         markExistingItemsAsReadOnFirstConfigure: Bool = true
@@ -232,6 +234,7 @@ public final class RCMHelpCenterManager {
         self.faqItems = faqItems
         self.storageKey = storageKey
         self.supportURL = supportURL
+        self.accentColor = accentColor
         self.unreadColor = unreadColor
         self.defaults = defaults
         self.isConfigured = true
@@ -574,12 +577,13 @@ public struct RCMVersionHistoryListView: View {
             } else {
                 LazyVStack(spacing: RCMTheme.shared.spacing.md) {
                     ForEach(manager.items) { item in
-                        RCMVersionHistoryRow(
-                            item: item,
-                            isUnread: manager.isUnread(item),
-                            unreadColor: manager.unreadColor,
-                            markAsRead: {
-                                manager.markAsRead(item)
+                            RCMVersionHistoryRow(
+                                item: item,
+                                isUnread: manager.isUnread(item),
+                                accentColor: manager.accentColor,
+                                unreadColor: manager.unreadColor,
+                                markAsRead: {
+                                    manager.markAsRead(item)
                             }
                         )
                     }
@@ -617,7 +621,7 @@ public struct RCMVersionHistoryListView: View {
 
             HStack(spacing: RCMTheme.shared.spacing.sm) {
                 if let supportURL = manager.supportURL {
-                    RCMButton(.soft, action: {
+                    RCMHelpActionButton(role: .soft, accentColor: manager.accentColor, action: {
 #if os(macOS)
                         NSWorkspace.shared.open(supportURL)
 #endif
@@ -626,7 +630,7 @@ public struct RCMVersionHistoryListView: View {
                     }
                 }
 
-                RCMButton(.secondary, action: {
+                RCMHelpActionButton(role: .secondary, accentColor: manager.accentColor, action: {
                     manager.markAllAsRead()
                 }) {
                     Label(packageL(MySwiftAppToolsL10n.helpCenterMarkAllRead), systemImage: "checkmark.circle")
@@ -648,7 +652,7 @@ private struct RCMHelpQuickLinkButton: View {
             HStack(alignment: .center, spacing: RCMTheme.shared.spacing.sm) {
                 Image(systemName: link.systemImage)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(RCMTheme.shared.colors.accent)
+                    .foregroundStyle(manager.accentColor)
                     .frame(width: 24, height: 24)
 
                 VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xxs) {
@@ -723,11 +727,49 @@ private struct RCMHelpFAQRow: View {
     }
 }
 
+private struct RCMHelpActionButton<LabelContent: View>: View {
+    enum Role {
+        case soft
+        case secondary
+    }
+
+    let role: Role
+    let accentColor: Color
+    let action: () -> Void
+    @ViewBuilder let label: () -> LabelContent
+
+    var body: some View {
+        Button(action: action) {
+            label()
+                .font(RCMTheme.shared.typography.bodyStrong)
+                .foregroundStyle(accentColor)
+                .frame(height: RCMTheme.shared.controlSize.buttonHeight)
+                .padding(.horizontal, RCMTheme.shared.spacing.md)
+                .background(background)
+                .contentShape(RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        switch role {
+        case .soft:
+            RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md, style: .continuous)
+                .fill(accentColor.opacity(0.12))
+        case .secondary:
+            RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md, style: .continuous)
+                .stroke(accentColor, lineWidth: 1.5)
+        }
+    }
+}
+
 private struct RCMVersionHistoryRow: View {
     @Environment(\.openURL) private var openURL
 
     let item: RCMVersionHistoryItem
     let isUnread: Bool
+    let accentColor: Color
     let unreadColor: Color
     let markAsRead: () -> Void
 
@@ -777,7 +819,7 @@ private struct RCMVersionHistoryRow: View {
     private var actions: some View {
         HStack(spacing: RCMTheme.shared.spacing.sm) {
             if let bilibiliURL = item.videoLinks.bilibiliURL {
-                RCMButton(.soft, action: {
+                RCMHelpActionButton(role: .soft, accentColor: accentColor, action: {
                     open(bilibiliURL)
                 }) {
                     Label(packageL(MySwiftAppToolsL10n.helpCenterBilibili), systemImage: "play.rectangle")
@@ -785,7 +827,7 @@ private struct RCMVersionHistoryRow: View {
             }
 
             if let youtubeURL = item.videoLinks.youtubeURL {
-                RCMButton(.soft, action: {
+                RCMHelpActionButton(role: .soft, accentColor: accentColor, action: {
                     open(youtubeURL)
                 }) {
                     Label(packageL(MySwiftAppToolsL10n.helpCenterYoutube), systemImage: "play.rectangle")
