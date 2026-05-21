@@ -32,22 +32,76 @@ import MySwiftAppTools
 
 ## 推荐初始化
 
-不同 App 可以在启动时集中配置这些工具：
+建议在 App 启动阶段集中配置用到的工具。下面是一个较完整的初始化模板：用得到的保留，用不到的删掉即可。
 
 ```swift
+import SwiftUI
+import MySwiftAppTools
+
 @main
 struct YourApp: App {
     init() {
+        // UserDefaults。如果 App 和扩展需要共享数据，传 appGroupID；否则可以不配置。
         DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
+
+        // Keychain 默认 service。建议每个 App 使用自己的 service 名。
         KeychainTools.configure(defaultService: "YourApp")
+
+        // 统一日志 subsystem。
         Log.configure(subsystem: "com.yourcompany.yourapp")
 
+        // DesignSystem 主题。建议在 UI 创建前完成配置。
         RCMTheme.shared.applyPreset(.blue)
 
+        // Toast 全局配置。只有使用 ToastView / ShowToast 时才需要。
         ToastManager.shared.configure(
             maxVisibleToasts: 5,
             toastWidth: 420,
             copyOnTap: true
+        )
+
+        // 反馈工具。配置后 HelpCenter 会自动出现“反馈问题”和“给应用评分”入口。
+        FeedbackManager.shared.configure(
+            appleID: "123456789",
+            supportURL: "https://example.com/support",
+            appName: "YourApp"
+        )
+
+        // HelpCenter。items / quickLinks / faqItems 的文案由 App 自己国际化后传入。
+        let versionItems = [
+            RCMVersionHistoryItem(
+                versionName: "v1.0.0",
+                publishedAtString: "2026-05-21",
+                changes: "Initial release",
+                bilibiliURL: URL(string: "https://www.bilibili.com/video/xxx"),
+                youtubeURL: URL(string: "https://www.youtube.com/watch?v=xxx")
+            )
+        ].compactMap { $0 }
+
+        let quickLinks = [
+            RCMHelpQuickLinkItem(
+                title: "User Guide",
+                subtitle: "Open the online guide",
+                systemImage: "book",
+                url: URL(string: "https://example.com/guide")!
+            )
+        ]
+
+        let faqItems = [
+            RCMHelpFAQItem(
+                question: "How do I get started?",
+                answer: "Open the guide from Quick Links and follow the first workflow."
+            )
+        ]
+
+        RCMHelpCenterManager.shared.configure(
+            items: versionItems,
+            storageKey: "YourApp.helpCenter.lastViewedPublishedAt",
+            supportURL: URL(string: "https://example.com/support"),
+            quickLinks: quickLinks,
+            faqItems: faqItems,
+            unreadColor: .red,
+            markExistingItemsAsReadOnFirstConfigure: true
         )
     }
 
@@ -60,9 +114,13 @@ struct YourApp: App {
 }
 ```
 
-如果某个 App 不需要 App Group，可以不调用 `DefaultsTools.configure(...)`。
+常见取舍：
 
-`RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
+- 不需要 App Group：可以不调用 `DefaultsTools.configure(...)`。
+- 不使用 Toast：可以不配置 `ToastManager`，也不需要挂 `ToastView()`。
+- 不使用反馈：可以不配置 `FeedbackManager`；HelpCenter 的快速入口里也不会自动出现反馈和评分。
+- 不需要快速入口或 FAQ：`quickLinks` / `faqItems` 可以不传，对应区域不会显示。
+- `RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
 
 ## 工具清单
 
