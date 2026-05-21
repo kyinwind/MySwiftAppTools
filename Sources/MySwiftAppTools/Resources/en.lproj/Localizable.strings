@@ -21,9 +21,13 @@
 "ThemeManager.ActionBar.preview.dragWidth" = "Try dragging the window width";
 "ThemeManager.ActionBar.preview.export" = "Export";
 "RCMHelpCenter.help" = "Help";
+"RCMHelpCenter.title" = "Help Center";
+"RCMHelpCenter.quickLinks" = "Quick Links";
+"RCMHelpCenter.feedback" = "Send Feedback";
+"RCMHelpCenter.rate" = "Rate App";
+"RCMHelpCenter.faq" = "FAQ";
 "RCMHelpCenter.versionHistory" = "Version History";
 "RCMHelpCenter.versionHistorySubtitle" = "Watch training videos and review what changed in each version.";
-"RCMHelpCenter.viewContent" = "View Details";
 "RCMHelpCenter.bilibili" = "Bilibili";
 "RCMHelpCenter.youtube" = "YouTube";
 "RCMHelpCenter.new" = "New";

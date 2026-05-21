@@ -1147,17 +1147,28 @@ RCMDesignSystemGallery()
 
 | 文件 | 角色 | 说明 |
 |------|------|------|
-| `RCMHelpCenter.swift` | 帮助中心 | 帮助按钮、未读红点、版本历史、培训视频入口 |
+| `RCMHelpCenter.swift` | 帮助中心 | 帮助按钮、未读红点、快速入口、版本历史、FAQ |
 
 主要内容：
 
 - `RCMVersionHistoryItem`
 - `RCMHelpVideoLinks`
+- `RCMHelpQuickLinkItem`
+- `RCMHelpFAQItem`
 - `RCMHelpCenterManager`
 - `RCMHelpButton`
 - `RCMVersionHistoryListView`
 
-配置版本历史数据：
+推荐结构：
+
+| 区域 | 作用 | 配置来源 |
+|------|------|----------|
+| 顶部 | 帮助中心标题、技术支持、标记已读 | `supportURL`、未读状态 |
+| 快速入口 | 教程、反馈、评分、官网等常用入口 | `quickLinks`，也可自动接入 `FeedbackManager` |
+| 版本历史 | 完整版本更新记录和 Bilibili/YouTube 视频入口 | `items` |
+| 常见问题 | 可折叠 FAQ | `faqItems` |
+
+配置帮助中心：
 
 ```swift
 let items = [
@@ -1171,11 +1182,63 @@ let items = [
     )
 ].compactMap { $0 }
 
+let quickLinks = [
+    RCMHelpQuickLinkItem(
+        title: L("HelpCenter.guide"),
+        subtitle: L("HelpCenter.guide.subtitle"),
+        systemImage: "book",
+        url: URL(string: "https://example.com/guide")!
+    ),
+    RCMHelpQuickLinkItem(
+        title: L("HelpCenter.videoTutorials"),
+        systemImage: "play.rectangle",
+        url: URL(string: "https://www.youtube.com")!
+    )
+]
+
+let faqItems = [
+    RCMHelpFAQItem(
+        question: L("FAQ.getStarted.question"),
+        answer: L("FAQ.getStarted.answer")
+    ),
+    RCMHelpFAQItem(
+        question: L("FAQ.restorePurchase.question"),
+        answer: L("FAQ.restorePurchase.answer")
+    )
+]
+
 RCMHelpCenterManager.shared.configure(
     items: items,
     storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
     supportURL: URL(string: "https://example.com/support"),
+    quickLinks: quickLinks,
+    faqItems: faqItems,
     unreadColor: .red
+)
+```
+
+如果 App 已经配置了 `FeedbackManager`，帮助中心会默认在快速入口中补充：
+
+- `反馈问题`：点击后打开标准 macOS 反馈窗口 `FeedbackView`
+- `给应用评分`：点击后打开 Mac App Store 评分页
+
+示例：
+
+```swift
+FeedbackManager.shared.configure(
+    appleID: "123456789",
+    supportURL: "https://example.com/support",
+    appName: "YourApp"
+)
+```
+
+如果不希望自动加入反馈和评分入口，可以关闭：
+
+```swift
+RCMHelpCenterManager.shared.configure(
+    items: items,
+    storageKey: "YourApp.helpCenter.lastViewedPublishedAt",
+    includeDefaultFeedbackLinks: false
 )
 ```
 
@@ -1209,9 +1272,9 @@ RCMHelpButton {
 item.publishedAt > lastViewedPublishedAt
 ```
 
-用户点击某条版本记录的“查看内容”、`Bilibili` 或 `YouTube` 后，组件会调用 `markAsRead(_:)`，把 `lastViewedPublishedAt` 更新到这条记录的发布时间。下次发布新版本时，只要新记录的 `publishedAt` 更晚，主界面帮助按钮和对应版本记录就会重新显示红点。
+用户点击某条版本记录的 `Bilibili` 或 `YouTube` 后，组件会调用 `markAsRead(_:)`，把 `lastViewedPublishedAt` 更新到这条记录的发布时间。下次发布新版本时，只要新记录的 `publishedAt` 更晚，主界面帮助按钮和对应版本记录就会重新显示红点。
 
-如果某条版本记录没有传 `bilibiliURL` 或 `youtubeURL`，这一条不会显示“查看内容”按钮。顶部的“标记为已读”按钮可以用于没有培训视频的版本记录，用户点击后会清除所有当前未读红点。
+如果某条版本记录没有传 `bilibiliURL` 或 `youtubeURL`，这一条不会显示视频平台按钮。顶部的“标记为已读”按钮可以用于没有培训视频的版本记录，用户点击后会清除所有当前未读红点。
 
 如果 `configure` 传入了 `supportURL`，版本历史窗口右上角会显示“打开技术支持”按钮。
 
@@ -1252,8 +1315,8 @@ RCMHelpCenterManager.shared.configure(
 
 国际化边界：
 
-- 组件固定 UI 文案由 MySwiftAppTools 负责国际化，例如“帮助”“版本历史”“查看内容”“暂无版本历史”。
-- 版本号、更新内容、视频标题属于具体 App 的业务内容，调用方负责国际化后再传入。
+- 组件固定 UI 文案由 MySwiftAppTools 负责国际化，例如“帮助”“帮助中心”“快速入口”“版本历史”“常见问题”“暂无版本历史”。
+- 版本号、更新内容、视频标题、快速入口标题、FAQ 问答属于具体 App 的业务内容，调用方负责国际化后再传入。
 - `publishedAt` 使用 `Date` 保存，显示时由组件按当前系统语言和地区格式化。
 
 #### `ThemeManager.swift`

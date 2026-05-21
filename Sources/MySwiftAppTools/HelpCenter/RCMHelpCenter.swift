@@ -43,6 +43,82 @@ public struct RCMHelpVideoLinks: Codable, Hashable, Sendable {
     }
 }
 
+public enum RCMHelpQuickLinkAction: Hashable, Sendable {
+    case url(URL)
+    case feedback
+    case appStoreReview
+    case support
+}
+
+public struct RCMHelpQuickLinkItem: Identifiable, Hashable, Sendable {
+    public var id: String
+    public var title: String
+    public var subtitle: String?
+    public var systemImage: String
+    public var action: RCMHelpQuickLinkAction
+
+    public init(
+        id: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String,
+        url: URL
+    ) {
+        self.id = id ?? title
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.action = .url(url)
+    }
+
+    public init(
+        id: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String,
+        action: RCMHelpQuickLinkAction
+    ) {
+        self.id = id ?? title
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.action = action
+    }
+
+    public static func feedback(
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterFeedback),
+        subtitle: String? = nil
+    ) -> Self {
+        Self(title: title, subtitle: subtitle, systemImage: "bubble.left.and.text.bubble.right", action: .feedback)
+    }
+
+    public static func appStoreReview(
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterRate),
+        subtitle: String? = nil
+    ) -> Self {
+        Self(title: title, subtitle: subtitle, systemImage: "star", action: .appStoreReview)
+    }
+
+    public static func support(
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterOpenSupport),
+        subtitle: String? = nil
+    ) -> Self {
+        Self(title: title, subtitle: subtitle, systemImage: "safari", action: .support)
+    }
+}
+
+public struct RCMHelpFAQItem: Identifiable, Hashable, Sendable {
+    public var id: String
+    public var question: String
+    public var answer: String
+
+    public init(id: String? = nil, question: String, answer: String) {
+        self.id = id ?? question
+        self.question = question
+        self.answer = answer
+    }
+}
+
 public struct RCMVersionHistoryItem: Identifiable, Codable, Hashable, Sendable {
     public var id: String
     public var versionName: String
@@ -125,6 +201,8 @@ public final class RCMHelpCenterManager {
     public static let shared = RCMHelpCenterManager()
 
     public private(set) var items: [RCMVersionHistoryItem] = []
+    public private(set) var quickLinks: [RCMHelpQuickLinkItem] = []
+    public private(set) var faqItems: [RCMHelpFAQItem] = []
     public private(set) var lastViewedPublishedAt: Date = .distantPast
     public private(set) var supportURL: URL?
     public private(set) var unreadColor: Color = RCMTheme.shared.colors.danger
@@ -139,11 +217,19 @@ public final class RCMHelpCenterManager {
         items: [RCMVersionHistoryItem],
         storageKey: String,
         supportURL: URL? = nil,
+        quickLinks: [RCMHelpQuickLinkItem] = [],
+        faqItems: [RCMHelpFAQItem] = [],
+        includeDefaultFeedbackLinks: Bool = true,
         unreadColor: Color = RCMTheme.shared.colors.danger,
         defaults: UserDefaults = .standard,
         markExistingItemsAsReadOnFirstConfigure: Bool = true
     ) {
         self.items = items.sorted { $0.publishedAt > $1.publishedAt }
+        self.quickLinks = Self.mergedQuickLinks(
+            customLinks: quickLinks,
+            includeDefaultFeedbackLinks: includeDefaultFeedbackLinks
+        )
+        self.faqItems = faqItems
         self.storageKey = storageKey
         self.supportURL = supportURL
         self.unreadColor = unreadColor
@@ -199,6 +285,27 @@ public final class RCMHelpCenterManager {
         lastViewedPublishedAt = date
         defaults.set(date, forKey: storageKey)
     }
+
+    private static func mergedQuickLinks(
+        customLinks: [RCMHelpQuickLinkItem],
+        includeDefaultFeedbackLinks: Bool
+    ) -> [RCMHelpQuickLinkItem] {
+        var links = customLinks
+
+        guard includeDefaultFeedbackLinks, FeedbackManager.shared.isConfigured else {
+            return links
+        }
+
+        if !links.contains(where: { $0.action == .feedback }) {
+            links.append(.feedback())
+        }
+
+        if !links.contains(where: { $0.action == .appStoreReview }) {
+            links.append(.appStoreReview())
+        }
+
+        return links
+    }
 }
 
 // MARK: - Help Center Window
@@ -213,7 +320,7 @@ public final class RCMHelpCenterWindowPresenter {
     public init() {}
 
     public func show(
-        title: String = packageL(MySwiftAppToolsL10n.helpCenterVersionHistory),
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterTitle),
         preferredPlatform: RCMHelpVideoPreferredPlatform = .automatic,
         manager: RCMHelpCenterManager = .shared
     ) {
@@ -225,7 +332,6 @@ public final class RCMHelpCenterWindowPresenter {
 
         let rootView = RCMVersionHistoryListView(
             title: title,
-            preferredPlatform: preferredPlatform,
             manager: manager
         )
         .frame(minWidth: 760, minHeight: 560)
@@ -263,6 +369,42 @@ public final class RCMHelpCenterWindowPresenter {
             y: visibleFrame.midY - windowSize.height / 2
         )
         window.setFrameOrigin(origin)
+    }
+}
+
+@MainActor
+public final class RCMFeedbackWindowPresenter {
+    public static let shared = RCMFeedbackWindowPresenter()
+
+    private var window: NSWindow?
+
+    public init() {}
+
+    public func show(title: String = packageL(MySwiftAppToolsL10n.helpCenterFeedback)) {
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let hostingController = NSHostingController(
+            rootView: FeedbackView()
+                .frame(minWidth: 560, minHeight: 520)
+        )
+        let newWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: 620),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        newWindow.title = title
+        newWindow.contentViewController = hostingController
+        newWindow.center()
+        newWindow.isReleasedWhenClosed = false
+        newWindow.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        window = newWindow
     }
 }
 #endif
@@ -373,10 +515,9 @@ public struct RCMVersionHistoryListView: View {
 
     private let title: String
     private let subtitle: String?
-    private let preferredPlatform: RCMHelpVideoPreferredPlatform
 
     public init(
-        title: String = packageL(MySwiftAppToolsL10n.helpCenterVersionHistory),
+        title: String = packageL(MySwiftAppToolsL10n.helpCenterTitle),
         subtitle: String? = packageL(MySwiftAppToolsL10n.helpCenterVersionHistorySubtitle),
         preferredPlatform: RCMHelpVideoPreferredPlatform = .automatic,
         manager: RCMHelpCenterManager = .shared
@@ -384,32 +525,83 @@ public struct RCMVersionHistoryListView: View {
         self._manager = State(initialValue: manager)
         self.title = title
         self.subtitle = subtitle
-        self.preferredPlatform = preferredPlatform
     }
 
     public var body: some View {
         ScrollView {
             RCMPageStack(maxWidth: 820) {
                 header
+                quickLinksSection
+                versionHistorySection
+                faqSection
+            }
+        }
+    }
 
-                if manager.items.isEmpty {
+    @ViewBuilder
+    private var quickLinksSection: some View {
+        if !manager.quickLinks.isEmpty {
+            VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.sm) {
+                RCMSectionTitle(title: packageL(MySwiftAppToolsL10n.helpCenterQuickLinks))
+
+                LazyVGrid(
+                    columns: [
+                        GridItem(.adaptive(minimum: 180), spacing: RCMTheme.shared.spacing.sm)
+                    ],
+                    alignment: .leading,
+                    spacing: RCMTheme.shared.spacing.sm
+                ) {
+                    ForEach(manager.quickLinks) { link in
+                        RCMHelpQuickLinkButton(link: link, manager: manager)
+                    }
+                }
+            }
+        }
+    }
+
+    private var versionHistorySection: some View {
+        VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.sm) {
+            RCMSectionTitle(title: packageL(MySwiftAppToolsL10n.helpCenterVersionHistory))
+
+            if manager.items.isEmpty {
+                RCMGroup {
                     RCMEmptyState(
                         systemImage: "clock.arrow.circlepath",
                         title: LocalizedStringKey(packageL(MySwiftAppToolsL10n.helpCenterNoVersionHistory)),
                         message: LocalizedStringKey(packageL(MySwiftAppToolsL10n.helpCenterNoVersionHistoryMessage))
                     )
-                } else {
-                    LazyVStack(spacing: RCMTheme.shared.spacing.md) {
-                        ForEach(manager.items) { item in
-                            RCMVersionHistoryRow(
-                                item: item,
-                                isUnread: manager.isUnread(item),
-                                unreadColor: manager.unreadColor,
-                                preferredPlatform: preferredPlatform,
-                                markAsRead: {
-                                    manager.markAsRead(item)
-                                }
-                            )
+                }
+            } else {
+                LazyVStack(spacing: RCMTheme.shared.spacing.md) {
+                    ForEach(manager.items) { item in
+                        RCMVersionHistoryRow(
+                            item: item,
+                            isUnread: manager.isUnread(item),
+                            unreadColor: manager.unreadColor,
+                            markAsRead: {
+                                manager.markAsRead(item)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var faqSection: some View {
+        if !manager.faqItems.isEmpty {
+            VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.sm) {
+                RCMSectionTitle(title: packageL(MySwiftAppToolsL10n.helpCenterFAQ))
+
+                RCMGroup {
+                    VStack(spacing: 0) {
+                        ForEach(Array(manager.faqItems.enumerated()), id: \.element.id) { index, item in
+                            RCMHelpFAQRow(item: item)
+
+                            if index < manager.faqItems.count - 1 {
+                                Divider()
+                            }
                         }
                     }
                 }
@@ -445,13 +637,98 @@ public struct RCMVersionHistoryListView: View {
     }
 }
 
+private struct RCMHelpQuickLinkButton: View {
+    @Environment(\.openURL) private var openURL
+
+    let link: RCMHelpQuickLinkItem
+    let manager: RCMHelpCenterManager
+
+    var body: some View {
+        Button(action: performAction) {
+            HStack(alignment: .center, spacing: RCMTheme.shared.spacing.sm) {
+                Image(systemName: link.systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(RCMTheme.shared.colors.accent)
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: RCMTheme.shared.spacing.xxs) {
+                    Text(link.title)
+                        .font(RCMTheme.shared.typography.bodyStrong)
+                        .foregroundStyle(RCMTheme.shared.colors.textPrimary)
+                        .lineLimit(1)
+
+                    if let subtitle = link.subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(RCMTheme.shared.typography.caption)
+                            .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer(minLength: RCMTheme.shared.spacing.xs)
+            }
+            .padding(RCMTheme.shared.spacing.md)
+            .frame(maxWidth: .infinity, minHeight: 84, maxHeight: 84, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md, style: .continuous)
+                    .fill(RCMTheme.shared.colors.cardGrayBackground)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: RCMTheme.shared.radius.md, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func performAction() {
+        switch link.action {
+        case .url(let url):
+            openURL(url)
+        case .feedback:
+#if os(macOS)
+            RCMFeedbackWindowPresenter.shared.show()
+#endif
+        case .appStoreReview:
+#if os(macOS)
+            if let appleID = FeedbackManager.shared.config?.appleID {
+                AppStoreHelper.rateApp(appleID: appleID)
+            }
+#endif
+        case .support:
+            if let url = manager.supportURL {
+                openURL(url)
+            } else if let supportURL = FeedbackManager.shared.config?.supportURL,
+                      let url = URL(string: supportURL) {
+                openURL(url)
+            }
+        }
+    }
+}
+
+private struct RCMHelpFAQRow: View {
+    let item: RCMHelpFAQItem
+
+    var body: some View {
+        DisclosureGroup {
+            Text(item.answer)
+                .font(RCMTheme.shared.typography.body)
+                .foregroundStyle(RCMTheme.shared.colors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, RCMTheme.shared.spacing.xs)
+        } label: {
+            Text(item.question)
+                .font(RCMTheme.shared.typography.bodyStrong)
+                .foregroundStyle(RCMTheme.shared.colors.textPrimary)
+        }
+        .padding(.vertical, RCMTheme.shared.spacing.sm)
+    }
+}
+
 private struct RCMVersionHistoryRow: View {
     @Environment(\.openURL) private var openURL
 
     let item: RCMVersionHistoryItem
     let isUnread: Bool
     let unreadColor: Color
-    let preferredPlatform: RCMHelpVideoPreferredPlatform
     let markAsRead: () -> Void
 
     var body: some View {
@@ -499,12 +776,6 @@ private struct RCMVersionHistoryRow: View {
 
     private var actions: some View {
         HStack(spacing: RCMTheme.shared.spacing.sm) {
-            if item.hasVideoLinks {
-                RCMButton(.primary, action: openPreferredVideo) {
-                    Label(packageL(MySwiftAppToolsL10n.helpCenterViewContent), systemImage: "play.circle")
-                }
-            }
-
             if let bilibiliURL = item.videoLinks.bilibiliURL {
                 RCMButton(.soft, action: {
                     open(bilibiliURL)
@@ -520,12 +791,6 @@ private struct RCMVersionHistoryRow: View {
                     Label(packageL(MySwiftAppToolsL10n.helpCenterYoutube), systemImage: "play.rectangle")
                 }
             }
-        }
-    }
-
-    private func openPreferredVideo() {
-        if let url = item.preferredVideoURL(preferredPlatform) {
-            open(url)
         }
     }
 
