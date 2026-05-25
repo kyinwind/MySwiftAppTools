@@ -51,6 +51,9 @@ final class PublicAPITests: XCTestCase {
         _ = RCMErrorState(title: "加载失败", message: "请稍后重试。", actionTitle: "重试") {}
         _ = RCMLoadingState("正在加载", message: "这通常只需要几秒。")
         _ = RCMProgressPanel("模型下载", subtitle: "LaMa.mlpackage.zip", fractionCompleted: 0.5, statusText: "50%", actionTitle: "取消") {}
+        let languageManager = RCMAppLanguageManager()
+        _ = languageManager.locale
+        _ = Text("Language").rcmAppLanguage(languageManager)
         let helpItem = RCMVersionHistoryItem(
             versionName: "v1.0.0",
             publishedAt: Date(timeIntervalSince1970: 100),
@@ -81,6 +84,20 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(Color(hexARGB: "#FF0000FF").toHex(), "#0000FF")
         XCTAssertEqual(Color(hexRGBA: "#FF0000FF").toHex(), "#FF0000")
         XCTAssertEqual(Color(hex: "#FF0000FF", format: .rgba).toHex(), "#FF0000")
+    }
+
+    func testRuntimeLocalizationCanOverridePackageLanguage() {
+        let suiteName = "MySwiftAppToolsTests.Localization.\(UUID().uuidString)"
+        let suite = UserDefaults(suiteName: suiteName) ?? .standard
+        RCMLocalization.configure(userDefaults: suite)
+
+        RCMLocalization.selectedLanguage = .english
+        XCTAssertEqual(packageL(MySwiftAppToolsL10n.confirmOK), "OK")
+
+        RCMLocalization.selectedLanguage = .zhHans
+        XCTAssertEqual(packageL(MySwiftAppToolsL10n.confirmOK), "确定")
+
+        RCMLocalization.selectedLanguage = .system
     }
     
     func testToolPublicEntrypointsCompile() async {

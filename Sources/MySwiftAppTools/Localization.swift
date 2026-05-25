@@ -5,37 +5,49 @@
 //  Created by yangxuehui on 2026/2/12.
 //
 import Foundation
-//在外部调用使用
+
+// MARK: - App-facing localization helpers
+
+/// App 侧通用本地化函数。
+///
+/// 兼容已有调用方式，同时底层改为走 `RCMLocalization`，让用户手动指定语言后旧代码也能生效。
 public func L(_ key: String, _ args: CVarArg...) -> String {
-    String(format: NSLocalizedString(key, comment: ""), arguments: args)
+    RCMLocalization.localizedFormat(key, arguments: args)
 }
 
-//包里面使用
+/// MySwiftAppTools 包内部资源的本地化函数。
+///
+/// 与 `L` 的区别是默认从 `Bundle.module` 查表，用于公共包自带 UI 文案。
 public func packageL(_ key: String, _ args: CVarArg...) -> String {
-    let format = Bundle.module.localizedString(forKey: key, value: key, table: nil)
-    return String(format: format, locale: Locale.current, arguments: args)
+    RCMLocalization.localizedFormat(key, bundle: .module, arguments: args)
 }
-//包外使用
+
 public extension String {
 
-    /// AppKit / Finder Extension 使用
+    /// AppKit / Finder Extension 使用的便捷入口。
+    ///
+    /// 返回 `String`，适合 NSAlert、NSMenu、NSButton 等不接受 `LocalizedStringKey` 的场景。
     var toNSLocalizedString: String {
-        NSLocalizedString(self, comment: "")
+        RCMLocalization.localizedString(self)
     }
 
-    /// 可选：显式指定 bundle（Finder Extension 用）
+    /// 显式指定 bundle 的查表入口。
+    ///
+    /// Finder Extension 或多 bundle 结构下，可以把目标 bundle 传进来。
     func localized(in bundle: Bundle) -> String {
-        NSLocalizedString(self, bundle: bundle, comment: "")
+        RCMLocalization.localizedString(self, bundle: bundle)
     }
 }
-//包内使用
+
 public extension String {
+    /// MySwiftAppTools 包内部资源的字符串查表入口。
     var toPackageNSLocalizedString: String {
-        Bundle.module.localizedString(forKey: self, value: self, table: nil)
+        RCMLocalization.localizedString(self, bundle: .module)
     }
 
+    /// 显式传入 bundle 的包内查表入口，保留原有 API 命名以兼容旧代码。
     func PackageLocalized(in bundle: Bundle) -> String {
-        bundle.localizedString(forKey: self, value: self, table: nil)
+        RCMLocalization.localizedString(self, bundle: bundle)
     }
 }
 

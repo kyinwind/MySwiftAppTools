@@ -44,6 +44,12 @@ struct YourApp: App {
         // UserDefaults。如果 App 和扩展需要共享数据，传 appGroupID；否则可以不配置。
         DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
 
+        // App 语言偏好。如果 App 和扩展需要共享语言设置，建议同样传 appGroupID。
+        RCMAppLanguageManager.shared.configure(
+            appGroupID: "group.com.yourcompany.yourapp",
+            defaultBundle: .main
+        )
+
         // Keychain 默认 service。建议每个 App 使用自己的 service 名。
         KeychainTools.configure(defaultService: "YourApp")
 
@@ -109,6 +115,7 @@ struct YourApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .rcmAppLanguage(RCMAppLanguageManager.shared)
                 .overlay(ToastView())
         }
     }
@@ -122,6 +129,7 @@ struct YourApp: App {
 - 不使用反馈：可以不配置 `FeedbackManager`；HelpCenter 的快速入口里也不会自动出现反馈和评分。
 - 不需要快速入口或 FAQ：`quickLinks` / `faqItems` 可以不传，对应区域不会显示。
 - `RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
+- 不需要 App 内语言切换：可以不配置 `RCMAppLanguageManager`，默认仍按系统语言查表。
 
 ## 工具清单
 
@@ -175,6 +183,96 @@ struct UserPreference: Codable {
 DefaultsTools.shared.setCodable(UserPreference(name: "Default"), for: "preference")
 let preference = DefaultsTools.shared.codable(UserPreference.self, for: "preference")
 ```
+
+#### `RCMLocalization` / `RCMAppLanguageManager`
+
+App 级语言偏好与运行时本地化工具，用于实现“跟随系统 / 简体中文 / English”这类应用内语言选择。
+
+职责划分：
+
+- `RCMLocalization`：纯查表与存储层，适合 AppKit、FinderSync、NSMenu、NSAlert 等非 SwiftUI 场景。
+- `RCMAppLanguageManager`：SwiftUI 状态层，负责保存选择并触发根视图刷新。
+- `RCMAppLanguagePreference`：语言枚举，当前内置 `.system`、`.zhHans`、`.english`。
+- `.rcmAppLanguage(...)`：SwiftUI 根视图 modifier，把当前 `Locale` 注入环境，并在语言变化时重建视图树。
+
+初始化：
+
+```swift
+@main
+struct YourApp: App {
+    @State private var languageManager = RCMAppLanguageManager.shared
+
+    init() {
+        languageManager.configure(
+            appGroupID: "group.com.yourcompany.yourapp",
+            defaultBundle: .main
+        )
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .rcmAppLanguage(languageManager)
+        }
+    }
+}
+```
+
+如果 App 没有扩展，也可以使用普通 `UserDefaults`：
+
+```swift
+RCMAppLanguageManager.shared.configure(
+    userDefaults: .standard,
+    defaultBundle: .main
+)
+```
+
+设置页切换语言：
+
+```swift
+Picker("Display Language", selection: $languageManager.selection) {
+    Text("Follow System").tag(RCMAppLanguagePreference.system)
+    Text("简体中文").tag(RCMAppLanguagePreference.zhHans)
+    Text("English").tag(RCMAppLanguagePreference.english)
+}
+.pickerStyle(.segmented)
+```
+
+也可以直接调用：
+
+```swift
+languageManager.setLanguage(.zhHans)
+languageManager.setLanguage(.english)
+languageManager.setLanguage(.system)
+```
+
+非 SwiftUI 场景查表：
+
+```swift
+let title = RCMLocalization.localizedString("menu_new_file")
+let message = RCMLocalization.localizedFormat(
+    "download.progress",
+    arguments: [50]
+)
+```
+
+兼容旧入口：
+
+```swift
+L("menu_new_file")
+"menu_new_file".toNSLocalizedString
+packageL(MySwiftAppToolsL10n.confirmOK)
+"Toast.confirmOK".toPackageNSLocalizedString
+```
+
+这些入口现在都会走 `RCMLocalization`，因此用户手动指定语言后，旧代码也能按新的语言偏好查表。
+
+注意事项：
+
+- App 自己的业务文案仍放在 App 自己的 `Localizable.strings` 中，并通过 `defaultBundle: .main` 查表。
+- MySwiftAppTools 自带 UI 文案使用 `packageL(...)` 或 `.toPackageNSLocalizedString`，从 `Bundle.module` 查表。
+- 如果主 App 与 FinderSync / Share Extension 需要共享语言选择，请使用 App Group 配置。
+- SwiftUI 的 `Text("key")` 依赖环境 `Locale`，建议把 `.rcmAppLanguage(...)` 放在每个 Window/Scene 的根视图上。
 
 #### `KeychainTools`
 
