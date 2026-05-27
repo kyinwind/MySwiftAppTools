@@ -28,7 +28,8 @@ public final class PermissionManager {
     @MainActor
     public func ensureAccess(
         for url: URL,
-        purpose: PermissionPurpose
+        purpose: PermissionPurpose,
+        presentingWindow: NSWindow? = nil
     ) async -> PermissionUrlGroup? {
         //根据 url 找到目录，所有权限操作都是目录级的
         let targetDir = normalizeToDirectory(url)
@@ -40,7 +41,7 @@ public final class PermissionManager {
         }
         
         // 2️⃣ 无可用 bookmark → 请求授权
-        return await requestDirectoryAccess(targetDir, purpose: purpose)
+        return await requestDirectoryAccess(targetDir, purpose: purpose, presentingWindow: presentingWindow)
     }
     
     //拼接目录，供外部调用方基于matchUrl拼接出具体的访问 url
@@ -138,7 +139,8 @@ public final class PermissionManager {
     // MARK: 未指定目标url入口
     public func ensureTargetDirectoryAccess(
         suggested: URL? = nil,
-        purpose: PermissionPurpose = .write
+        purpose: PermissionPurpose = .write,
+        presentingWindow: NSWindow? = nil
     ) async -> PermissionUrlGroup? {
         if isRequesting { return nil }
         isRequesting = true
@@ -154,7 +156,7 @@ public final class PermissionManager {
             panel.title = MySwiftAppToolsL10n.authWriteTitle.toPackageNSLocalizedString
             panel.message = MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
             NSApp.activate(ignoringOtherApps: true)
-            panel.begin { resp in
+            self.present(panel, presentingWindow: presentingWindow) { resp in
                 guard resp == .OK, let url = panel.url else {
                     continuation.resume(returning: nil)
                     return
@@ -236,7 +238,8 @@ public final class PermissionManager {
     //请求目录访问赋权
     public func requestDirectoryAccess(
         _ suggested: URL,
-        purpose: PermissionPurpose
+        purpose: PermissionPurpose,
+        presentingWindow: NSWindow? = nil
     ) async -> PermissionUrlGroup? {
         
         if isRequesting { return nil }
@@ -253,7 +256,7 @@ public final class PermissionManager {
             panel.title = MySwiftAppToolsL10n.authWriteTitle.toPackageNSLocalizedString
             panel.message = MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
             NSApp.activate(ignoringOtherApps: true)
-            panel.begin { resp in
+            self.present(panel, presentingWindow: presentingWindow) { resp in
                 guard resp == .OK, let url = panel.url else {
                     continuation.resume(returning: nil)
                     return
@@ -328,5 +331,22 @@ public final class PermissionManager {
         case .write:
             return MySwiftAppToolsL10n.authWriteMsg.toPackageNSLocalizedString
         }
+    }
+
+    /// 优先把授权面板挂到调用方窗口上，避免独立弹窗被 floating 工具窗口挡住。
+    private func present(
+        _ panel: NSOpenPanel,
+        presentingWindow: NSWindow?,
+        completion: @escaping (NSApplication.ModalResponse) -> Void
+    ) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        if let window = presentingWindow ?? NSApp.keyWindow ?? NSApp.mainWindow {
+            window.makeKeyAndOrderFront(nil)
+            panel.beginSheetModal(for: window, completionHandler: completion)
+            return
+        }
+
+        panel.begin(completionHandler: completion)
     }
 }
