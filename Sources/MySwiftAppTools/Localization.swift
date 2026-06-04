@@ -1,6 +1,6 @@
 //
 //  Localization.swift
-//  RightClickMate
+//  MySwiftAppTools
 //
 //  Created by yangxuehui on 2026/2/12.
 //
@@ -9,17 +9,20 @@ import Foundation
 // MARK: - App-facing localization helpers
 
 /// App 侧通用本地化函数。
-///
-/// 兼容已有调用方式，同时底层改为走 `RCMLocalization`，让用户手动指定语言后旧代码也能生效。
 public func L(_ key: String, _ args: CVarArg...) -> String {
-    RCMLocalization.localizedFormat(key, arguments: args)
+    localizedFormat(key, bundle: .main, arguments: args)
 }
 
 /// MySwiftAppTools 包内部资源的本地化函数。
 ///
 /// 与 `L` 的区别是默认从 `Bundle.module` 查表，用于公共包自带 UI 文案。
 public func packageL(_ key: String, _ args: CVarArg...) -> String {
-    RCMLocalization.localizedFormat(key, bundle: .module, arguments: args)
+    localizedFormat(key, bundle: .module, arguments: args)
+}
+
+private func localizedFormat(_ key: String, bundle: Bundle, arguments: [CVarArg]) -> String {
+    let format = bundle.localizedString(forKey: key, value: nil, table: nil)
+    return String(format: format, locale: .autoupdatingCurrent, arguments: arguments)
 }
 
 public extension String {
@@ -28,26 +31,26 @@ public extension String {
     ///
     /// 返回 `String`，适合 NSAlert、NSMenu、NSButton 等不接受 `LocalizedStringKey` 的场景。
     var toNSLocalizedString: String {
-        RCMLocalization.localizedString(self)
+        Bundle.main.localizedString(forKey: self, value: nil, table: nil)
     }
 
     /// 显式指定 bundle 的查表入口。
     ///
     /// Finder Extension 或多 bundle 结构下，可以把目标 bundle 传进来。
     func localized(in bundle: Bundle) -> String {
-        RCMLocalization.localizedString(self, bundle: bundle)
+        bundle.localizedString(forKey: self, value: nil, table: nil)
     }
 }
 
 public extension String {
     /// MySwiftAppTools 包内部资源的字符串查表入口。
     var toPackageNSLocalizedString: String {
-        RCMLocalization.localizedString(self, bundle: .module)
+        Bundle.module.localizedString(forKey: self, value: nil, table: nil)
     }
 
     /// 显式传入 bundle 的包内查表入口，保留原有 API 命名以兼容旧代码。
     func PackageLocalized(in bundle: Bundle) -> String {
-        RCMLocalization.localizedString(self, bundle: bundle)
+        bundle.localizedString(forKey: self, value: nil, table: nil)
     }
 }
 

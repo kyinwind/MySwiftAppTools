@@ -44,12 +44,6 @@ struct YourApp: App {
         // UserDefaults。如果 App 和扩展需要共享数据，传 appGroupID；否则可以不配置。
         DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
 
-        // App 语言偏好。如果 App 和扩展需要共享语言设置，建议同样传 appGroupID。
-        RCMAppLanguageManager.shared.configure(
-            appGroupID: "group.com.yourcompany.yourapp",
-            defaultBundle: .main
-        )
-
         // Keychain 默认 service。建议每个 App 使用自己的 service 名。
         KeychainTools.configure(defaultService: "YourApp")
 
@@ -66,56 +60,11 @@ struct YourApp: App {
             copyOnTap: true
         )
 
-        // 反馈工具。配置后 HelpCenter 会自动出现“反馈问题”和“给应用评分”入口。
-        FeedbackManager.shared.configure(
-            appleID: "123456789",
-            supportURL: "https://example.com/support",
-            appName: "YourApp"
-        )
-
-        // HelpCenter。items / quickLinks / faqItems 的文案由 App 自己国际化后传入。
-        let versionItems = [
-            RCMVersionHistoryItem(
-                versionName: "v1.0.0",
-                publishedAtString: "2026-05-21",
-                changes: "Initial release",
-                bilibiliURL: URL(string: "https://www.bilibili.com/video/xxx"),
-                youtubeURL: URL(string: "https://www.youtube.com/watch?v=xxx")
-            )
-        ].compactMap { $0 }
-
-        let quickLinks = [
-            RCMHelpQuickLinkItem(
-                title: "User Guide",
-                subtitle: "Open the online guide",
-                systemImage: "book",
-                url: URL(string: "https://example.com/guide")!
-            )
-        ]
-
-        let faqItems = [
-            RCMHelpFAQItem(
-                question: "How do I get started?",
-                answer: "Open the guide from Quick Links and follow the first workflow."
-            )
-        ]
-
-        RCMHelpCenterManager.shared.configure(
-            items: versionItems,
-            storageKey: "YourApp.helpCenter.lastViewedPublishedAt",
-            supportURL: URL(string: "https://example.com/support"),
-            quickLinks: quickLinks,
-            faqItems: faqItems,
-            accentColor: .orange,
-            unreadColor: .red,
-            markExistingItemsAsReadOnFirstConfigure: true
-        )
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .rcmAppLanguage(RCMAppLanguageManager.shared)
                 .overlay(ToastView())
         }
     }
@@ -126,10 +75,9 @@ struct YourApp: App {
 
 - 不需要 App Group：可以不调用 `DefaultsTools.configure(...)`。
 - 不使用 Toast：可以不配置 `ToastManager`，也不需要挂 `ToastView()`。
-- 不使用反馈：可以不配置 `FeedbackManager`；HelpCenter 的快速入口里也不会自动出现反馈和评分。
 - 不需要快速入口或 FAQ：`quickLinks` / `faqItems` 可以不传，对应区域不会显示。
 - `RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
-- 不需要 App 内语言切换：可以不配置 `RCMAppLanguageManager`，默认仍按系统语言查表。
+- 需要 App 内语言切换：建议使用 SwiftHelpCenter 提供的 `SHCAppLanguageManager` / `SHCLocalization`，MySwiftAppTools 不再维护运行时语言偏好。
 
 ## 工具清单
 
@@ -184,79 +132,9 @@ DefaultsTools.shared.setCodable(UserPreference(name: "Default"), for: "preferenc
 let preference = DefaultsTools.shared.codable(UserPreference.self, for: "preference")
 ```
 
-#### `RCMLocalization` / `RCMAppLanguageManager`
+#### 本地化辅助函数
 
-App 级语言偏好与运行时本地化工具，用于实现“跟随系统 / 简体中文 / English”这类应用内语言选择。
-
-职责划分：
-
-- `RCMLocalization`：纯查表与存储层，适合 AppKit、FinderSync、NSMenu、NSAlert 等非 SwiftUI 场景。
-- `RCMAppLanguageManager`：SwiftUI 状态层，负责保存选择并触发根视图刷新。
-- `RCMAppLanguagePreference`：语言枚举，当前内置 `.system`、`.zhHans`、`.english`。
-- `.rcmAppLanguage(...)`：SwiftUI 根视图 modifier，把当前 `Locale` 注入环境，并在语言变化时重建视图树。
-
-初始化：
-
-```swift
-@main
-struct YourApp: App {
-    @State private var languageManager = RCMAppLanguageManager.shared
-
-    init() {
-        languageManager.configure(
-            appGroupID: "group.com.yourcompany.yourapp",
-            defaultBundle: .main
-        )
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .rcmAppLanguage(languageManager)
-        }
-    }
-}
-```
-
-如果 App 没有扩展，也可以使用普通 `UserDefaults`：
-
-```swift
-RCMAppLanguageManager.shared.configure(
-    userDefaults: .standard,
-    defaultBundle: .main
-)
-```
-
-设置页切换语言：
-
-```swift
-Picker("Display Language", selection: $languageManager.selection) {
-    Text("Follow System").tag(RCMAppLanguagePreference.system)
-    Text("简体中文").tag(RCMAppLanguagePreference.zhHans)
-    Text("English").tag(RCMAppLanguagePreference.english)
-}
-.pickerStyle(.segmented)
-```
-
-也可以直接调用：
-
-```swift
-languageManager.setLanguage(.zhHans)
-languageManager.setLanguage(.english)
-languageManager.setLanguage(.system)
-```
-
-非 SwiftUI 场景查表：
-
-```swift
-let title = RCMLocalization.localizedString("menu_new_file")
-let message = RCMLocalization.localizedFormat(
-    "download.progress",
-    arguments: [50]
-)
-```
-
-兼容旧入口：
+MySwiftAppTools 保留轻量本地化辅助函数，用于标准 Bundle 查表：
 
 ```swift
 L("menu_new_file")
@@ -265,14 +143,15 @@ packageL(MySwiftAppToolsL10n.confirmOK)
 "Toast.confirmOK".toPackageNSLocalizedString
 ```
 
-这些入口现在都会走 `RCMLocalization`，因此用户手动指定语言后，旧代码也能按新的语言偏好查表。
+这些入口会分别从 App 的 `Bundle.main` 或 MySwiftAppTools 的 `Bundle.module` 查表。
+
+如果需要“跟随系统 / 简体中文 / English”这类 App 内语言切换，请使用 SwiftHelpCenter 中的 `SHCAppLanguageManager`、`SHCLocalization` 和 `.SHCAppLanguage(...)`。
 
 注意事项：
 
 - App 自己的业务文案仍放在 App 自己的 `Localizable.strings` 中，并通过 `defaultBundle: .main` 查表。
 - MySwiftAppTools 自带 UI 文案使用 `packageL(...)` 或 `.toPackageNSLocalizedString`，从 `Bundle.module` 查表。
-- 如果主 App 与 FinderSync / Share Extension 需要共享语言选择，请使用 App Group 配置。
-- SwiftUI 的 `Text("key")` 依赖环境 `Locale`，建议把 `.rcmAppLanguage(...)` 放在每个 Window/Scene 的根视图上。
+- 如果主 App 与 FinderSync / Share Extension 需要共享语言选择，请在 SwiftHelpCenter 中用 App Group 配置语言管理器。
 
 #### `KeychainTools`
 
@@ -1294,192 +1173,11 @@ RCMDesignSystemGallery()
 3. 再逐步把 `ThemeManager.swift` 中真正通用的组件迁移到 DesignSystem。
 4. `ThemeManager.swift` 作为 legacy 兼容层保留，不建议继续在里面扩展新 UI 能力。
 
-#### HelpCenter
+#### HelpCenter / Feedback
 
-位于 `Sources/MySwiftAppTools/HelpCenter`。
+帮助中心、反馈、公告、评分和 App 内语言切换能力已经迁移到 SwiftHelpCenter。
 
-`DesignSystem` 是 UI 原料，提供按钮、行、分组、页面骨架等基础组件；`HelpCenter` 是用这些原料组合出来的功能模块，带有自己的数据模型、状态管理和业务流程。它更像一份可直接放进 App 的“预制组件”。
-
-文件总览：
-
-| 文件 | 角色 | 说明 |
-|------|------|------|
-| `RCMHelpCenter.swift` | 帮助中心 | 帮助按钮、未读红点、快速入口、版本历史、FAQ |
-
-主要内容：
-
-- `RCMVersionHistoryItem`
-- `RCMHelpVideoLinks`
-- `RCMHelpQuickLinkItem`
-- `RCMHelpFAQItem`
-- `RCMHelpCenterManager`
-- `RCMHelpButton`
-- `RCMVersionHistoryListView`
-
-推荐结构：
-
-| 区域 | 作用 | 配置来源 |
-|------|------|----------|
-| 顶部 | 帮助中心标题、技术支持、标记已读 | `supportURL`、未读状态 |
-| 快速入口 | 教程、反馈、评分、官网等常用入口 | `quickLinks`，也可自动接入 `FeedbackManager` |
-| 版本历史 | 完整版本更新记录和 Bilibili/YouTube 视频入口 | `items` |
-| 常见问题 | 可折叠 FAQ | `faqItems` |
-
-配置帮助中心：
-
-```swift
-let items = [
-    RCMVersionHistoryItem(
-        versionName: "v1.1.5",
-        publishedAtString: "2026-05-15",
-        changes: L("VersionHistory.v1_1_5.changes"),
-        videoTitle: L("VersionHistory.v1_1_5.videoTitle"),
-        bilibiliURL: URL(string: "https://www.bilibili.com/video/xxx"),
-        youtubeURL: URL(string: "https://www.youtube.com/watch?v=xxx")
-    )
-].compactMap { $0 }
-
-let quickLinks = [
-    RCMHelpQuickLinkItem(
-        title: L("HelpCenter.guide"),
-        subtitle: L("HelpCenter.guide.subtitle"),
-        systemImage: "book",
-        url: URL(string: "https://example.com/guide")!
-    ),
-    RCMHelpQuickLinkItem(
-        title: L("HelpCenter.videoTutorials"),
-        systemImage: "play.rectangle",
-        url: URL(string: "https://www.youtube.com")!
-    )
-]
-
-let faqItems = [
-    RCMHelpFAQItem(
-        question: L("FAQ.getStarted.question"),
-        answer: L("FAQ.getStarted.answer")
-    ),
-    RCMHelpFAQItem(
-        question: L("FAQ.restorePurchase.question"),
-        answer: L("FAQ.restorePurchase.answer")
-    )
-]
-
-RCMHelpCenterManager.shared.configure(
-    items: items,
-    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
-    supportURL: URL(string: "https://example.com/support"),
-    quickLinks: quickLinks,
-    faqItems: faqItems,
-    accentColor: .orange,
-    unreadColor: .red
-)
-```
-
-如果 App 已经配置了 `FeedbackManager`，帮助中心会默认在快速入口中补充：
-
-- `反馈问题`：点击后打开标准 macOS 反馈窗口 `FeedbackView`
-- `给应用评分`：点击后打开 Mac App Store 评分页
-
-示例：
-
-```swift
-FeedbackManager.shared.configure(
-    appleID: "123456789",
-    supportURL: "https://example.com/support",
-    appName: "YourApp"
-)
-```
-
-如果不希望自动加入反馈和评分入口，可以关闭：
-
-```swift
-RCMHelpCenterManager.shared.configure(
-    items: items,
-    storageKey: "YourApp.helpCenter.lastViewedPublishedAt",
-    includeDefaultFeedbackLinks: false
-)
-```
-
-主界面放帮助按钮：
-
-```swift
-RCMHelpButton()
-```
-
-`RCMHelpButton` 会根据 `RCMHelpCenterManager.shared.hasUnreadUpdates` 自动显示红点。点击后默认打开一个标准 macOS 窗口，带关闭、最小化和缩放按钮；不需要调用方再用 `.sheet` 包一层。
-
-`RCMHelpButton` 默认使用适合 toolbar 的尺寸。如果要放在普通页面里，可以使用大号按钮：
-
-```swift
-RCMHelpButton(size: .large)
-```
-
-如果需要自己控制打开行为，也可以传入 action：
-
-```swift
-RCMHelpButton {
-    RCMHelpCenterWindowPresenter.shared.show()
-}
-```
-
-`RCMVersionHistoryListView` 中每条未读版本记录也会显示红点和 `New` 标记。
-
-未读判断只看版本发布时间：
-
-```swift
-item.publishedAt > lastViewedPublishedAt
-```
-
-用户点击某条版本记录的 `Bilibili` 或 `YouTube` 后，组件会调用 `markAsRead(_:)`，把 `lastViewedPublishedAt` 更新到这条记录的发布时间。下次发布新版本时，只要新记录的 `publishedAt` 更晚，主界面帮助按钮和对应版本记录就会重新显示红点。
-
-如果某条版本记录没有传 `bilibiliURL` 或 `youtubeURL`，这一条不会显示视频平台按钮。顶部的“标记为已读”按钮可以用于没有培训视频的版本记录，用户点击后会清除所有当前未读红点。
-
-如果 `configure` 传入了 `supportURL`，版本历史窗口右上角会显示“打开技术支持”按钮。
-
-帮助中心有两类颜色：
-
-- `accentColor`：操作强调色，用于顶部按钮、快速入口图标、Bilibili/YouTube 等操作按钮，默认使用 `RCMTheme.shared.colors.accent`。
-- `unreadColor`：未读提示色，只用于帮助按钮红点、版本记录红点、`New` 标签等未读状态，默认是红色。
-
-```swift
-RCMHelpCenterManager.shared.configure(
-    items: items,
-    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
-    supportURL: URL(string: "https://example.com/support"),
-    accentColor: .orange,
-    unreadColor: .red
-)
-```
-
-首次配置时，`markExistingItemsAsReadOnFirstConfigure` 默认是 `true`。这表示新安装或第一次接入组件时，不会把所有历史版本都显示成未读；之后 App 升级新增更晚的版本记录，才会显示红点。如果希望第一次打开也提示最新版本内容，可以设为 `false`：
-
-```swift
-RCMHelpCenterManager.shared.configure(
-    items: items,
-    storageKey: "TTSMate.helpCenter.lastViewedPublishedAt",
-    markExistingItemsAsReadOnFirstConfigure: false
-)
-```
-
-如果 App 和扩展需要共享红点状态，可以传入 App Group 的 `UserDefaults`：
-
-```swift
-let groupDefaults = UserDefaults(suiteName: "group.com.michaeldev") ?? .standard
-
-RCMHelpCenterManager.shared.configure(
-    items: items,
-    storageKey: "RightClickMate.helpCenter.lastViewedPublishedAt",
-    supportURL: URL(string: "https://example.com/support"),
-    unreadColor: .orange,
-    defaults: groupDefaults
-)
-```
-
-国际化边界：
-
-- 组件固定 UI 文案由 MySwiftAppTools 负责国际化，例如“帮助”“帮助中心”“快速入口”“版本历史”“常见问题”“暂无版本历史”。
-- 版本号、更新内容、视频标题、快速入口标题、FAQ 问答属于具体 App 的业务内容，调用方负责国际化后再传入。
-- `publishedAt` 使用 `Date` 保存，显示时由组件按当前系统语言和地区格式化。
+MySwiftAppTools 现在只保留业务无关的工具、存储、日志、下载、Keychain、Toast 和 DesignSystem 基础组件。需要用户沟通相关能力时，请在 App 中直接引入 SwiftHelpCenter，并使用 `SHCHelpCenterManager`、`FeedbackManager`、`SHCAppLanguageManager` 等 `SHC` API。
 
 #### `ThemeManager.swift`
 
@@ -1546,101 +1244,6 @@ L("Some.Key")
 ```
 
 App 自己的业务文案建议仍放在 App 自己的本地化文件中。
-
-## `FeedbackManager`
-
-多通道用户反馈管理器，支持将反馈发送到 **Discord**、**钉钉机器人**、**邮箱** 三个渠道。
-
-### 功能特性
-
-- 支持 Discord Webhook（纯文本 + 文件上传）
-- 支持钉钉机器人（纯文本）
-- 支持邮件（通过 `mailto:` 打开系统邮件客户端）
-- 内置系统信息收集（App 名称、版本、macOS 版本、CPU 类型等）
-- 内置 App Store 评分跳转
-- 开箱即用的 SwiftUI 反馈视图
-- 中英文国际化支持
-
-### 配置
-
-在 App 启动时调用一次 `configure`：
-
-```swift
-import MySwiftAppTools
-
-// 在 App.init() 中
-FeedbackManager.shared.configure(
-    appleID: "6752127439",           // Mac App Store 应用 ID（必填）
-    supportURL: "https://...",       // 技术支持页面 URL（必填）
-    email: "your@email.com",         // 接收反馈的邮箱（可选，有默认值）
-    discordWebhook: "https://...",   // Discord Webhook URL（可选，有默认值）
-    dingTalkWebhook: "https://...",  // 钉钉机器人 Webhook URL（可选，有默认值）
-    appName: "MyApp"                 // 应用名称，用于系统信息（可选）
-)
-```
-
-其中 `email`、`discordWebhook`、`dingTalkWebhook` 均有默认值，通常无需传入。
-
-### 发送反馈
-
-使用 `FeedbackPayload` 构造反馈内容，调用 `sendFeedback`：
-
-```swift
-let payload = FeedbackPayload(
-    content: "这里填写反馈内容",
-    attachments: [],                 // 附件 URL 列表
-    includeSystemInfo: true,
-    channels: [.discord]             // 发送渠道
-)
-
-Task {
-    do {
-        try await FeedbackManager.shared.sendFeedback(payload)
-        print("发送成功")
-    } catch {
-        print("发送失败: \(error)")
-    }
-}
-```
-
-### 使用内置反馈视图
-
-```swift
-import MySwiftAppTools
-
-struct SettingsView: View {
-    var body: some View {
-        NavigationStack {
-            List {
-                NavigationLink("意见反馈") {
-                    FeedbackView()
-                }
-            }
-        }
-    }
-}
-```
-
-### 评分跳转
-
-```swift
-guard let config = FeedbackManager.shared.config else { return }
-AppStoreHelper.rateApp(appleID: config.appleID)
-```
-
-### API 概览
-
-| API | 说明 |
-|-----|------|
-| `FeedbackManager.shared.configure(...)` | 配置管理器（必调） |
-| `FeedbackManager.shared.sendFeedback(_:)` | 发送反馈 |
-| `FeedbackManager.shared.isSending` | 发送状态 |
-| `FeedbackView()` | 内置反馈表单视图 |
-| `AppStoreHelper.rateApp(appleID:)` | 打开 Mac App Store 评分页 |
-| `SystemInfoProvider.collect(appName:)` | 收集系统信息 |
-| `FeedbackConfiguration` | 配置数据结构 |
-| `FeedbackChannel` | 反馈渠道枚举（discord / dingTalk / mail） |
-| `FeedbackPayload` | 反馈内容数据模型 |
 
 ## 版本发布流程
 
