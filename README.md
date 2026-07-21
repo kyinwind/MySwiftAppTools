@@ -73,7 +73,7 @@ struct YourApp: App {
 
 常见取舍：
 
-- 不需要 App Group：可以不调用 `DefaultsTools.configure(...)`。
+- 不需要 App Group：可以不调用 `DefaultsTools.configure(...)`；默认使用 `UserDefaults.standard`。如需在运行时恢复 standard，可传入 `nil`。
 - 不使用 Toast：可以不配置 `ToastManager`，也不需要挂 `ToastView()`。
 - 不需要快速入口或 FAQ：`quickLinks` / `faqItems` 可以不传，对应区域不会显示。
 - `RCMTheme` 建议在 App 启动阶段、UI 创建前完成配置。当前主题系统主要面向启动时配置；运行时动态切换主题时，SwiftUI 不一定自动刷新所有已经渲染的视图。
@@ -107,6 +107,12 @@ DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
 let key = DefaultsTools.Key(rawValue: "launchCount")
 let count = DefaultsTools.shared.int(key) ?? 0
 DefaultsTools.shared.set(count + 1, for: key)
+```
+
+恢复使用 App 自身的 standard 配置：
+
+```swift
+DefaultsTools.configure(appGroupID: nil)
 ```
 
 更多类型：

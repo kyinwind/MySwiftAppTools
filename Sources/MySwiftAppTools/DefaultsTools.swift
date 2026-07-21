@@ -10,7 +10,8 @@ import Foundation
 /// UserDefaults 统一访问工具
 public struct DefaultsTools: @unchecked Sendable {
     // MARK: - App Group ID
-    nonisolated(unsafe) public static var appGroupID = "group.com.michaeldev"
+    /// 当前配置的 App Group ID。空字符串表示使用 App 自身的 standard 配置。
+    nonisolated(unsafe) public static var appGroupID = ""
 
     // MARK: - 实例
 
@@ -20,25 +21,26 @@ public struct DefaultsTools: @unchecked Sendable {
         self.ud = userDefaults
     }
     
-    //在项目 app 启动时，如果有 groupid，可以进行配置，如果没有则不用管，DefaultsTools会默认使用 app 本身的standard配置
-    public static func configure(appGroupID: String) {
-        self.appGroupID = appGroupID
+    /// 配置 App Group。传入 `nil` 或空白字符串可恢复使用 `.standard`。
+    public static func configure(appGroupID: String?) {
+        self.appGroupID = appGroupID?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
     // MARK: - 工厂
 
     //static let standard = DefaultsTools(userDefaults: .standard)
 
     public static var group: DefaultsTools {
-        DefaultsTools(userDefaults: UserDefaults(suiteName: appGroupID) ?? .standard)
+        guard !appGroupID.isEmpty,
+              let groupDefaults = UserDefaults(suiteName: appGroupID)
+        else {
+            return DefaultsTools(userDefaults: .standard)
+        }
+        return DefaultsTools(userDefaults: groupDefaults)
     }
     
     /// 自动选择（推荐）调用的入口
     public static var shared: DefaultsTools {
-        if let groupUD = UserDefaults(suiteName: appGroupID) {
-            return DefaultsTools(userDefaults: groupUD)
-        } else {
-            return DefaultsTools(userDefaults: .standard)
-        }
+        group
     }
 
     // MARK: - 基础读写（强类型）

@@ -14,6 +14,20 @@
 import Foundation
 import AppKit
 
+public enum FileToolsError: Error, LocalizedError, Equatable {
+    case pathIsNotDirectory(URL)
+    case unableToCreateFile(URL)
+
+    public var errorDescription: String? {
+        switch self {
+        case .pathIsNotDirectory(let url):
+            return "路径已存在，但不是目录：\(url.path)"
+        case .unableToCreateFile(let url):
+            return "无法创建文件：\(url.path)"
+        }
+    }
+}
+
 /// 文件系统工具类（macOS / Sandbox 适配）
 ///
 /// 设计目标：
@@ -95,7 +109,12 @@ public final class FileTools {
     /// 确保目录存在（不存在就创建）
     @discardableResult
     public static func ensureDirectory(_ url: URL) throws -> URL {
-        guard !exists(url) else { return url }
+        if exists(url) {
+            guard isDirectory(url) else {
+                throw FileToolsError.pathIsNotDirectory(url)
+            }
+            return url
+        }
         try fm.createDirectory(
             at: url,
             withIntermediateDirectories: true,
@@ -118,7 +137,10 @@ public final class FileTools {
                 return
             }
         }
-        fm.createFile(atPath: url.path, contents: nil)
+        try ensureDirectory(url.deletingLastPathComponent())
+        guard fm.createFile(atPath: url.path, contents: nil) else {
+            throw FileToolsError.unableToCreateFile(url)
+        }
     }
     
     /// 删除文件或目录

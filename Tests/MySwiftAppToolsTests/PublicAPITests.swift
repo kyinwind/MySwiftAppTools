@@ -19,7 +19,7 @@ final class PublicAPITests: XCTestCase {
         }
         """.data(using: .utf8)!
         try RCMTheme.shared.configure(jsonData: partialJSON)
-        
+
         _ = RCMButton("保存", role: .primary, systemImage: "checkmark") {}
         _ = RCMBadge("Pro", style: .accent)
         let badgeText = "String Variable"
@@ -124,6 +124,49 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(DirectoryManager.loadHistory().first?.label, "tmp")
         DirectoryManager.save([])
         DirectoryManager.resetStorageToStandard()
+        DefaultsTools.configure(appGroupID: nil)
+    }
+
+    func testDefaultsToolsUsesStandardStorageWithoutAppGroup() {
+        let key = "DefaultsTools.standard.\(UUID().uuidString)"
+        defer {
+            UserDefaults.standard.removeObject(forKey: key)
+            DefaultsTools.configure(appGroupID: nil)
+        }
+
+        DefaultsTools.configure(appGroupID: nil)
+        DefaultsTools.shared.set("standard", forStringKey: key)
+
+        XCTAssertEqual(UserDefaults.standard.string(forKey: key), "standard")
+        XCTAssertEqual(DefaultsTools.appGroupID, "")
+    }
+
+    func testDefaultsToolsCanReturnToStandardStorage() {
+        DefaultsTools.configure(appGroupID: "  ")
+        XCTAssertEqual(DefaultsTools.appGroupID, "")
+    }
+
+    func testFileToolsCreatesParentDirectories() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MySwiftAppToolsTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("nested/file.txt")
+
+        try FileTools.createFile(at: file)
+
+        XCTAssertTrue(FileTools.exists(file))
+        XCTAssertTrue(FileTools.isDirectory(file.deletingLastPathComponent()))
+    }
+
+    func testEnsureDirectoryRejectsExistingFile() throws {
+        let file = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MySwiftAppToolsTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: file) }
+        XCTAssertTrue(FileManager.default.createFile(atPath: file.path, contents: Data()))
+
+        XCTAssertThrowsError(try FileTools.ensureDirectory(file)) { error in
+            XCTAssertEqual(error as? FileToolsError, .pathIsNotDirectory(file))
+        }
     }
     
     @MainActor
