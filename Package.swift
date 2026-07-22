@@ -23,8 +23,7 @@ let package = Package(
             name: "MySwiftAppTools",
             resources: [
                 .process("Resources/en.lproj"),
-                .process("Resources/zh-Hans.lproj"),
-                .copy("DesignSystem/RCMDefaultTheme.json")
+                .process("Resources/zh-Hans.lproj")
             ]
         ),
         .testTarget(

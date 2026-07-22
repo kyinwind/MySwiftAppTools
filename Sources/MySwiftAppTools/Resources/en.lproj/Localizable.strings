@@ -20,7 +20,3 @@
 "ThemeManager.ActionBar.exit" = "Exit";
 "ThemeManager.ActionBar.preview.dragWidth" = "Try dragging the window width";
 "ThemeManager.ActionBar.preview.export" = "Export";
-"RCMComparisonSection.features.title" = "Feature Comparison";
-"RCMComparisonSection.features.features" = "Features";
-"RCMComparisonSection.features.free" = "Free";
-"RCMComparisonSection.features.pro" = "Pro";

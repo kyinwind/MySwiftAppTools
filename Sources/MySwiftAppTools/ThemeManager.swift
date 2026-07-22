@@ -79,24 +79,33 @@ public struct Theme {
 
 public extension Color {
     //背景颜色
-    static let myGray = Color(hexRGB: "#fdfdfd")
+    static let myGray = legacyRGB(0xFD, 0xFD, 0xFD)
     //其他背景色
     //蓝色
-    static let myBlue = Color(hexRGB: "#3183ff")
-    static let myBlue2 = Color(hexRGB: "#a2d2ff")
+    static let myBlue = legacyRGB(0x31, 0x83, 0xFF)
+    static let myBlue2 = legacyRGB(0xA2, 0xD2, 0xFF)
     //薄荷绿
-    static let myMintGreen = Color(hexRGB: "#A6E3E9")
+    static let myMintGreen = legacyRGB(0xA6, 0xE3, 0xE9)
     //黑灰色，常用于字体颜色
-    static let myDarkGray = Color(hexRGB: "#242424")
+    static let myDarkGray = legacyRGB(0x24, 0x24, 0x24)
     //亮橘色
-    static let myOrange = Color(hexRGB: "#FF6F3D")
+    static let myOrange = legacyRGB(0xFF, 0x6F, 0x3D)
     //#FFD700：经典的金黄色，非常接近实际黄金的颜色。
     //#FFC107：一种较亮的金黄色，常用于现代设计。
-    static let myYellow = Color(hexRGB: "#FFC107")
+    static let myYellow = legacyRGB(0xFF, 0xC1, 0x07)
     //#FFDF00：略带橙色调的金黄色，显得更加温暖和耀眼。
-    static let myYellow2 = Color(hexRGB: "#FFDF00")
+    static let myYellow2 = legacyRGB(0xFF, 0xDF, 0x00)
     //#E1AD01：较深的金黄色，模拟了金属的厚重感。
-    static let myYellow3 = Color(hexRGB: "#E1AD01")
+    static let myYellow3 = legacyRGB(0xE1, 0xAD, 0x01)
+
+    private static func legacyRGB(_ red: Int, _ green: Int, _ blue: Int) -> Color {
+        Color(
+            .sRGB,
+            red: Double(red) / 255,
+            green: Double(green) / 255,
+            blue: Double(blue) / 255
+        )
+    }
 }
 
 
@@ -982,7 +991,7 @@ public struct ActionBarButtonDisplayStyle:  Sendable {
     public init(
         backgroundColor: Color,
         foregroundColor: Color,
-        cornerRadius: CGFloat = RCMTheme.shared.radius.md
+        cornerRadius: CGFloat = 12
     ) {
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
@@ -1002,10 +1011,10 @@ private struct ActionBarDisplayButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(RCMTheme.shared.typography.bodyStrong)
+            .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(displayStyle.foregroundColor.opacity(isEnabled ? 1 : 0.72))
-            .frame(height: RCMTheme.shared.controlSize.buttonHeight)
-            .padding(.horizontal, RCMTheme.shared.spacing.md)
+            .frame(height: 34)
+            .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: displayStyle.cornerRadius, style: .continuous)
                     .fill(displayStyle.backgroundColor.opacity(backgroundOpacity(isPressed: configuration.isPressed)))
@@ -1433,77 +1442,4 @@ public struct AppInfo {
         ])
     }
     .padding()
-}
-
-//功能对比
-public struct RCMComparisonSection: View {
-    /*这是一个元组数组，类似于：
-     let features = [
-         ("PurchaseView.features.openTerminal".toPackageNSLocalizedString, true, true),
-         ("PurchaseView.features.copyPath".toPackageNSLocalizedString, true, true),
-     ]
-    */
-    public let features:[(String, Bool, Bool)]
-    
-    public init(features:[(String, Bool, Bool)]) {
-        self.features = features
-    }
-
-    public var body: some View {
-        RCMSection(header: {
-            RCMSectionTitle(title: "RCMComparisonSection.features.title".toPackageNSLocalizedString)
-                .padding(.vertical, 10)
-        }) {
-            VStack(spacing: RCMTheme.shared.spacing.sm) {
-                HStack {
-                    Text("RCMComparisonSection.features.features".toPackageNSLocalizedString)
-                        .font(RCMTheme.shared.typography.captionStrong)
-                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
-                        .frame(width: 55)
-                    
-                    Spacer()
-                    
-                    Text("RCMComparisonSection.features.free".toPackageNSLocalizedString)
-                        .font(RCMTheme.shared.typography.captionStrong)
-                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
-                        .frame(width: 72)
-                    
-                    Text("RCMComparisonSection.features.pro".toPackageNSLocalizedString)
-                        .font(RCMTheme.shared.typography.captionStrong)
-                        .foregroundStyle(RCMTheme.shared.colors.textSecondary)
-                        .frame(width: 72)
-                }
-                
-                Divider()
-                
-                ForEach(features.indices, id: \.self) { index in
-                    VStack(spacing: 5) {
-                        HStack(spacing: RCMTheme.shared.spacing.md) {
-                            Text("\(index + 1).")
-                            Text(features[index].0)
-                                .font(RCMTheme.shared.typography.body)
-                                .foregroundStyle(RCMTheme.shared.colors.textPrimary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            RCMIconMark(isOn: features[index].1)
-                                .frame(width: 72)
-                            
-                            RCMIconMark(isOn: features[index].2)
-                                .frame(width: 72)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-public struct RCMIconMark: View {
-    let isOn: Bool
-    
-    public var body: some View {
-        Image(systemName: isOn ? "checkmark.circle.fill" : "minus.circle")
-            .foregroundStyle(isOn ? RCMTheme.shared.colors.success : RCMTheme.shared.colors.textTertiary)
-            .font(.system(size: 18, weight: .semibold))
-    }
 }
