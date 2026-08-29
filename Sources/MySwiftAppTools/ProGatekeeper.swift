@@ -58,6 +58,7 @@ public final class ProGatekeeper {
     public static let shared = ProGatekeeper()
     private var hasPurchasedPro: () -> Bool = { false }
     private var presentPurchase: () -> Void = {}
+    private var prepareAccess: () async -> Void = {}
     public var freeLimits: [String: Int] = [:]
     private var keyPrefix = "ProGatekeeper"
     private init() {}
@@ -65,29 +66,34 @@ public final class ProGatekeeper {
         freeLimits: [String: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
-        presentPurchase: @escaping () -> Void
+        presentPurchase: @escaping () -> Void,
+        prepareAccess: @escaping () async -> Void = {}
     ) {
         self.freeLimits = freeLimits
         self.keyPrefix = keyPrefix
         self.hasPurchasedPro = hasPurchasedPro
         self.presentPurchase = presentPurchase
+        self.prepareAccess = prepareAccess
     }
 
     public func configure<Feature>(
         freeLimits: [Feature: Int],
         keyPrefix: String = "ProGatekeeper",
         hasPurchasedPro: @escaping () -> Bool,
-        presentPurchase: @escaping () -> Void
+        presentPurchase: @escaping () -> Void,
+        prepareAccess: @escaping () async -> Void = {}
     ) where Feature: Hashable & RawRepresentable, Feature.RawValue == String {
         configure(
             freeLimits: Dictionary(uniqueKeysWithValues: freeLimits.map { ($0.key.rawValue, $0.value) }),
             keyPrefix: keyPrefix,
             hasPurchasedPro: hasPurchasedPro,
-            presentPurchase: presentPurchase
+            presentPurchase: presentPurchase,
+            prepareAccess: prepareAccess
         )
     }
 
     public func check(_ feature: String) async -> Bool {
+        await prepareAccess()
         if allow(feature) {
             consume(feature)
             return true
