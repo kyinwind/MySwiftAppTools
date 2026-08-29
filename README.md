@@ -32,37 +32,87 @@ import MySwiftAppTools
 
 ## 推荐初始化
 
-建议在 App 启动阶段集中配置用到的工具。下面是一个较完整的初始化模板：用得到的保留，用不到的删掉即可。
+建议在 App 启动阶段集中配置有全局状态、共享存储或长期监听任务的工具。下面的模板覆盖包内所有适合集中初始化的能力：用得到的保留，用不到的删掉即可。
 
 ```swift
 import SwiftUI
 import MySwiftAppTools
 
+enum AppProductID {
+    static let proYearly = "com.yourcompany.yourapp.pro.yearly"
+    static let proLifetime = "com.yourcompany.yourapp.pro.lifetime"
+    static let all = [proYearly, proLifetime]
+    static let proEntitlements: Set<String> = [proYearly, proLifetime]
+}
+
+enum AppProFeature: String {
+    case batchExport
+    case privacyOCR
+}
+
 @main
 struct YourApp: App {
-    init() {
-        // UserDefaults。如果 App 和扩展需要共享数据，传 appGroupID；否则可以不配置。
-        DefaultsTools.configure(appGroupID: "group.com.yourcompany.yourapp")
+    @State private var storeManager = StoreManager.shared
+    @State private var themeManager = ThemeManager.shared
 
-        // Keychain 默认 service。建议每个 App 使用自己的 service 名。
+    init() {
+        let appGroupID = "group.com.yourcompany.yourapp"
+
+        // 1. UserDefaults：主 App 与扩展需要共享配置时使用同一个 App Group。
+        DefaultsTools.configure(appGroupID: appGroupID)
+
+        // 2. 目录权限书签：有 Finder/Share/Widget 扩展时也配置同一个 App Group。
+        DirectoryManager.configure(appGroupID: appGroupID)
+
+        // 3. Keychain：为不显式传 service 的读写设置 App 级默认 service。
         KeychainTools.configure(defaultService: "YourApp")
 
-        // 统一日志 subsystem。
+        // 4. 日志：统一 OSLog subsystem，并可按构建或用户设置控制开关。
         Log.configure(subsystem: "com.yourcompany.yourapp")
 
-        // Toast 全局配置。只有使用 ToastView / ShowToast 时才需要。
+        // 5. StoreKit：年度订阅与永久买断中的任一有效权益都授予 Pro。
+        StoreManager.shared.configure(
+            productIDs: AppProductID.all,
+            proEntitlementProductIDs: AppProductID.proEntitlements
+        )
+
+        // 6. Pro Gate：配置免费额度、购买页入口及首次权益加载保护。
+        ProGatekeeper.shared.configure(
+            freeLimits: [
+                AppProFeature.batchExport: 0,
+                AppProFeature.privacyOCR: 10
+            ],
+            keyPrefix: "YourApp.ProGatekeeper",
+            hasPurchasedPro: {
+                StoreManager.shared.hasPurchasedPro
+            },
+            presentPurchase: {
+                // 打开购买页、设置页或订阅弹窗。
+            },
+            prepareAccess: {
+                if !StoreManager.shared.hasLoadedEntitlements {
+                    await StoreManager.shared.checkAllPurchasedProducts()
+                }
+            }
+        )
+
+        // 7. Toast：全局显示数量、宽度、边距和点击复制行为。
         ToastManager.shared.configure(
             maxVisibleToasts: 5,
             toastWidth: 420,
+            topPadding: 50,
+            bottomPadding: 50,
             copyOnTap: true
         )
-
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .overlay(ToastView())
+                // 8. ThemeManager：使用包内 Legacy Theme 组件时注入环境。
+                .environment(themeManager)
+                .environment(storeManager)
         }
     }
 }
@@ -71,9 +121,20 @@ struct YourApp: App {
 常见取舍：
 
 - 不需要 App Group：可以不调用 `DefaultsTools.configure(...)`；默认使用 `UserDefaults.standard`。如需在运行时恢复 standard，可传入 `nil`。
+- 没有扩展共享目录权限的需求：可以不调用 `DirectoryManager.configure(...)`，默认使用 `UserDefaults.standard`。
+- 没有内购：删除 `StoreManager`、`ProGatekeeper` 和对应的 environment 注入。
+- 有内购但没有免费额度：仍可使用 `ProGatekeeper`，未出现在 `freeLimits` 中的功能默认是 Pro-only。
 - 不使用 Toast：可以不配置 `ToastManager`，也不需要挂 `ToastView()`。
-- 不需要快速入口或 FAQ：`quickLinks` / `faqItems` 可以不传，对应区域不会显示。
+- 不使用包内 Legacy Theme 组件：不需要创建和注入 `ThemeManager`。新项目可直接采用自己的设计系统。
 - 需要 App 内语言切换：建议使用 SwiftHelpCenter 提供的 `SHCAppLanguageManager` / `SHCLocalization`，MySwiftAppTools 不再维护运行时语言偏好。
+
+以下工具不需要启动初始化，按功能使用即可：
+
+- `FileTools`、`DateTools`、本地化辅助函数：静态无状态工具。
+- `AudioPlayer.shared`、`AutoLaunchManager.shared`：单例已自带默认行为。
+- `PermissionManager.shared`：按需请求权限；其目录书签存储由上面的 `DirectoryManager` 配置。
+- `MultiSourceDownloader`、`ComponentsFlowManager`：根据具体任务或页面创建实例。
+- `HourglassView` 及其他 SwiftUI 组件：直接在 View 层使用。
 
 ## 工具清单
 
