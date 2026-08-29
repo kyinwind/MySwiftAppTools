@@ -464,18 +464,23 @@ Button("切换自动启动") {
 
 #### `StoreManager`
 
-StoreKit 购买状态管理工具。产品 ID 由调用 App 配置，工具包不写死任何业务产品。
+StoreKit 购买与权益状态管理工具。产品 ID 由调用 App 配置，工具包不写死任何业务产品。
+
+`0.1.65` 起，一个 Pro 权益可以由多个 StoreKit 产品共同授予，例如“年度订阅”和“永久买断”。只要其中任一产品存在有效权益，`hasPurchasedPro` 就为 `true`。
 
 示例：
 
 ```swift
 enum AppProductID {
-    static let pro = "com.yourcompany.yourapp.pro"
+    static let proYearly = "com.yourcompany.yourapp.pro.yearly"
+    static let proLifetime = "com.yourcompany.yourapp.pro.lifetime"
+    static let all = [proYearly, proLifetime]
+    static let proEntitlements: Set<String> = [proYearly, proLifetime]
 }
 
 @State private var storeManager = StoreManager(
-    productIDs: [AppProductID.pro],
-    proProductID: AppProductID.pro
+    productIDs: AppProductID.all,
+    proEntitlementProductIDs: AppProductID.proEntitlements
 )
 
 ContentView()
@@ -488,7 +493,19 @@ ContentView()
 ForEach(storeManager.products) { product in
     Button(product.displayPrice) {
         Task {
-            await storeManager.purchase(product)
+            switch await storeManager.purchaseWithOutcome(product) {
+            case .success:
+                // 权益状态已经刷新
+                break
+            case .pending:
+                // 等待家长批准或其他延迟处理
+                break
+            case .userCancelled:
+                break
+            case .failed(let message):
+                // 显示购买失败信息
+                print(message)
+            }
         }
     }
 }
@@ -501,6 +518,30 @@ if storeManager.hasPurchasedPro {
     // 解锁 Pro 功能
 }
 ```
+
+读取具体产品及权益：
+
+```swift
+let yearlyProduct = storeManager.product(for: AppProductID.proYearly)
+let yearlyEntitlement = storeManager.entitlement(for: AppProductID.proYearly)
+
+if storeManager.hasLoadedEntitlements {
+    // 首次 StoreKit 权益快照已经加载完成
+}
+
+if let expirationDate = yearlyEntitlement?.expirationDate {
+    // 展示当前服务期结束日期。是否自动续订应以 App Store 状态为准。
+    print(expirationDate)
+}
+```
+
+说明：
+
+- `activeEntitlements` 是根据 `Transaction.currentEntitlements` 完整重建的当前有效权益快照，会排除已撤销和已过期交易。
+- `purchasedProducts` 保留每个已配置产品的布尔状态，便于旧代码继续读取。
+- `Transaction.updates` 和购买成功后都会重新计算完整权益，避免订阅到期后残留旧的 Pro 状态。
+- 商品列表按传入的 `productIDs` 顺序排列，购买页可以通过配置顺序控制展示顺序。
+- 旧的单产品 `StoreManager(productIDs:proProductID:)`、`configure(productIDs:proProductID:)` 和返回 `Bool` 的 `purchase` API 仍然兼容。
 
 #### `ProGatekeeper`
 
@@ -527,6 +568,12 @@ ProGatekeeper.shared.configure(
     },
     presentPurchase: {
         // 打开购买页
+    },
+    prepareAccess: {
+        // Finder Extension、Widget 等入口可能早于首次权益加载。
+        if !storeManager.hasLoadedEntitlements {
+            await storeManager.checkAllPurchasedProducts()
+        }
     }
 )
 
@@ -538,6 +585,7 @@ if await ProGatekeeper.shared.check(AppProFeature.privacyOCR) {
 说明：
 
 - `freeLimits` 中没有声明的 feature，会被视为 Pro-only。
+- `prepareAccess` 会在每次权限判断前执行，适合在跨进程入口首次触发 Pro 功能时确保权益已经加载；不需要准备工作时可以省略。
 - limit 为 `0` 表示免费用户完全不可用。
 - Pro 用户直接放行，不消耗免费次数。
 
