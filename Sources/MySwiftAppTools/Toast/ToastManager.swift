@@ -239,10 +239,12 @@ public final class ToastManager {
         // 与下方 toasts 数组完全独立：toast 定时消失或被挤出，都不影响历史记录。
         ToastHistoryStore.shared.record(item)
 
-        withAnimation {
-            toasts.append(item)
-            trimToLimit()
-        }
+        // 不在状态层发起全局动画事务。`ToastView` 已通过
+        // `.animation(_:value:)` 为自身的插入与移除提供动画；若在这里使用
+        // `withAnimation`，同一 runloop 内更新的历史窗口也会被卷入事务。
+        // macOS 下可选择文本的 AppKit 图层可能因此以翻转快照渲染。
+        toasts.append(item)
+        trimToLimit()
 
         if !item.requireConfirm && item.type != .loading {
             Task { @MainActor in
@@ -253,15 +255,11 @@ public final class ToastManager {
     }
 
     public func remove(_ item: ToastItem) {
-        withAnimation {
-            toasts.removeAll { $0.id == item.id }
-        }
+        toasts.removeAll { $0.id == item.id }
     }
 
     public func hideAll() {
-        withAnimation {
-            toasts.removeAll()
-        }
+        toasts.removeAll()
     }
 
     private func trimToLimit() {

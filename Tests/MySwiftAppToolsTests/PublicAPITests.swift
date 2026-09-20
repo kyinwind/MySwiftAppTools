@@ -219,6 +219,16 @@ final class PublicAPITests: XCTestCase {
 
         // 本地化文案键可查到包内字符串
         XCTAssertFalse(packageL(MySwiftAppToolsL10n.toastHistoryTitle).isEmpty)
-        XCTAssertFalse(packageL(MySwiftAppToolsL10n.toastHistoryMore, 3).isEmpty)
+        let formattedKeys = [
+            MySwiftAppToolsL10n.toastHistoryCount,
+            MySwiftAppToolsL10n.toastHistoryMore,
+            MySwiftAppToolsL10n.toastHistoryClearConfirmMsg,
+            MySwiftAppToolsL10n.toastHistoryMinutesAgo,
+        ]
+        for key in formattedKeys {
+            let text = packageL(key, 37)
+            XCTAssertTrue(text.contains("37"), "格式化文案没有保留传入数字：\(text)")
+            XCTAssertFalse(text.contains("%d"), "格式化占位符没有被替换：\(text)")
+        }
     }
 }

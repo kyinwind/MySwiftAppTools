@@ -269,6 +269,17 @@ final class ToastHistoryTests: XCTestCase {
         ToastManager.shared.hideAll()
     }
 
+    func testMinutesAgoUsesActualMinuteCount() {
+        let now = Date()
+        let text = ToastHistoryView.timeText(
+            for: now.addingTimeInterval(-5 * 60),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("5"), "分钟文案应包含实际分钟数：\(text)")
+        XCTAssertFalse(text.contains("%d"), "分钟文案不应残留格式化占位符：\(text)")
+    }
+
     // MARK: - configureToastHistory（局部更新语义）
 
     func testConfigureToastHistoryKeepsUnspecifiedValues() {
