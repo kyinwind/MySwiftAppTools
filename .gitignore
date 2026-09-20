@@ -63,5 +63,5 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-
-codex-plan/**
+# AI 工作记忆目录（本地数据，不进版本库）
+.workbuddy/

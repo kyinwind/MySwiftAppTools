@@ -4,6 +4,8 @@ MichaelDevStudio 的 Swift/macOS 公共工具包，用来沉淀多个 App 中重
 
 这个包目前面向 macOS App，最低平台为 macOS 14，使用 Swift 6。
 
+版本变动记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 安装
 
 在 Xcode 中添加 Swift Package：
@@ -103,6 +105,12 @@ struct YourApp: App {
             topPadding: 50,
             bottomPadding: 50,
             copyOnTap: true
+        )
+
+        // 7.1 消息历史（可选）：不调用即用默认值（500 条 / 开启记录 / 排除 loading）。
+        ToastManager.shared.configureToastHistory(
+            maxCount: 500,
+            isHistoryEnabled: true
         )
     }
 
@@ -467,6 +475,65 @@ ShowToast(
     }
 )
 ```
+
+#### 消息历史：`ToastHistoryStore` / `ToastHistoryView`
+
+每条 toast 都会自动写入消息历史（通过 `DefaultsTools` 落盘），App 重启后仍在。默认排除 `loading` 类型。
+
+浏览和管理界面：
+
+```swift
+// 1. 嵌入自己的页面或 Sheet
+.sheet { ToastHistoryView() }
+
+// 2. macOS 上弹出独立窗口
+ToastHistoryWindowController.shared.show()
+```
+
+界面行为：
+
+- 按「最新 → 最旧」排列，按 今天 / 昨天 / 日期 分组
+- 一屏最多 20 条，点底部「更多」每次追加 20 条，到底显示「已显示全部」
+- 每条显示类型图标、消息文本、发出时间，鼠标悬停可看精确时间
+- 单条删除：悬停出现 ✕ 按钮，或右键菜单「删除这条」
+- 清空全部：标题栏「清空全部」，带二次确认
+
+配置（可选，不配置即用默认值）。**配置入口只有 `ToastManager.configureToastHistory` 一个**：
+
+```swift
+ToastManager.shared.configureToastHistory(
+    maxCount: 500,              // 最多保留条数，超出丢最旧
+    isHistoryEnabled: true,     // 记录总开关
+    excludedTypes: [.loading],  // 默认不记录的类型
+    maxMessageLength: 500,      // 单条最大字符数，超出截断
+    maxTotalBytes: 512 * 1024,  // 总字节兜底，防止长消息撑大 UserDefaults
+    deferredPersist: false      // 高频刷 toast 时可改为手动 flush()
+)
+
+// 全部参数都可选，省略即「保持当前值」，不会被重置：
+ToastManager.shared.configureToastHistory(maxCount: 2000)
+ToastManager.shared.configureToastHistory(isHistoryEnabled: false)  // 彻底关闭记录
+ToastManager.shared.configureToastHistory(excludedTypes: [])        // 清空排除列表，恢复记录 loading
+```
+
+> 为什么配置属性对外只读：`ToastHistoryStore` 的所有实例共用同一个 UserDefaults key，多个实例各设一套策略会互相裁剪。所以策略变更只保留 `configureToastHistory` 这**一条**公开路径。
+
+容量说明：三重上限（条数 / 单条长度 / 总字节）保证 UserDefaults 不会被撑大。实测典型消息（30 字）500 条约 103 KB。
+
+其他接口（读取与增删仍走 `ToastManager.shared.toastHistory`，等价于 `ToastHistoryStore.shared`）：
+
+- `.records`：全部历史（新 → 旧），`ToastRecord` 含 `message` / `type` / `position` / `createdAt`
+- `.record(message:type:)`：只记历史、不弹提示
+- `.delete(_:)` / `.delete(id:)`：删除单条
+- `.clearAll()`：清空全部历史
+- `.reload()`：重新读盘（App Group 场景下另一个 App 写入后需要调用）
+- `.flush()`：`deferredPersist = true` 时手动落盘
+- `ToastManager.shared.history`：`toastHistory` 的旧名，保留以兼容
+
+注意：
+
+- 历史数据存放在 `~/Library/Preferences/<bundleid>.plist`，是明文。toast 文本若可能包含文件路径等敏感信息，请用 `configureToastHistory(isHistoryEnabled: false)` 或 `excludedTypes` 控制。
+- 配置了 App Group 时，同 group 的多个 App 共享同一份历史，但已打开的界面不会自动刷新，需调用 `reload()`。
 
 ### macOS 系统能力
 

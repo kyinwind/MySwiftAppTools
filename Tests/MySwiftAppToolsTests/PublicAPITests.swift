@@ -159,4 +159,66 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(progress.formattedSpeed, "1.5 KB/s")
         XCTAssertEqual(progress.formattedRemainingTime, "0:10")
     }
+
+    @MainActor
+    func testToastHistoryPublicEntrypointsCompile() {
+        defer {
+            DefaultsTools.shared.remove(forStringKey: ToastHistoryStore.storageKey)
+        }
+
+        // 存储层公开入口：读取与增删（配置属性对外只读）
+        XCTAssertEqual(ToastHistoryStore.storageKey, "MySwiftAppTools.Toast.history.v1")
+        let store = ToastHistoryStore()
+
+        store.record(message: "冒烟", type: .normal)
+        XCTAssertEqual(store.records.count, 1)
+        XCTAssertEqual(store.records.first?.message, "冒烟")
+
+        store.flush()
+        store.reload()
+        if let first = store.records.first {
+            store.delete(id: first.id)
+        }
+        XCTAssertTrue(store.records.isEmpty)
+
+        // 唯一的公开配置入口：ToastManager.configureToastHistory
+        ToastManager.shared.configureToastHistory(
+            maxCount: 10,
+            isHistoryEnabled: true,
+            excludedTypes: [],
+            maxMessageLength: 100,
+            maxTotalBytes: 64 * 1024,
+            deferredPersist: false
+        )
+        ToastManager.shared.configureToastHistory(maxCount: 12)
+        XCTAssertEqual(ToastManager.shared.toastHistory.maxCount, 12)
+        XCTAssertEqual(ToastManager.shared.toastHistory.maxMessageLength, 100)
+        XCTAssertTrue(ToastManager.shared.toastHistory.excludedTypes.isEmpty)
+        XCTAssertFalse(ToastManager.shared.toastHistory.hasPendingChanges)
+
+        // ToastRecord 的公开构造与读取
+        let record = ToastRecord(message: "r", type: .warning, position: .bottom)
+        XCTAssertEqual(record.type, .warning)
+        XCTAssertEqual(record.position, .bottom)
+        XCTAssertFalse(record.message.isEmpty)
+        XCTAssertNotNil(record.id)
+        XCTAssertNotNil(record.createdAt)
+
+        // ToastManager 转发入口
+        XCTAssertTrue(ToastManager.shared.toastHistory === ToastHistoryStore.shared)
+        XCTAssertTrue(ToastManager.shared.history === ToastHistoryStore.shared)
+        _ = ToastManager.shared.toastHistory.records
+
+        // 界面与窗口控制器的公开构造
+        _ = ToastHistoryView()
+        _ = ToastHistoryView(store: store, pageSize: 5, showsClearAllButton: false)
+        _ = ToastHistoryView(store: store, onClose: {})
+        _ = ToastHistoryWindowController.shared
+        _ = ToastHistoryWindowController.shared.isVisible
+        ToastHistoryWindowController.shared.close()
+
+        // 本地化文案键可查到包内字符串
+        XCTAssertFalse(packageL(MySwiftAppToolsL10n.toastHistoryTitle).isEmpty)
+        XCTAssertFalse(packageL(MySwiftAppToolsL10n.toastHistoryMore, 3).isEmpty)
+    }
 }

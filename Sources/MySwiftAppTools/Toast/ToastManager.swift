@@ -61,15 +61,26 @@ import SwiftUI
         copyOnTap: true
     )
 
+ 7. 消息历史的可选配置（展示层与存储层分开两个方法，避免既有签名膨胀）：
+
+    ToastManager.shared.configureToastHistory(
+        maxCount: 500,
+        isHistoryEnabled: true
+    )
+
  说明：
  - 默认使用 ToastManager.shared，全局函数 ShowToast... 都写入 shared。
  - ToastView 只需要挂一次；没有挂 ToastView 时，调用 ShowToast 会更新状态但用户看不到 UI。
  - loading 和 requireConfirm 不会自动消失，需要手动确认或调用 ShowToastHide。
  - 点击非 success 类型 toast 会复制文本到剪贴板，copyOnTap 可关闭。
+ - 每条 toast 都会写入消息历史（ToastHistoryStore），可用 ToastHistoryView 浏览和管理。
+   默认最多保留 500 条、排除 loading 类型；开关与上限见 configureToastHistory(...)。
  */
 public struct ToastItem: Identifiable, Equatable {
     public let id = UUID()
     public let message: String
+    /// 消息发出时间。同时会写入消息历史（见 `ToastHistoryStore`）。
+    public let createdAt: Date
     public let type: ToastType
     public let position: ToastPosition
     public let customIcon: Image?
@@ -81,7 +92,7 @@ public struct ToastItem: Identifiable, Equatable {
     }
 }
 
-public enum ToastType {
+public enum ToastType: String, Codable, Sendable {
     case success
     case error
     case warning
@@ -128,7 +139,7 @@ extension ToastType {
     }
 }
 
-public enum ToastPosition {
+public enum ToastPosition: String, Codable, Sendable {
     case top
     case bottom
 }
@@ -145,6 +156,49 @@ public final class ToastManager {
     public var topPadding: CGFloat = 50
     public var bottomPadding: CGFloat = 50
     public var copyOnTap = true
+
+    /// 消息历史的配置入口，等价于对 `ToastHistoryStore.shared` 做**局部更新**。
+    ///
+    /// **省略的参数保持原值**，不会被重置。所以下面两次调用互不干扰：
+    ///
+    /// ```swift
+    /// ToastManager.shared.configureToastHistory(maxCount: 2000)
+    /// ToastManager.shared.configureToastHistory(isHistoryEnabled: false)
+    /// // 结果：maxCount 仍是 2000，记录已关闭
+    /// ```
+    ///
+    /// 想清空排除列表（恢复记录 `loading`）传空集即可：`excludedTypes: []`。
+    /// 不传则是「保持原样」。
+    ///
+    /// - Note: `ToastHistoryStore` 不对外暴露配置写入。所有实例共用同一个 UserDefaults key，
+    ///   多个实例各设一套策略会互相裁剪，因此策略变更只保留这一个公开入口。
+    @MainActor
+    public func configureToastHistory(
+        maxCount: Int? = nil,
+        isHistoryEnabled: Bool? = nil,
+        excludedTypes: Set<ToastType>? = nil,
+        maxMessageLength: Int? = nil,
+        maxTotalBytes: Int? = nil,
+        deferredPersist: Bool? = nil
+    ) {
+        let history = ToastHistoryStore.shared
+        history.configure(
+            maxCount: maxCount ?? history.maxCount,
+            isHistoryEnabled: isHistoryEnabled ?? history.isHistoryEnabled,
+            excludedTypes: excludedTypes ?? history.excludedTypes,
+            maxMessageLength: maxMessageLength ?? history.maxMessageLength,
+            maxTotalBytes: maxTotalBytes ?? history.maxTotalBytes,
+            deferredPersist: deferredPersist ?? history.deferredPersist
+        )
+    }
+
+    /// 消息历史存储的快捷入口，等价于 `ToastHistoryStore.shared`。
+    ///
+    /// 用于读取记录与做增删：`ToastManager.shared.toastHistory.records` / `.delete(_:)` / `.clearAll()`。
+    public var toastHistory: ToastHistoryStore { .shared }
+
+    /// `toastHistory` 的旧名，保留以兼容。
+    public var history: ToastHistoryStore { .shared }
 
     public init() {}
 
@@ -173,12 +227,17 @@ public final class ToastManager {
     ) {
         let item = ToastItem(
             message: text,
+            createdAt: Date(),
             type: type,
             position: position,
             customIcon: customIcon,
             requireConfirm: requireConfirm,
             onConfirm: onConfirm
         )
+
+        // 写入消息历史（受 isHistoryEnabled / excludedTypes 过滤）。
+        // 与下方 toasts 数组完全独立：toast 定时消失或被挤出，都不影响历史记录。
+        ToastHistoryStore.shared.record(item)
 
         withAnimation {
             toasts.append(item)
