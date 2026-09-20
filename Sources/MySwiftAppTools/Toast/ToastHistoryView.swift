@@ -62,6 +62,16 @@ public struct ToastHistoryView: View {
             Divider()
             listArea
         }
+        // 关键：历史列表**永不参与动画**。
+        //
+        // 调用方弹 toast 时会用 `withAnimation`（`ToastManager.show` 内部就是），
+        // 而历史写入与它发生在同一个 runloop 轮次里，于是新记录的插入会被
+        // 卷进那个动画事务。macOS 上 SwiftUI 用「快照」来渲染行的插入过渡，
+        // 而把翻转过的 AppKit 视图快照画回未翻转位图会得到**上下镜像**的行
+        // （症状：最新的几条消息整行倒着，且行序错乱）。
+        // 历史列表是一份日志，插入就该瞬时出现，这里把事务里的动画清掉，
+        // 从根上不给它产生中间态的机会。
+        .transaction { $0.animation = nil }
         .frame(minWidth: 360, minHeight: 280)
         .alert(
             packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmTitle),
@@ -73,7 +83,7 @@ public struct ToastHistoryView: View {
                 visibleCount = pageSize
             }
         } message: {
-            Text(String(format: packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmMsg), store.records.count))
+            Text(packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmMsg, store.records.count))
         }
         .onChange(of: store.records.count) { oldValue, newValue in
             // 新消息插到头部时同步补偿分页计数，避免正在浏览的旧消息被挤出视野。
@@ -89,7 +99,7 @@ public struct ToastHistoryView: View {
             Text(packageL(MySwiftAppToolsL10n.toastHistoryTitle))
                 .font(.headline)
 
-            Text(String(format: packageL(MySwiftAppToolsL10n.toastHistoryCount), store.records.count))
+            Text(packageL(MySwiftAppToolsL10n.toastHistoryCount, store.records.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -164,7 +174,7 @@ public struct ToastHistoryView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 10, weight: .semibold))
-                    Text(String(format: packageL(MySwiftAppToolsL10n.toastHistoryMore), store.records.count - visibleCount))
+                    Text(packageL(MySwiftAppToolsL10n.toastHistoryMore, store.records.count - visibleCount))
                 }
                 .font(.callout)
                 .frame(maxWidth: .infinity)
@@ -284,7 +294,7 @@ public struct ToastHistoryView: View {
         }
         if interval >= 60, interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(format: packageL(MySwiftAppToolsL10n.toastHistoryMinutesAgo), minutes)
+            return packageL(MySwiftAppToolsL10n.toastHistoryMinutesAgo, minutes)
         }
 
         let calendar = Calendar.current
