@@ -139,4 +139,52 @@ final class PackageLanguageTests: XCTestCase {
         XCTAssertEqual(PackageLanguage.english.resourceName, "en")
         XCTAssertEqual(PackageLanguage.custom("ja").resourceName, "ja")
     }
+
+    // MARK: - 环境 Locale 派生（「零桥接」路径）
+
+    /// 调用方只用了 `SwiftHelpCenter` 的语言 modifier、一行桥接都不写时，
+    /// 包内视图就是从环境 `Locale` 推语言 —— 这条推导必须准。
+    ///
+    /// `Locale.identifier` 的实际形态不固定（`en` / `en_US` / `zh-Hans_CN`），
+    /// 所以候选名要从最具体试到最宽松。
+    func testResourceNameDerivedFromEnvironmentLocale() {
+        XCTAssertEqual(PackageLocalization.resourceName(for: Locale(identifier: "en")), "en")
+        XCTAssertEqual(PackageLocalization.resourceName(for: Locale(identifier: "zh-Hans")), "zh-Hans")
+        XCTAssertEqual(PackageLocalization.resourceName(for: Locale(identifier: "zh-Hans_CN")), "zh-Hans")
+        XCTAssertEqual(PackageLocalization.resourceName(for: Locale(identifier: "en_US")), "en")
+        // 只有语言码时按前缀撞到带脚本的目录名。
+        XCTAssertEqual(PackageLocalization.resourceName(for: Locale(identifier: "zh_CN")), "zh-Hans")
+    }
+
+    /// 包内没有该语言的资源时必须返回 `nil`（回退标准查表），而不是硬塞一个错目录。
+    func testUnknownEnvironmentLocaleReturnsNil() {
+        XCTAssertNil(PackageLocalization.resourceName(for: Locale(identifier: "fr_FR")))
+    }
+
+    /// 视图层传入的资源名（来自环境）必须压过全局设置；
+    /// 传 `nil` 时才回退全局设置 —— 这是「子树级优先」的语义底线。
+    func testExplicitResourceNameWinsOverGlobalSetting() {
+        PackageLanguageManager.shared.setLanguage(.zhHans)
+
+        XCTAssertEqual(
+            packageL(MySwiftAppToolsL10n.toastHistoryTitle, resourceName: "en", arguments: []),
+            "Message History"
+        )
+        XCTAssertEqual(
+            packageL(MySwiftAppToolsL10n.toastHistoryTitle, resourceName: nil, arguments: []),
+            "消息历史"
+        )
+    }
+
+    /// 带占位符的文案走指定语言时也要正确格式化（不能填成 0）。
+    func testExplicitResourceNameKeepsFormatting() {
+        XCTAssertEqual(
+            packageL(MySwiftAppToolsL10n.toastHistoryCount, resourceName: "en", arguments: [3]),
+            "3 messages"
+        )
+        XCTAssertEqual(
+            packageL(MySwiftAppToolsL10n.toastHistoryCount, resourceName: "zh-Hans", arguments: [3]),
+            "共 3 条"
+        )
+    }
 }

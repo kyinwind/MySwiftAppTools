@@ -62,6 +62,13 @@ public struct ToastHistoryView: View {
     @State private var store: ToastHistoryStore
     /// 观察包内语言：语言切换时整棵子树重建，`packageL` 的结果才会跟着变。
     @State private var languageManager = PackageLanguageManager.shared
+    /// 调用方经 `.packageLanguageRefresh(resourceName:)` 注入的语言（子树级，优先级最高）。
+    @Environment(\.packageLanguageResourceName) private var injectedResourceName
+    /// SwiftUI 环境里的 `Locale`。
+    ///
+    /// `SwiftHelpCenter` 的 `.SHCAppLanguage(...)` 会往环境注入它并在切语言时重建子树，
+    /// 所以读它就能**自动跟随 App 内语言切换，调用方零桥接代码**。
+    @Environment(\.locale) private var environmentLocale
     private let pageSize: Int
     private let showsClearAllButton: Bool
     private let onClose: (() -> Void)?
@@ -89,6 +96,34 @@ public struct ToastHistoryView: View {
         self._visibleCount = State(initialValue: size)
     }
 
+    // MARK: 语言
+
+    /// 本视图查表用的 `.lproj` 资源名。
+    ///
+    /// 优先级（高 → 低）：
+    /// 1. **环境键** —— 调用方经 `.packageLanguageRefresh(resourceName:)` 注入，
+    ///    或独立窗口 wrapper 注入的全局值；
+    /// 2. **环境 `Locale` 派生** —— `SwiftHelpCenter` 的 `.SHCAppLanguage(...)` 注入
+    ///    的就是它。这条是「零桥接」的关键：调用方只要用了 SHC 的语言 modifier，
+    ///    本视图就自动跟着变，不需要再写任何 `setResourceName` 调用；
+    /// 3. 全局值 `PackageLanguageManager.setResourceName(_:)` —— 只在环境推导不出来时兜底
+    ///    （包内没有该语言的资源）；
+    /// 4. `nil` —— 交给 `Bundle.module` 默认解析（跟随系统）。
+    ///
+    /// 第 2 条刻意排在全局值**之前**：全局值是「谁最后设谁赢」的弱一致状态，
+    /// 一旦调用方漏了某次同步，它会停在旧语言上；而环境 `Locale` 由 SwiftUI
+    /// 负责传播，是强一致的。让强一致的那条先赢，界面就不会被过期的全局值钉死。
+    private var localizationResourceName: String? {
+        if let injectedResourceName { return injectedResourceName }
+        if let derived = PackageLocalization.resourceName(for: environmentLocale) { return derived }
+        return PackageLocalization.explicitResourceName
+    }
+
+    /// 用本视图当前语言查表。视图内的包内文案一律走它，不要直接调 `packageL`。
+    private func L(_ key: String, _ args: CVarArg...) -> String {
+        packageL(key, resourceName: localizationResourceName, arguments: args)
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             header
@@ -113,16 +148,16 @@ public struct ToastHistoryView: View {
         // 尺寸，被 frame 撑开的那部分仍然是透明的，裸嵌进别人容器照样漏底。
         .background(backgroundStyle)
         .alert(
-            packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmTitle),
+            L(MySwiftAppToolsL10n.toastHistoryClearConfirmTitle),
             isPresented: $showsClearConfirm
         ) {
-            Button(packageL(MySwiftAppToolsL10n.toastHistoryCancel), role: .cancel) {}
-            Button(packageL(MySwiftAppToolsL10n.toastHistoryDelete), role: .destructive) {
+            Button(L(MySwiftAppToolsL10n.toastHistoryCancel), role: .cancel) {}
+            Button(L(MySwiftAppToolsL10n.toastHistoryDelete), role: .destructive) {
                 store.clearAll()
                 visibleCount = pageSize
             }
         } message: {
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmMsg, store.records.count))
+            Text(L(MySwiftAppToolsL10n.toastHistoryClearConfirmMsg, store.records.count))
         }
         .onChange(of: store.records.count) { oldValue, newValue in
             // 新消息插到头部时同步补偿分页计数，避免正在浏览的旧消息被挤出视野。
@@ -153,10 +188,10 @@ public struct ToastHistoryView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryTitle))
+            Text(L(MySwiftAppToolsL10n.toastHistoryTitle))
                 .font(.headline)
 
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryCount, store.records.count))
+            Text(L(MySwiftAppToolsL10n.toastHistoryCount, store.records.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -167,7 +202,7 @@ public struct ToastHistoryView: View {
                 Button(role: .destructive) {
                     showsClearConfirm = true
                 } label: {
-                    Text(packageL(MySwiftAppToolsL10n.toastHistoryClearAll))
+                    Text(L(MySwiftAppToolsL10n.toastHistoryClearAll))
                 }
                 .controlSize(.small)
             }
@@ -176,7 +211,7 @@ public struct ToastHistoryView: View {
                 Button {
                     onClose()
                 } label: {
-                    Text(packageL(MySwiftAppToolsL10n.toastHistoryClose))
+                    Text(L(MySwiftAppToolsL10n.toastHistoryClose))
                 }
                 .controlSize(.small)
             }
@@ -200,6 +235,7 @@ public struct ToastHistoryView: View {
                                 ForEach(Array(section.records.enumerated()), id: \.element.id) { index, record in
                                     ToastHistoryRow(
                                         record: record,
+                                        resourceName: localizationResourceName,
                                         onCopy: { copySilently(record.message) },
                                         onDelete: { store.delete(record) }
                                     )
@@ -231,7 +267,7 @@ public struct ToastHistoryView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 10, weight: .semibold))
-                    Text(packageL(MySwiftAppToolsL10n.toastHistoryMore, store.records.count - visibleCount))
+                    Text(L(MySwiftAppToolsL10n.toastHistoryMore, store.records.count - visibleCount))
                 }
                 .font(.callout)
                 .frame(maxWidth: .infinity)
@@ -241,7 +277,7 @@ public struct ToastHistoryView: View {
             .padding(.vertical, 10)
         } else if store.records.count > pageSize {
             Divider()
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryAllLoaded))
+            Text(L(MySwiftAppToolsL10n.toastHistoryAllLoaded))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
@@ -259,11 +295,11 @@ public struct ToastHistoryView: View {
                 .font(.system(size: 28))
                 .foregroundStyle(.tertiary)
 
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryEmpty))
+            Text(L(MySwiftAppToolsL10n.toastHistoryEmpty))
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
-            Text(packageL(MySwiftAppToolsL10n.toastHistoryEmptyHint))
+            Text(L(MySwiftAppToolsL10n.toastHistoryEmptyHint))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -308,7 +344,11 @@ public struct ToastHistoryView: View {
         }
 
         return order.map { day in
-            HistorySection(id: day, title: Self.dayTitle(for: day), records: buckets[day] ?? [])
+            HistorySection(
+                id: day,
+                title: Self.dayTitle(for: day, resourceName: localizationResourceName),
+                records: buckets[day] ?? []
+            )
         }
     }
 
@@ -328,13 +368,27 @@ public struct ToastHistoryView: View {
     }
 
     /// 分组标题：今天 / 昨天 / 9月18日 星期五 / 2025年9月18日 星期四
-    static func dayTitle(for day: Date, now: Date = Date()) -> String {
+    ///
+    /// `static` 方法拿不到 `self`，所以当前语言由调用方显式传入。
+    static func dayTitle(
+        for day: Date,
+        now: Date = Date(),
+        resourceName: String? = nil
+    ) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(day) {
-            return packageL(MySwiftAppToolsL10n.toastHistoryToday)
+            return packageL(
+                MySwiftAppToolsL10n.toastHistoryToday,
+                resourceName: resourceName,
+                arguments: []
+            )
         }
         if calendar.isDateInYesterday(day) {
-            return packageL(MySwiftAppToolsL10n.toastHistoryYesterday)
+            return packageL(
+                MySwiftAppToolsL10n.toastHistoryYesterday,
+                resourceName: resourceName,
+                arguments: []
+            )
         }
         if calendar.isDate(day, equalTo: now, toGranularity: .year) {
             return monthDayWeekFormatter.string(from: day)
@@ -343,15 +397,29 @@ public struct ToastHistoryView: View {
     }
 
     /// 行内时间：刚刚 / N 分钟前 / 22:41 / 昨天 22:41 / 9月18日 22:41 / 2025年9月18日 22:41
-    static func timeText(for date: Date, now: Date = Date()) -> String {
+    ///
+    /// `static` 方法拿不到 `self`，所以当前语言由调用方显式传入。
+    static func timeText(
+        for date: Date,
+        now: Date = Date(),
+        resourceName: String? = nil
+    ) -> String {
         let interval = now.timeIntervalSince(date)
 
         if interval >= 0, interval < 60 {
-            return packageL(MySwiftAppToolsL10n.toastHistoryJustNow)
+            return packageL(
+                MySwiftAppToolsL10n.toastHistoryJustNow,
+                resourceName: resourceName,
+                arguments: []
+            )
         }
         if interval >= 60, interval < 3600 {
             let minutes = Int(interval / 60)
-            return packageL(MySwiftAppToolsL10n.toastHistoryMinutesAgo, minutes)
+            return packageL(
+                MySwiftAppToolsL10n.toastHistoryMinutesAgo,
+                resourceName: resourceName,
+                arguments: [minutes]
+            )
         }
 
         let calendar = Calendar.current
@@ -359,7 +427,11 @@ public struct ToastHistoryView: View {
             return hmFormatter.string(from: date)
         }
         if calendar.isDateInYesterday(date) {
-            return packageL(MySwiftAppToolsL10n.toastHistoryYesterday) + " " + hmFormatter.string(from: date)
+            return packageL(
+                MySwiftAppToolsL10n.toastHistoryYesterday,
+                resourceName: resourceName,
+                arguments: []
+            ) + " " + hmFormatter.string(from: date)
         }
         if calendar.isDate(date, equalTo: now, toGranularity: .year) {
             return monthDayFormatter.string(from: date)
@@ -378,6 +450,8 @@ public struct ToastHistoryView: View {
 private struct ToastHistoryRow: View {
 
     let record: ToastRecord
+    /// 本视图当前生效的语言（由 `ToastHistoryView` 传入）。
+    let resourceName: String?
     let onCopy: () -> Void
     let onDelete: () -> Void
 
@@ -404,7 +478,7 @@ private struct ToastHistoryRow: View {
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(ToastHistoryView.timeText(for: record.createdAt))
+            Text(ToastHistoryView.timeText(for: record.createdAt, resourceName: resourceName))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -428,11 +502,24 @@ private struct ToastHistoryRow: View {
             #endif
         }
         .contextMenu {
-            Button(packageL(MySwiftAppToolsL10n.toastHistoryCopy)) {
+            Button(
+                packageL(
+                    MySwiftAppToolsL10n.toastHistoryCopy,
+                    resourceName: resourceName,
+                    arguments: []
+                )
+            ) {
                 onCopy()
             }
             Divider()
-            Button(packageL(MySwiftAppToolsL10n.toastHistoryDelete), role: .destructive) {
+            Button(
+                packageL(
+                    MySwiftAppToolsL10n.toastHistoryDelete,
+                    resourceName: resourceName,
+                    arguments: []
+                ),
+                role: .destructive
+            ) {
                 onDelete()
             }
         }
@@ -488,7 +575,13 @@ public final class ToastHistoryWindowController {
         height: CGFloat = 620,
         background: ToastHistoryBackground = .system
     ) {
-        let resolvedTitle = title ?? packageL(MySwiftAppToolsL10n.toastHistoryTitle)
+        // 独立窗口不在 App 的视图树里，拿不到环境 `Locale`，
+        // 所以窗口标题只能取「全局设置的语言」。
+        let resolvedTitle = title ?? packageL(
+            MySwiftAppToolsL10n.toastHistoryTitle,
+            resourceName: PackageLocalization.explicitResourceName,
+            arguments: []
+        )
 
         if let window {
             window.title = resolvedTitle
@@ -509,7 +602,9 @@ public final class ToastHistoryWindowController {
         // `titlebarAppearsTransparent`，默认底就可能丢，那时整个历史界面会直接透出桌面。
         window.isOpaque = true
         window.backgroundColor = .windowBackgroundColor
-        window.contentView = NSHostingView(rootView: ToastHistoryView(background: background))
+        window.contentView = NSHostingView(
+            rootView: ToastHistoryWindowRoot(background: background)
+        )
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate()
@@ -519,6 +614,29 @@ public final class ToastHistoryWindowController {
 
     public func close() {
         window?.close()
+    }
+}
+
+/// 独立窗口的根视图。
+///
+/// 独立窗口**不在** App 的视图树里，`@Environment(\.locale)` 只会拿到系统值 ——
+/// 所以这里把「全局设置的语言」显式注入环境键，并观察 `PackageLanguageManager`：
+/// 语言一变整块重建，窗口标题与内部文案一起跟上。
+///
+/// 嵌入形态不需要它：`ToastHistoryView` 自己会读环境 `Locale`。
+private struct ToastHistoryWindowRoot: View {
+
+    let background: ToastHistoryBackground
+
+    @State private var manager = PackageLanguageManager.shared
+
+    var body: some View {
+        ToastHistoryView(background: background)
+            .environment(
+                \.packageLanguageResourceName,
+                PackageLocalization.explicitResourceName
+            )
+            .id(manager.refreshToken)
     }
 }
 

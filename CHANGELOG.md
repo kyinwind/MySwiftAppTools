@@ -25,6 +25,35 @@ MySwiftAppTools 的版本变动记录。
 
 暂无待发布改动。
 
+## [0.1.71] — 2026-09-21
+
+### 修复
+
+- **消息历史界面不跟随 App 内语言切换。** `ToastHistoryView` 原先只认
+  `PackageLanguageManager` 的全局值，而全局值是「谁最后设谁赢」的弱一致状态：
+  调用方漏一次同步（例如 `onChange` 回调因子树被 `.id(...)` 重建而没触发），
+  界面就被过期的全局值钉死在启动语言上。现在视图**优先读 SwiftUI 环境 `Locale`**
+  —— `SwiftHelpCenter` 的 `.SHCAppLanguage(...)` 会注入它并在切语言时用 `.id(...)`
+  重建子树，环境值由 SwiftUI 负责传播，是强一致的。因此调用方**不需要再写任何桥接
+  代码**，只要用了 SHC 的语言 modifier，包内界面就自动跟随。
+
+### 新增
+
+- `EnvironmentValues.packageLanguageResourceName`：子树级语言注入键，
+  由 `.packageLanguageRefresh(resourceName:)` 写入，包内视图读它取当前语言。
+- `packageL(_:resourceName:arguments:)`：指定 `.lproj` 资源名的查表重载
+  （带 label + 数组参数，与可变参数版本不产生重载歧义）。
+- `PackageLocalization.resourceName(for:)`：由 `Locale` 推导 `.lproj` 资源名，
+  候选名从最具体试到最宽松（`zh-Hans_CN` → `zh-Hans-CN` → `zh-Hans` → `zh`），
+  并在 `Bundle.module.localizations` 里做大小写不敏感匹配。
+
+### 变更
+
+- `ToastHistoryView` 的语言优先级调整为：**环境键 > 环境 `Locale` > 全局值 > 系统**。
+  环境 `Locale` 刻意排在全局值之前，避免界面被过期的全局值钉死。
+- `ToastHistoryWindowController` 改用新的内部根视图 `ToastHistoryWindowRoot`：
+  独立窗口拿不到 App 的环境 `Locale`，改由它把全局值注入环境键并观察语言变化。
+
 ## [0.1.70] — 2026-09-21
 
 ### 新增

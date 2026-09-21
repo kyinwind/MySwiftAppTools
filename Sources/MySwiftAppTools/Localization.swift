@@ -23,6 +23,20 @@ public func packageL(_ key: String, _ args: CVarArg...) -> String {
     PackageLocalization.localizedFormat(key, arguments: args)
 }
 
+/// 指定 `.lproj` 资源名的包内查表。
+///
+/// 供包内视图传入「本视图当前生效的语言」—— 视图层从 SwiftUI 环境里读到语言后，
+/// 用这个重载查表（`%d` 之类的占位符照样参与格式化）。
+///
+/// 带 label 且收数组参数，与上面的可变参数版本不会产生重载歧义。
+public func packageL(
+    _ key: String,
+    resourceName: String?,
+    arguments: [CVarArg]
+) -> String {
+    PackageLocalization.localizedFormat(key, resourceName: resourceName, arguments: arguments)
+}
+
 private func localizedFormat(_ key: String, bundle: Bundle, arguments: [CVarArg]) -> String {
     let format = bundle.localizedString(forKey: key, value: nil, table: nil)
     return String(format: format, locale: .autoupdatingCurrent, arguments: arguments)

@@ -219,7 +219,17 @@ packageL(MySwiftAppToolsL10n.confirmOK)
 如果需要“跟随系统 / 简体中文 / English”这类 App 内语言切换，分两层处理：
 
 - **App 自己的文案**：用 SwiftHelpCenter 中的 `SHCAppLanguageManager`、`SHCLocalization` 和 `.SHCAppLanguage(...)`。
-- **包内文案**（`packageL(...)` 渲染出来的界面，如消息历史窗口）：用本包的 `PackageLanguageManager`。
+- **包内文案**（`packageL(...)` 渲染出来的界面，如消息历史窗口）：**用了 SHC 就什么都不用写** —— 见下。
+
+**嵌入形态：零桥接。** `ToastHistoryView` 会读 SwiftUI 环境的 `Locale`，而 `SwiftHelpCenter` 的 `.SHCAppLanguage(...)` 正是靠注入它 + `.id(...)` 重建子树来刷新的。所以只要 App 用了那个 modifier，包内界面就自动跟随，**不需要任何额外代码**。
+
+```swift
+// App 侧只需要这一行（SHC 的），包内界面自动跟随
+ZStack { MainView() }
+    .SHCAppLanguage(languageManager)
+```
+
+只有想**显式控制**时才用本包的 API：
 
 ```swift
 // 命令式切换
@@ -227,17 +237,19 @@ PackageLanguageManager.shared.setLanguage(.english)   // .system / .zhHans / .en
 PackageLanguageManager.shared.setResourceName("en")   // 直接对接外部语言系统（如 SHC 的 selection.resourceName）
 PackageLanguageManager.shared.setResourceName(nil)    // 回到跟随系统
 
-// 推荐：套在根视图上，外部语言值一变就自动同步 + 重建整棵子树
+// 子树级显式注入：语言值一变，这棵子树里的包内界面就跟着变
 RootView()
     .packageLanguageRefresh(resourceName: SHCAppLanguageManager.shared.selection.resourceName)
 ```
 
-不调用这些 API 时，包内文案跟随系统语言，行为与 0.1.69 及以前完全一致。`ToastHistoryView` 内部自带观察，单独用（独立窗口 / sheet）也能自动刷新，无需额外配置。
+**独立窗口形态**（`ToastHistoryWindowController`）不在 App 的视图树里，拿不到 App 注入的 `Locale`，所以需要上面任一种方式显式告知语言；窗口内部已自带观察与重建。
+
+不调用这些 API 时，包内文案跟随系统语言，行为与 0.1.69 及以前完全一致。
 
 注意事项：
 
 - App 自己的业务文案仍放在 App 自己的 `Localizable.strings` 中，并通过 `defaultBundle: .main` 查表。
-- MySwiftAppTools 自带 UI 文案使用 `packageL(...)` 或 `.toPackageNSLocalizedString`，从 `Bundle.module` 查表；**语言由 `PackageLanguageManager` 控制**。
+- MySwiftAppTools 自带 UI 文案使用 `packageL(...)` 或 `.toPackageNSLocalizedString`，从 `Bundle.module` 查表。取语言的优先级为：**环境键 > 环境 `Locale` > `PackageLanguageManager` 全局值 > 系统** —— 环境 `Locale` 排在全局值之前，是为了不让过期的全局值把界面钉死在旧语言上。
 - 资源名匹配**大小写不敏感**（外部语言系统常给小写 `zh-hans`，而本包目录是 `zh-Hans.lproj`）。
 - 如果主 App 与 FinderSync / Share Extension 需要共享语言选择，请在 SwiftHelpCenter 中用 App Group 配置语言管理器。
 
