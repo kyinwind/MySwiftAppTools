@@ -25,6 +25,32 @@ MySwiftAppTools 的版本变动记录。
 
 暂无待发布改动。
 
+## [0.1.70] — 2026-09-21
+
+### 新增
+
+- **包内 UI 文案支持运行时切换语言**：`PackageLanguageManager.shared.setLanguage(.english / .zhHans / .custom(_))`；也可 `setResourceName("en")` 直接对接外部语言系统（如 `SwiftHelpCenter`），传 `nil` 回到跟随系统
+- **`PackageLanguage`**：`.system`（默认）/ `.zhHans` / `.english` / `.custom(String)`
+- **`View.packageLanguageRefresh(resourceName:)`**：套在根视图上，外部语言值一变就自动同步 + 重建整棵子树
+- **`View.packageLanguageRefresh()`**：命令式版本，跟随 `PackageLanguageManager.shared.refreshToken`
+- `PackageLocalization`：定向 `.lproj` 查表（对外只暴露 `resourceName`）
+
+### 修复
+
+- **App 内切换语言后，包内文案不跟着变。**
+  两处都缺：① `packageL` 走 `Bundle.module.localizedString`，而语言由 Foundation 在**进程启动时**
+  解析并缓存，App 内改语言不会让它重新解析；② `packageL` 是普通全局函数，不参与 SwiftUI
+  依赖追踪，没有任何东西能触发重绘。
+  现在 `packageL` 在指定语言时会**显式定位对应 `.lproj` 再查表**（三级回退：lproj Bundle →
+  直接读 `.strings` → 标准查表），`ToastHistoryView` 内部也自带观察，语言一变即重建。
+  资源名匹配**大小写不敏感** —— 外部语言系统普遍给小写 `zh-hans`，而本包目录是 `zh-Hans.lproj`。
+
+### 兼容性说明
+
+- **源兼容**：全部是新增 API。`packageL(_:_:)` 签名未变；不调用新 API 时 `resourceName` 为 `nil`，
+  走原路径，**逐 key 与 0.1.69 一致**（有单测穷举全部 key 守住这条底线）
+- **行为变化**：无
+
 ## [0.1.69] — 2026-09-21
 
 ### 修复

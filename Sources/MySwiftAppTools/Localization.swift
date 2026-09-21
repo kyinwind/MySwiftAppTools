@@ -16,8 +16,11 @@ public func L(_ key: String, _ args: CVarArg...) -> String {
 /// MySwiftAppTools 包内部资源的本地化函数。
 ///
 /// 与 `L` 的区别是默认从 `Bundle.module` 查表，用于公共包自带 UI 文案。
+///
+/// 语言由 `PackageLanguageManager` 控制：默认（`.system`）跟随系统，
+/// 调 `setLanguage(_:)` 后可让包内文案在 App 运行中切换（`packageL` 会定向到对应 `.lproj`）。
 public func packageL(_ key: String, _ args: CVarArg...) -> String {
-    localizedFormat(key, bundle: .module, arguments: args)
+    PackageLocalization.localizedFormat(key, arguments: args)
 }
 
 private func localizedFormat(_ key: String, bundle: Bundle, arguments: [CVarArg]) -> String {

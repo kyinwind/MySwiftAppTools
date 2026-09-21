@@ -60,6 +60,8 @@ public enum ToastHistoryBackground: Sendable, Equatable {
 public struct ToastHistoryView: View {
 
     @State private var store: ToastHistoryStore
+    /// 观察包内语言：语言切换时整棵子树重建，`packageL` 的结果才会跟着变。
+    @State private var languageManager = PackageLanguageManager.shared
     private let pageSize: Int
     private let showsClearAllButton: Bool
     private let onClose: (() -> Void)?
@@ -103,6 +105,9 @@ public struct ToastHistoryView: View {
         // 历史列表是一份日志，插入就该瞬时出现，这里把事务里的动画清掉，
         // 从根上不给它产生中间态的机会。
         .transaction { $0.animation = nil }
+        // 语言切换时重建整棵子树：`packageL` 是普通函数、不参与 SwiftUI 依赖追踪，
+        // 不换 identity 的话文案会停在旧语言上。
+        .id(languageManager.refreshToken)
         .frame(minWidth: 360, minHeight: 280)
         // 自带背景。顺序必须排在 `.frame` **之后**：若排在前面，背景只会覆盖内容
         // 尺寸，被 frame 撑开的那部分仍然是透明的，裸嵌进别人容器照样漏底。
