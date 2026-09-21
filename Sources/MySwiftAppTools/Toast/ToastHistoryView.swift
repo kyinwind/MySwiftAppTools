@@ -15,6 +15,31 @@ import UIKit
 
 import SwiftUI
 
+// MARK: - 背景样式
+
+/// 消息历史界面的背景样式。
+///
+/// 库视图不该把「有没有底」这件事交给调用方负责：历史界面被裸嵌进别人的容器时，
+/// 若自身没有背景就会透出宿主底色（宿主是透明窗口时直接露出桌面）。
+/// 所以默认铺一层系统语义背景；调用方要自己接管时，显式选 `.none` 或 `.color(_)`。
+public enum ToastHistoryBackground: Sendable, Equatable {
+
+    /// 不铺背景，完全由调用方接管。
+    ///
+    /// 注意：只有选它，写在 `ToastHistoryView()` **实例外层**的 `.background(...)`
+    /// 才会生效 —— 另外两种 case 画在更上层，会把外层背景盖住。
+    case none
+
+    /// 系统语义背景（默认）。
+    ///
+    /// macOS 取 `NSColor.windowBackgroundColor`，iOS 取 `UIColor.systemBackground`，
+    /// 随浅色 / 深色模式自动切换，且与窗口、sheet 面板底色一致、无接缝。
+    case system
+
+    /// 指定颜色，供调用方注入自家主题色。
+    case color(Color)
+}
+
 // MARK: - 主视图
 
 /// Toast 消息历史浏览界面。
@@ -38,6 +63,10 @@ public struct ToastHistoryView: View {
     private let pageSize: Int
     private let showsClearAllButton: Bool
     private let onClose: (() -> Void)?
+    private let background: ToastHistoryBackground
+
+    /// 白盒单测入口：确认默认参数的解析结果。外部用不到，故不设 `public`。
+    internal var resolvedBackground: ToastHistoryBackground { background }
 
     @State private var visibleCount: Int
     @State private var showsClearConfirm = false
@@ -46,13 +75,15 @@ public struct ToastHistoryView: View {
         store: ToastHistoryStore = .shared,
         pageSize: Int = 20,
         showsClearAllButton: Bool = true,
-        onClose: (() -> Void)? = nil
+        onClose: (() -> Void)? = nil,
+        background: ToastHistoryBackground = .system
     ) {
         let size = max(1, pageSize)
         self.store = store
         self.pageSize = size
         self.showsClearAllButton = showsClearAllButton
         self.onClose = onClose
+        self.background = background
         self._visibleCount = State(initialValue: size)
     }
 
@@ -73,6 +104,9 @@ public struct ToastHistoryView: View {
         // 从根上不给它产生中间态的机会。
         .transaction { $0.animation = nil }
         .frame(minWidth: 360, minHeight: 280)
+        // 自带背景。顺序必须排在 `.frame` **之后**：若排在前面，背景只会覆盖内容
+        // 尺寸，被 frame 撑开的那部分仍然是透明的，裸嵌进别人容器照样漏底。
+        .background(backgroundStyle)
         .alert(
             packageL(MySwiftAppToolsL10n.toastHistoryClearConfirmTitle),
             isPresented: $showsClearConfirm
@@ -89,6 +123,24 @@ public struct ToastHistoryView: View {
             // 新消息插到头部时同步补偿分页计数，避免正在浏览的旧消息被挤出视野。
             guard newValue > oldValue, visibleCount > pageSize else { return }
             visibleCount += newValue - oldValue
+        }
+    }
+
+    // MARK: 背景
+
+    /// 根视图背景。语义见 `ToastHistoryBackground`。
+    private var backgroundStyle: Color {
+        switch background {
+        case .none:
+            return .clear
+        case .system:
+            #if os(macOS)
+            return Color(nsColor: .windowBackgroundColor)
+            #else
+            return Color(uiColor: .systemBackground)
+            #endif
+        case .color(let color):
+            return color
         }
     }
 
@@ -422,10 +474,14 @@ public final class ToastHistoryWindowController {
     }
 
     /// 显示历史窗口。窗口已存在时直接置前，不重复创建。
+    ///
+    /// - Parameter background: 历史界面的背景样式。仅在窗口**首次创建**时生效；
+    ///   窗口已存在时调用只做置前，不重建内容 —— 重建会丢掉滚动位置与分页状态。
     public func show(
         title: String? = nil,
         width: CGFloat = 520,
-        height: CGFloat = 620
+        height: CGFloat = 620,
+        background: ToastHistoryBackground = .system
     ) {
         let resolvedTitle = title ?? packageL(MySwiftAppToolsL10n.toastHistoryTitle)
 
@@ -444,7 +500,11 @@ public final class ToastHistoryWindowController {
         )
         window.title = resolvedTitle
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: ToastHistoryView())
+        // 显式兜底，不吃 NSWindow 的默认值：将来若改 styleMask 或加上
+        // `titlebarAppearsTransparent`，默认底就可能丢，那时整个历史界面会直接透出桌面。
+        window.isOpaque = true
+        window.backgroundColor = .windowBackgroundColor
+        window.contentView = NSHostingView(rootView: ToastHistoryView(background: background))
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate()
@@ -489,6 +549,41 @@ public final class ToastHistoryWindowController {
     ToastHistoryView(store: ToastHistoryPreviewData.makeStore())
         .frame(width: 520, height: 620)
         .preferredColorScheme(.dark)
+}
+
+// MARK: 背景三态对照
+//
+// 三个 Preview 底下都垫了橙色块：只有 `.none` 该透出橙色，
+// 另外两个必须是实底 —— 这就是「包自己兜住背景」的验收标准。
+
+#Preview("消息历史 · 背景 .system（默认）") {
+    ZStack {
+        Color.orange
+        ToastHistoryView(store: ToastHistoryPreviewData.makeStore())
+    }
+    .frame(width: 520, height: 620)
+}
+
+#Preview("消息历史 · 背景 .color（主题色接管）") {
+    ZStack {
+        Color.orange
+        ToastHistoryView(
+            store: ToastHistoryPreviewData.makeStore(),
+            background: .color(.blue.opacity(0.15))
+        )
+    }
+    .frame(width: 520, height: 620)
+}
+
+#Preview("消息历史 · 背景 .none（应透出橙色）") {
+    ZStack {
+        Color.orange
+        ToastHistoryView(
+            store: ToastHistoryPreviewData.makeStore(),
+            background: .none
+        )
+    }
+    .frame(width: 520, height: 620)
 }
 
 #endif

@@ -490,6 +490,21 @@ ShowToast(
 ToastHistoryWindowController.shared.show()
 ```
 
+**背景**：界面自带系统语义背景（默认 `.system`），裸嵌进任何容器都不会漏底，浅色 / 深色自动适配。要跟随自家主题色，用 `.color(_)` 接管：
+
+```swift
+// 跟随自家主题
+ToastHistoryView(background: .color(theme.pageBackground))
+
+// 完全不要背景，由外层自己铺
+ZStack {
+    myBackdrop
+    ToastHistoryView(background: .none)
+}
+```
+
+> 只有 `.none` 才会让**写在 `ToastHistoryView()` 实例外层**的 `.background(...)` 生效 —— 另外两种 case 画在更上层，会把外层背景盖住。要换色请走 `.color(_)`，不要用外层 `.background(...)`。
+
 界面行为：
 
 - 按「最新 → 最旧」排列，按 今天 / 昨天 / 日期 分组

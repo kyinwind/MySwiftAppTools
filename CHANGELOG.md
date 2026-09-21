@@ -25,6 +25,31 @@ MySwiftAppTools 的版本变动记录。
 
 暂无待发布改动。
 
+## [0.1.69] — 2026-09-21
+
+### 修复
+
+- **`ToastHistoryView` 自身没有背景，裸嵌进别人的容器会整片漏底。**
+  界面的 `body` 原先一层背景都没画，显示正常全靠宿主恰好在底下垫了一层（`NSWindow` /
+  `.sheet` 自带底色），属于「偶然正确」；一旦裸嵌进 `ZStack` 或自定义容器，透出的就是宿主底色，
+  宿主是透明窗口时直接露出桌面。现在默认铺一层系统语义背景
+  （macOS `NSColor.windowBackgroundColor` / iOS `UIColor.systemBackground`），
+  随浅色深色自动切换，且与窗口、sheet 面板底色一致、无接缝。
+- `ToastHistoryWindowController` 显式设置 `isOpaque = true` 与 `backgroundColor`，
+  不再依赖 `NSWindow` 的默认值 —— 原先只是碰巧有底，将来改 `styleMask` 或加上
+  `titlebarAppearsTransparent` 就可能弄丢。
+
+### 新增
+
+- **`ToastHistoryBackground`**：背景样式三态 —— `.system`（默认）/ `.none`（调用方接管）/ `.color(_)`（注入主题色）
+- `ToastHistoryView(background:)` 与 `ToastHistoryWindowController.show(background:)` 新增参数；**带默认值，老调用方源码零改动**
+
+### 变更
+
+- **行为变化**：`ToastHistoryView` 默认多出一层系统背景。若原先在**实例外层**写过 `.background(...)`
+  （例如 `ToastHistoryView().background(theme.pageBackground)`），它会被这层新背景盖住 ——
+  请改用 `ToastHistoryView(background: .color(theme.pageBackground))`。
+
 ## [0.1.68] — 2026-09-21
 
 ### 修复

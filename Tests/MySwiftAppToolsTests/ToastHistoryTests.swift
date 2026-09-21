@@ -321,4 +321,38 @@ final class ToastHistoryTests: XCTestCase {
         XCTAssertEqual(history.records.map(\.message), ["第 5 条", "第 4 条"], "应丢掉最旧的")
         history.clearAll()
     }
+
+    // MARK: - 界面背景
+    //
+    // 回归背景：原来 `ToastHistoryView` 一层背景都不画，显示正常全靠宿主恰好在底下
+    // 垫了一层，属于「偶然正确」。裸嵌进别人容器（或透明窗口）就会整片漏底。
+
+    func testHistoryViewBackgroundDefaultsToSystem() {
+        let view = ToastHistoryView(store: ToastHistoryStore())
+        XCTAssertEqual(
+            view.resolvedBackground,
+            .system,
+            "不传 background 时必须默认铺系统底，否则裸嵌进别人容器照样漏底"
+        )
+    }
+
+    func testHistoryViewBackgroundAcceptsAllCases() {
+        XCTAssertEqual(
+            ToastHistoryView(store: ToastHistoryStore(), background: .none).resolvedBackground,
+            .none
+        )
+        XCTAssertEqual(
+            ToastHistoryView(store: ToastHistoryStore(), background: .color(.red)).resolvedBackground,
+            .color(.red)
+        )
+    }
+
+    func testHistoryViewKeepsLegacyInitForms() {
+        // 0.1.67 及以前的调用形式必须继续可用：新增参数有默认值，不得破坏源兼容。
+        let plain = ToastHistoryView()
+        let customized = ToastHistoryView(pageSize: 10, showsClearAllButton: false, onClose: {})
+
+        XCTAssertEqual(plain.resolvedBackground, .system)
+        XCTAssertEqual(customized.resolvedBackground, .system)
+    }
 }
