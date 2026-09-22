@@ -290,16 +290,27 @@ public struct ToastHistoryView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "tray")
+        // 区分两种空态：**功能没开** vs **开了但还没消息**。
+        //
+        // 不区分的话，App 没开启历史时用户只看到「暂无消息」，会误以为是自己
+        // 没产生过消息，而不是功能被关着 —— 后者是可操作的（去设置里打开），
+        // 前者只能等。图标也分开：关着用 bell.slash，开着没消息用 tray。
+        let disabled = !store.isHistoryEnabled
+
+        return VStack(spacing: 8) {
+            Image(systemName: disabled ? "bell.slash" : "tray")
                 .font(.system(size: 28))
                 .foregroundStyle(.tertiary)
 
-            Text(L(MySwiftAppToolsL10n.toastHistoryEmpty))
+            Text(disabled
+                 ? L(MySwiftAppToolsL10n.toastHistoryDisabled)
+                 : L(MySwiftAppToolsL10n.toastHistoryEmpty))
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
-            Text(L(MySwiftAppToolsL10n.toastHistoryEmptyHint))
+            Text(disabled
+                 ? L(MySwiftAppToolsL10n.toastHistoryDisabledHint)
+                 : L(MySwiftAppToolsL10n.toastHistoryEmptyHint))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -664,6 +675,12 @@ private struct ToastHistoryWindowRoot: View {
 /// 空状态：验证占位图标与引导文案。
 #Preview("消息历史 · 空状态") {
     ToastHistoryView(store: ToastHistoryPreviewData.makeEmptyStore())
+        .frame(width: 520, height: 400)
+}
+
+/// 历史未开启：验证与「暂无消息」的空态区分（bell.slash 图标 + 独立文案）。
+#Preview("消息历史 · 历史未开启") {
+    ToastHistoryView(store: ToastHistoryPreviewData.makeDisabledStore())
         .frame(width: 520, height: 400)
 }
 

@@ -18,6 +18,8 @@
 "Toast.History.copy" = "复制内容";
 "Toast.History.empty" = "暂无消息";
 "Toast.History.emptyHint" = "App 发出过的提示消息会显示在这里。";
+"Toast.History.disabled" = "消息历史未开启";
+"Toast.History.disabledHint" = "当前未记录消息历史。可在 App 设置中开启后查看。";
 "Toast.History.today" = "今天";
 "Toast.History.yesterday" = "昨天";
 "Toast.History.justNow" = "刚刚";

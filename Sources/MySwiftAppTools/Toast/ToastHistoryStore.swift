@@ -67,12 +67,14 @@ public struct ToastRecord: Codable, Identifiable, Equatable, Sendable {
 /// 使用方式：
 ///
 /// ```swift
-/// // 默认即开箱可用，无需任何配置。
-/// // 需要调整策略时（统一从这个入口改，见 ToastManager.configureToastHistory）：
+/// // 默认**不记录**任何历史 —— 必须显式开启才会写入：
+/// ToastManager.shared.configureToastHistory(isHistoryEnabled: true)
+/// // 开启后需要调整策略时（统一从这个入口改）：
 /// ToastManager.shared.configureToastHistory(maxCount: 1000)
-/// // 需要彻底关闭时：
-/// ToastManager.shared.configureToastHistory(isHistoryEnabled: false)
 /// ```
+///
+/// - Note: 默认关闭是刻意的。toast 文本常含用户文件路径，落盘属于有副作用的持久化写入，
+///   不该由「调用方没写任何相关代码」被动触发。
 ///
 /// - Important: 配置属性对外**只读**，策略变更一律走 `ToastManager.configureToastHistory(...)`。
 ///   原因是本类的所有实例共用同一个 UserDefaults key，实例级配置会互相打架；
@@ -97,8 +99,10 @@ public final class ToastHistoryStore {
     /// 最多保留条数，超出后从最旧开始丢弃。
     public internal(set) var maxCount = 500
 
-    /// 历史记录总开关。关闭后不再写入任何历史。
-    public internal(set) var isHistoryEnabled = true
+    /// 历史记录总开关。**默认关闭（`false`）** —— 必须显式打开才会写入任何历史。
+    ///
+    /// 开启方式：`ToastManager.shared.configureToastHistory(isHistoryEnabled: true)`
+    public internal(set) var isHistoryEnabled = false
 
     /// 不记录的类型。默认排除 `.loading`（「处理中…」这类临时状态）。
     public internal(set) var excludedTypes: Set<ToastType> = [.loading]
@@ -131,9 +135,11 @@ public final class ToastHistoryStore {
     /// - Important: 仅包内可用（测试 / Preview 需要「一次调用拿到确定状态」）。
     ///   对外的策略变更请走 `ToastManager.configureToastHistory(...)`，那里是**局部更新**语义，
     ///   省略的参数保持原值，不会把其它项悄悄重置。
+    /// - Warning: 全量重置意味着**不传 `isHistoryEnabled` 就会把它关掉**（默认 `false`）。
+    ///   包内想记录历史时必须显式写 `isHistoryEnabled: true`。
     internal func configure(
         maxCount: Int = 500,
-        isHistoryEnabled: Bool = true,
+        isHistoryEnabled: Bool = false,
         excludedTypes: Set<ToastType> = [.loading],
         maxMessageLength: Int = 500,
         maxTotalBytes: Int = 512 * 1024,

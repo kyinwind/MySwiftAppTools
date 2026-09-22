@@ -168,7 +168,14 @@ final class PublicAPITests: XCTestCase {
 
         // 存储层公开入口：读取与增删（配置属性对外只读）
         XCTAssertEqual(ToastHistoryStore.storageKey, "MySwiftAppTools.Toast.history.v1")
-        let store = ToastHistoryStore()
+
+        // 0.1.72 起历史**默认关闭**，写之前必须先显式开启。
+        // 注意：公开的 configureToastHistory 只作用于共享单例，
+        // 所以这里必须用 .shared —— 新建实例拿不到这条配置。
+        ToastManager.shared.configureToastHistory(isHistoryEnabled: true)
+
+        let store = ToastHistoryStore.shared
+        store.clearAll() // 从确定的空状态开始，避免受其它用例残留影响
 
         store.record(message: "冒烟", type: .normal)
         XCTAssertEqual(store.records.count, 1)

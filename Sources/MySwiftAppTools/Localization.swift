@@ -102,6 +102,8 @@ public enum MySwiftAppToolsL10n {
     public static let toastHistoryCopy = "Toast.History.copy"
     public static let toastHistoryEmpty = "Toast.History.empty"
     public static let toastHistoryEmptyHint = "Toast.History.emptyHint"
+    public static let toastHistoryDisabled = "Toast.History.disabled"
+    public static let toastHistoryDisabledHint = "Toast.History.disabledHint"
     public static let toastHistoryToday = "Toast.History.today"
     public static let toastHistoryYesterday = "Toast.History.yesterday"
     public static let toastHistoryJustNow = "Toast.History.justNow"

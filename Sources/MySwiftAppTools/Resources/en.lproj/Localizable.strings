@@ -18,6 +18,8 @@
 "Toast.History.copy" = "Copy";
 "Toast.History.empty" = "No messages";
 "Toast.History.emptyHint" = "Messages shown by this app will appear here.";
+"Toast.History.disabled" = "Message history is off";
+"Toast.History.disabledHint" = "Messages aren't being recorded. Turn it on in the app's settings to see them here.";
 "Toast.History.today" = "Today";
 "Toast.History.yesterday" = "Yesterday";
 "Toast.History.justNow" = "Just now";

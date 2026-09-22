@@ -107,7 +107,8 @@ struct YourApp: App {
             copyOnTap: true
         )
 
-        // 7.1 消息历史（可选）：不调用即用默认值（500 条 / 开启记录 / 排除 loading）。
+        // 7.1 消息历史（可选，**默认关闭**）：必须显式传 isHistoryEnabled: true 才会记录。
+        //     不调用、或调用了但不传这个开关，都不会写入任何历史。
         ToastManager.shared.configureToastHistory(
             maxCount: 500,
             isHistoryEnabled: true
@@ -542,12 +543,16 @@ ZStack {
 - 单条删除：悬停出现 ✕ 按钮，或右键菜单「删除这条」
 - 清空全部：标题栏「清空全部」，带二次确认
 
-配置（可选，不配置即用默认值）。**配置入口只有 `ToastManager.configureToastHistory` 一个**：
+配置。**消息历史默认关闭 —— 不显式开启就不会记录任何历史**（见下方说明）。
+配置入口只有 `ToastManager.configureToastHistory` 一个：
 
 ```swift
+// 开启记录。默认是关的，必须显式传：
+ToastManager.shared.configureToastHistory(isHistoryEnabled: true)
+
 ToastManager.shared.configureToastHistory(
     maxCount: 500,              // 最多保留条数，超出丢最旧
-    isHistoryEnabled: true,     // 记录总开关
+    isHistoryEnabled: true,     // 记录总开关，默认 false
     excludedTypes: [.loading],  // 默认不记录的类型
     maxMessageLength: 500,      // 单条最大字符数，超出截断
     maxTotalBytes: 512 * 1024,  // 总字节兜底，防止长消息撑大 UserDefaults
@@ -556,11 +561,13 @@ ToastManager.shared.configureToastHistory(
 
 // 全部参数都可选，省略即「保持当前值」，不会被重置：
 ToastManager.shared.configureToastHistory(maxCount: 2000)
-ToastManager.shared.configureToastHistory(isHistoryEnabled: false)  // 彻底关闭记录
+ToastManager.shared.configureToastHistory(isHistoryEnabled: false)  // 关闭记录
 ToastManager.shared.configureToastHistory(excludedTypes: [])        // 清空排除列表，恢复记录 loading
 ```
 
-> 为什么配置属性对外只读：`ToastHistoryStore` 的所有实例共用同一个 UserDefaults key，多个实例各设一套策略会互相裁剪。所以策略变更只保留 `configureToastHistory` 这**一条**公开路径。
+> **为什么默认关闭**：toast 文本常含用户文件路径（「已处理 `/Users/xxx/…`」），写入 UserDefaults 是有副作用的持久化行为。这类功能不该由「调用方没写任何相关代码」被动触发，所以默认不记录，要用就显式打开。
+>
+> **为什么配置属性对外只读**：`ToastHistoryStore` 的所有实例共用同一个 UserDefaults key，多个实例各设一套策略会互相裁剪。所以策略变更只保留 `configureToastHistory` 这**一条**公开路径。
 
 容量说明：三重上限（条数 / 单条长度 / 总字节）保证 UserDefaults 不会被撑大。实测典型消息（30 字）500 条约 103 KB。
 
@@ -576,7 +583,8 @@ ToastManager.shared.configureToastHistory(excludedTypes: [])        // 清空排
 
 注意：
 
-- 历史数据存放在 `~/Library/Preferences/<bundleid>.plist`，是明文。toast 文本若可能包含文件路径等敏感信息，请用 `configureToastHistory(isHistoryEnabled: false)` 或 `excludedTypes` 控制。
+- 历史数据存放在 `~/Library/Preferences/<bundleid>.plist`，是明文。toast 文本常含用户文件路径，**这正是历史默认关闭的原因**；开启后如需收窄，用 `excludedTypes` 排除不适用的类型。
+- 历史**未开启**时，消息历史界面显示的是「消息历史未开启」，而不是「暂无消息」—— 两种空态刻意区分，免得使用者误以为是自己没产生过消息。
 - 配置了 App Group 时，同 group 的多个 App 共享同一份历史，但已打开的界面不会自动刷新，需调用 `reload()`。
 
 ### macOS 系统能力

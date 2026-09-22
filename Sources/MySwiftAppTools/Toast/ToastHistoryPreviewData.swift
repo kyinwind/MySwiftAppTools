@@ -39,9 +39,24 @@ enum ToastHistoryPreviewData {
         makeStore(samples: Array(fullSamples.suffix(6)))
     }
 
-    /// 空状态样本。
+    /// 空状态样本：历史开着，但还没有任何消息。
     static func makeEmptyStore() -> ToastHistoryStore {
         makeStore(samples: [])
+    }
+
+    /// 历史**未开启**的状态样本。
+    ///
+    /// 与 `makeEmptyStore()` 的区别：那个是「开了但没消息」，这个是「功能关着」。
+    /// 两者在 `ToastHistoryView.emptyState` 里有不同的图标与文案。
+    static func makeDisabledStore() -> ToastHistoryStore {
+        let store = ToastHistoryStore()
+        store.configure(
+            isHistoryEnabled: false,  // 关键：功能关着
+            excludedTypes: [],
+            deferredPersist: true     // 同上：只动内存，不碰 UserDefaults
+        )
+        store.clearAll()
+        return store
     }
 
     /// 组装存储。

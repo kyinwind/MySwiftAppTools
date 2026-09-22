@@ -25,6 +25,42 @@ MySwiftAppTools 的版本变动记录。
 
 暂无待发布改动。
 
+## [0.1.72] — 2026-09-22
+
+### 变更
+
+- **消息历史改为默认关闭。** 现在**必须**显式调用
+  `ToastManager.shared.configureToastHistory(isHistoryEnabled: true)` 才会记录任何历史；
+  不调用、或调用了但不传这个开关，都不会写入。
+
+  原因：toast 文本常含用户文件路径（「已处理 `/Users/xxx/…`」），写 UserDefaults 是
+  有副作用的持久化行为，不该由「调用方没写任何相关代码」被动触发。
+
+  **影响与迁移**：对外 API 签名一个没动，老代码不改也能编译，属于**行为变更**而非
+  破坏性 API 变更，因此走 `0.1.x`。但如果你依赖「不配置就自动记录」的旧行为，
+  升级后历史会是空的 —— 加一行显式开启即可。已知接入方 RightClickMate
+（`RightClickMateApp.swift:92`）与 VideoHero（`VideoHeroApp.swift:159`）
+  都已在 App 初始化里显式传了 `isHistoryEnabled: true`，**行为完全不变**。
+
+  内部默认值同步翻转：`ToastHistoryStore.isHistoryEnabled` 与
+  `ToastHistoryStore.configure(isHistoryEnabled:)` 的默认值均由 `true` 改为 `false`。
+  注意 `ToastHistoryStore.configure(...)` 是**全量重置**语义 —— 包内想记录历史时
+  必须显式写 `isHistoryEnabled: true`，否则不传就会被关掉。
+
+### 新增
+
+- **消息历史界面的空态区分**：「功能未开启」（`bell.slash` 图标 + 「消息历史未开启」）
+  与「开启了但还没有消息」（`tray` 图标 + 「暂无消息」）现在是两种不同的显示 ——
+  不区分的话，App 没开启历史时使用者只看到「暂无消息」，会误以为是自己没产生过消息，
+  而不是功能被关着。
+  新增文案 key：`Toast.History.disabled` / `Toast.History.disabledHint`（中英同步），
+  以及 Preview `"消息历史 · 历史未开启"`。
+
+### 文档
+
+- README 的「快速开始」与「消息历史」章节改为显式开启写法，补充默认关闭的原因与空态说明。
+- 新增 `docs/20260922-Toast历史默认关闭-变更方案.md`（含影响面调研、测试清单与拍板记录）。
+
 ## [0.1.71] — 2026-09-21
 
 ### 修复

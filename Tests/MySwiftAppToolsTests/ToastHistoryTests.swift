@@ -38,7 +38,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testRecordKeepsNewestFirstAndSurvivesReload() {
         let store = ToastHistoryStore()
-        store.configure(maxCount: 100, excludedTypes: [])
+        store.configure(maxCount: 100, isHistoryEnabled: true, excludedTypes: [])
 
         store.record(message: "第一条")
         store.record(message: "第二条")
@@ -53,7 +53,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testRecordCarriesCreatedAt() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
 
         let before = Date()
         store.record(message: "带时间")
@@ -73,7 +73,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testMaxCountDropsOldest() {
         let store = ToastHistoryStore()
-        store.configure(maxCount: 3, excludedTypes: [])
+        store.configure(maxCount: 3, isHistoryEnabled: true, excludedTypes: [])
 
         for index in 1...5 {
             store.record(message: "msg\(index)")
@@ -85,7 +85,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testMessageTruncation() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [], maxMessageLength: 10)
+        store.configure(isHistoryEnabled: true, excludedTypes: [], maxMessageLength: 10)
 
         store.record(message: String(repeating: "测", count: 50))
 
@@ -97,7 +97,7 @@ final class ToastHistoryTests: XCTestCase {
     func testTotalBytesTrimKeepsNewest() {
         let store = ToastHistoryStore()
         // 每条估算约 430 字节，预算 512 * 0.9 ≈ 460，只能留下最新的 1 条
-        store.configure(maxCount: 100, excludedTypes: [], maxTotalBytes: 512)
+        store.configure(maxCount: 100, isHistoryEnabled: true, excludedTypes: [], maxTotalBytes: 512)
 
         for index in 1...10 {
             store.record(message: "\(index)" + String(repeating: "测", count: 99))
@@ -112,7 +112,9 @@ final class ToastHistoryTests: XCTestCase {
 
     func testLoadingExcludedByDefault() {
         let store = ToastHistoryStore()
-        store.configure()
+        // 本用例测的是「loading 默认被排除」，与历史开关无关，
+        // 所以显式打开记录，否则改默认后这条会因为什么都没记而失败。
+        store.configure(isHistoryEnabled: true)
 
         store.record(message: "正常提示", type: .normal)
         store.record(message: "处理中", type: .loading)
@@ -122,7 +124,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testLoadingRecordedWhenNotExcluded() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
 
         store.record(message: "处理中", type: .loading)
 
@@ -139,11 +141,55 @@ final class ToastHistoryTests: XCTestCase {
         XCTAssertTrue(ToastHistoryStore().records.isEmpty)
     }
 
+    /// 新默认（0.1.72 翻转）：**不显式开启就不记录**。
+    ///
+    /// 这条是本次行为变更的守卫用例 —— 谁把默认值改回 `true` 都会在这里红。
+    func testHistoryDisabledByDefault() {
+        let store = ToastHistoryStore()
+        // 刻意不传 isHistoryEnabled：走默认值
+        store.configure(excludedTypes: [])
+
+        XCTAssertFalse(store.isHistoryEnabled, "默认应为关闭")
+
+        store.record(message: "不该被记录")
+        store.record(message: "也不该", type: .success)
+
+        XCTAssertTrue(store.records.isEmpty, "未显式开启时不应记录任何历史")
+    }
+
+    /// 「局部更新」语义最容易踩的坑：只想改条数，却顺带把历史打开（或关掉）。
+    ///
+    /// `configureToastHistory` 的 `isHistoryEnabled` 是 `Bool?`，`nil` = 保持原值，
+    /// 所以改 maxCount 不应该动它。
+    func testConfigureToastHistoryDoesNotToggleByOmission() {
+        // setUp 把共享单例设成了开启，先复位到「App 没配过」的初始态
+        ToastManager.shared.configureToastHistory(maxCount: 500, isHistoryEnabled: false)
+
+        // 只改条数：不应把历史打开
+        ToastManager.shared.configureToastHistory(maxCount: 120)
+        XCTAssertFalse(
+            ToastManager.shared.toastHistory.isHistoryEnabled,
+            "只改 maxCount 不应把历史打开"
+        )
+        XCTAssertEqual(ToastManager.shared.toastHistory.maxCount, 120)
+
+        // 显式开启：这次才该记录
+        ToastManager.shared.configureToastHistory(isHistoryEnabled: true)
+        XCTAssertTrue(ToastManager.shared.toastHistory.isHistoryEnabled)
+
+        // 再只改条数：不应把刚开的又关掉
+        ToastManager.shared.configureToastHistory(maxCount: 80)
+        XCTAssertTrue(
+            ToastManager.shared.toastHistory.isHistoryEnabled,
+            "开启后再改 maxCount 不应把它关掉"
+        )
+    }
+
     // MARK: - 删除
 
     func testDeleteSingleRecord() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
         store.record(message: "A")
         store.record(message: "B")
 
@@ -156,7 +202,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testDeleteByID() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
         store.record(message: "A")
         store.record(message: "B")
 
@@ -168,7 +214,7 @@ final class ToastHistoryTests: XCTestCase {
 
     func testClearAllRemovesEverything() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
         store.record(message: "A")
         store.record(message: "B")
 
@@ -207,11 +253,11 @@ final class ToastHistoryTests: XCTestCase {
 
     func testReloadPicksUpExternalChanges() {
         let store = ToastHistoryStore()
-        store.configure(excludedTypes: [])
+        store.configure(isHistoryEnabled: true, excludedTypes: [])
 
         // 另一个 store 实例（模拟另一个 App / 另一处代码）写入
         let other = ToastHistoryStore()
-        other.configure(excludedTypes: [])
+        other.configure(isHistoryEnabled: true, excludedTypes: [])
         other.record(message: "外部写入")
 
         XCTAssertTrue(store.records.isEmpty, "未 reload 前应看不到外部改动")

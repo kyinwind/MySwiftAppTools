@@ -73,8 +73,9 @@ import SwiftUI
  - ToastView 只需要挂一次；没有挂 ToastView 时，调用 ShowToast 会更新状态但用户看不到 UI。
  - loading 和 requireConfirm 不会自动消失，需要手动确认或调用 ShowToastHide。
  - 点击非 success 类型 toast 会复制文本到剪贴板，copyOnTap 可关闭。
- - 每条 toast 都会写入消息历史（ToastHistoryStore），可用 ToastHistoryView 浏览和管理。
-   默认最多保留 500 条、排除 loading 类型；开关与上限见 configureToastHistory(...)。
+ - 消息历史**默认关闭**，必须显式 `configureToastHistory(isHistoryEnabled: true)` 才会写入。
+   开启后每条 toast 会写入 ToastHistoryStore，可用 ToastHistoryView 浏览和管理；
+   默认最多保留 500 条、排除 loading 类型。
  */
 public struct ToastItem: Identifiable, Equatable {
     public let id = UUID()
@@ -167,6 +168,13 @@ public final class ToastManager {
     /// // 结果：maxCount 仍是 2000，记录已关闭
     /// ```
     ///
+    /// - Important: **消息历史默认关闭**。完全不调用本方法，或调用了但不给
+    ///   `isHistoryEnabled: true`，都不会写入任何历史。开启必须显式写：
+    ///
+    /// ```swift
+    /// ToastManager.shared.configureToastHistory(isHistoryEnabled: true)
+    /// ```
+    ///
     /// 想清空排除列表（恢复记录 `loading`）传空集即可：`excludedTypes: []`。
     /// 不传则是「保持原样」。
     ///
@@ -235,7 +243,8 @@ public final class ToastManager {
             onConfirm: onConfirm
         )
 
-        // 写入消息历史（受 isHistoryEnabled / excludedTypes 过滤）。
+        // 尝试写入消息历史。注意**默认是关的**（isHistoryEnabled = false），
+        // 调用方必须显式 configureToastHistory(isHistoryEnabled: true) 才会真的记录。
         // 与下方 toasts 数组完全独立：toast 定时消失或被挤出，都不影响历史记录。
         ToastHistoryStore.shared.record(item)
 
