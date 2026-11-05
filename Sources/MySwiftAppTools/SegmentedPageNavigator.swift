@@ -85,15 +85,25 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
 
     private let activeColor: Color
     private let inactiveColor: Color
-    private let segmentX: CGFloat = 11
+    private let horizontalPadding: CGFloat
+    private let segmentHalfHitWidth: CGFloat = 11
     private let tooltipWidth: CGFloat = 78
     private let tooltipHeight: CGFloat = 24
+
+    private var segmentX: CGFloat {
+        horizontalPadding + segmentHalfHitWidth
+    }
+
+    private var segmentHitWidth: CGFloat {
+        (horizontalPadding + segmentHalfHitWidth) * 2
+    }
 
     public init(
         items: [SegmentedPageNavigatorItem<ID>],
         currentID: ID?,
         activeColor: Color = .accentColor,
         inactiveColor: Color = .secondary.opacity(0.42),
+        horizontalPadding: CGFloat = 8,
         pageLabel: @escaping (Int) -> String,
         onSelect: @escaping (ID) -> Void
     ) {
@@ -101,6 +111,7 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
         self.currentID = currentID
         self.activeColor = activeColor
         self.inactiveColor = inactiveColor
+        self.horizontalPadding = max(0, horizontalPadding)
         self.pageLabel = pageLabel
         self.onSelect = onSelect
     }
@@ -140,12 +151,16 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
                             )
                         )
                         .allowsHitTesting(false)
+                        .zIndex(1)
                         .transition(.opacity)
                 }
             }
             .animation(.easeOut(duration: 0.12), value: hoveredID)
         }
-        .frame(width: segmentX + 24 + tooltipWidth)
+        // Only the rail participates in the parent's layout. The tooltip may
+        // overflow to the trailing side, so hosts can reserve a symmetric rail
+        // without also reserving the transient tooltip width.
+        .frame(width: segmentHitWidth)
         .accessibilityElement(children: .contain)
     }
 
@@ -172,11 +187,17 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
                     width: isCurrent || isHovered ? 12 : 7,
                     height: metrics.segmentHeight
                 )
-                .frame(width: 22, height: metrics.rowHeight)
-                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .position(x: segmentX, y: metrics.centerY(for: index))
+        // Constrain the Button itself before moving it. Applying `position` to an
+        // unconstrained Button can leave every page with the full GeometryReader
+        // hit region, so the last page wins all hover events.
+        .frame(width: segmentHitWidth, height: max(1, metrics.rowHeight))
+        .contentShape(Rectangle())
+        .offset(
+            x: 0,
+            y: metrics.centerY(for: index) - max(1, metrics.rowHeight) / 2
+        )
         .onHover { isInside in
             if isInside {
                 hoveredID = item.id
@@ -184,7 +205,6 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
                 hoveredID = nil
             }
         }
-        .help(label)
         .accessibilityLabel(label)
         .accessibilityAddTraits(isCurrent ? [.isSelected] : [])
     }
