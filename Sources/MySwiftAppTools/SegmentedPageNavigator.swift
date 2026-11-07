@@ -20,7 +20,6 @@ public struct SegmentedPageNavigatorItem<ID: Hashable>: Identifiable {
 
 struct SegmentedPageNavigatorMetrics: Equatable {
     static let preferredSegmentHeight: CGFloat = 3
-    static let preferredSpacing: CGFloat = 2
 
     let contentTop: CGFloat
     let rowHeight: CGFloat
@@ -40,22 +39,13 @@ struct SegmentedPageNavigatorMetrics: Equatable {
         }
 
         let count = CGFloat(itemCount)
-        let preferredContentHeight = count * Self.preferredSegmentHeight
-            + max(0, count - 1) * Self.preferredSpacing
-        if self.availableHeight >= preferredContentHeight {
-            contentTop = (self.availableHeight - preferredContentHeight) / 2
-            rowHeight = Self.preferredSegmentHeight + Self.preferredSpacing
-            segmentHeight = Self.preferredSegmentHeight
-            firstCenterOffset = Self.preferredSegmentHeight / 2
-        } else {
-            contentTop = 0
-            rowHeight = self.availableHeight / count
-            segmentHeight = min(
-                Self.preferredSegmentHeight,
-                max(1, rowHeight * 0.6)
-            )
-            firstCenterOffset = rowHeight / 2
-        }
+        contentTop = 0
+        rowHeight = self.availableHeight / count
+        segmentHeight = min(
+            Self.preferredSegmentHeight,
+            max(1, rowHeight * 0.6)
+        )
+        firstCenterOffset = rowHeight / 2
     }
 
     func centerY(for index: Int) -> CGFloat {
@@ -86,6 +76,7 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
     private let activeColor: Color
     private let inactiveColor: Color
     private let horizontalPadding: CGFloat
+    private let minimumHeight: CGFloat
     private let segmentHalfHitWidth: CGFloat = 11
     private let tooltipWidth: CGFloat = 78
     private let tooltipHeight: CGFloat = 24
@@ -104,6 +95,7 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
         activeColor: Color = .accentColor,
         inactiveColor: Color = .secondary.opacity(0.42),
         horizontalPadding: CGFloat = 8,
+        minimumHeight: CGFloat = 120,
         pageLabel: @escaping (Int) -> String,
         onSelect: @escaping (ID) -> Void
     ) {
@@ -112,6 +104,7 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
         self.activeColor = activeColor
         self.inactiveColor = inactiveColor
         self.horizontalPadding = max(0, horizontalPadding)
+        self.minimumHeight = max(0, minimumHeight)
         self.pageLabel = pageLabel
         self.onSelect = onSelect
     }
@@ -161,6 +154,7 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
         // overflow to the trailing side, so hosts can reserve a symmetric rail
         // without also reserving the transient tooltip width.
         .frame(width: segmentHitWidth)
+        .frame(minHeight: minimumHeight)
         .accessibilityElement(children: .contain)
     }
 
@@ -192,11 +186,11 @@ public struct SegmentedPageNavigator<ID: Hashable>: View {
         // Constrain the Button itself before moving it. Applying `position` to an
         // unconstrained Button can leave every page with the full GeometryReader
         // hit region, so the last page wins all hover events.
-        .frame(width: segmentHitWidth, height: max(1, metrics.rowHeight))
+        .frame(width: segmentHitWidth, height: metrics.rowHeight)
         .contentShape(Rectangle())
         .offset(
             x: 0,
-            y: metrics.centerY(for: index) - max(1, metrics.rowHeight) / 2
+            y: metrics.centerY(for: index) - metrics.rowHeight / 2
         )
         .onHover { isInside in
             if isInside {

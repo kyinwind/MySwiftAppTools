@@ -3,15 +3,29 @@ import XCTest
 @testable import MySwiftAppTools
 
 final class SegmentedPageNavigatorTests: XCTestCase {
-    func testMetricsUsePreferredSegmentSizeWhenSpaceAllows() {
+    func testMetricsDistributeRowsAcrossAllAvailableHeight() {
         let metrics = SegmentedPageNavigatorMetrics(
             availableHeight: 500,
             itemCount: 71
         )
 
-        XCTAssertEqual(metrics.rowHeight, 5)
+        XCTAssertEqual(metrics.rowHeight, 500.0 / 71.0, accuracy: 0.0001)
         XCTAssertEqual(metrics.segmentHeight, 3)
-        XCTAssertEqual(metrics.contentTop, 73.5)
+        XCTAssertEqual(metrics.contentTop, 0)
+        XCTAssertEqual(metrics.centerY(for: 0), 250.0 / 71.0, accuracy: 0.0001)
+        XCTAssertEqual(metrics.centerY(for: 70), 500.0 - 250.0 / 71.0, accuracy: 0.0001)
+    }
+
+    func testMetricsSpreadSmallPageCountWithoutChangingSegmentThickness() {
+        let metrics = SegmentedPageNavigatorMetrics(
+            availableHeight: 120,
+            itemCount: 5
+        )
+
+        XCTAssertEqual(metrics.rowHeight, 24)
+        XCTAssertEqual(metrics.segmentHeight, 3)
+        XCTAssertEqual(metrics.centerY(for: 0), 12)
+        XCTAssertEqual(metrics.centerY(for: 4), 108)
     }
 
     func testMetricsCompressLargePageCountsIntoAvailableHeight() {
